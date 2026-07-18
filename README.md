@@ -1,18 +1,31 @@
-# VPN Gate Connector
+# VpnM
+
 [![Android CI](https://github.com/hoang-rio/vpngate-connector/actions/workflows/android-ci.yml/badge.svg)](https://github.com/hoang-rio/vpngate-connector/actions/workflows/android-ci.yml)
 
-## A VPN Gate Client for android
+## A de-googled VPN Gate client for Android, for personal/sideload use
 
-Supports multiple VPN protocols — **SoftEther VPN** (native implementation, no third-party client required), **OpenVPN**, **MS-SSTP**, and **L2TP/IPsec** (Android 12 and below only) — across both free and paid VPN Gate servers.
+This is a personal fork of [hoang-rio/vpngate-connector](https://github.com/hoang-rio/vpngate-connector), a VPN Gate client supporting **SoftEther VPN** (native implementation, no third-party client required), **OpenVPN**, **MS-SSTP**, and **L2TP/IPsec** (Android 12 and below only), across both free and paid VPN Gate servers.
 
-**Available in Google Play Store**
+**This fork removes every Google service dependency** so it can be built and sideloaded without talking to Firebase, Google Play Services, AdMob, or Google Play Billing. It is meant for building locally with Android Studio and installing on your own device — it is not published anywhere.
 
-<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" style="width: 300px;">
+### What was removed vs. the upstream project
+- Firebase Analytics, Crashlytics, Cloud Messaging (push notifications), and Remote Config
+- AdMob (banner / interstitial / native ads) and the Start.io ad mediation SDK
+- Google User Messaging Platform (ads consent flow)
+- Google Play Core in-app update check
+- Google Play Billing (in-app purchase of extra paid-server data)
+- Google Play Services `ProviderInstaller` (security provider updater)
 
+Values that used to come from Firebase Remote Config (API endpoints, ad-block DNS, etc.) are now fixed local defaults — see [`app/src/main/java/vn/unlimit/vpngate/compat/`](app/src/main/java/vn/unlimit/vpngate/compat/). Analytics event calls are kept as no-op local log lines only, for source-compatibility, and send nothing anywhere.
 
-Free Version: https://play.google.com/store/apps/details?id=vn.unlimit.vpngate
+Because of this, a few upstream features are intentionally unavailable in this build: push notifications for the paid server, in-app purchase of extra data, and automatic Play Store update checks. Everything else — including free/paid server browsing and connecting over any of the four protocols — works the same as upstream.
 
-Pro Version: https://play.google.com/store/apps/details?id=vn.unlimit.vpngatepro
+### Building
+Open in Android Studio and select the **`proDebug`** build variant (Build → Select Build Variant) to sideload without needing a release signing key. Clone with submodules:
+
+```bash
+git clone --recursive https://github.com/morteza-taheri/VpnM.git
+```
 
 # Protocol Support
 
@@ -52,12 +65,11 @@ Uses the Android OS built-in L2TP/IPsec client. Available on both free and paid 
 
 # LICENSE
 
-This project is under GPLv3 LICENSE. It mean if you use this project or a part of this project in your project it must be open source.
+This project is under GPLv3 LICENSE, same as the upstream project. If you use this project or a part of this project in your project it must be open source.
 
-This project use another open source project as library detail bellow.
+Original project: [hoang-rio/vpngate-connector](https://github.com/hoang-rio/vpngate-connector)
+
+This project uses other open source projects as libraries, detailed below.
 * [**OpenVPN for Android**](https://github.com/schwabe/ics-openvpn) under GPLv2 LICENSE (https://github.com/schwabe/ics-openvpn/blob/master/doc/LICENSE.txt)
 * [**glide**](https://github.com/bumptech/glide) under Apache License, Version 2.0 (https://github.com/bumptech/glide/blob/master/LICENSE)
 * [**Open SSTP Client for Android**](https://github.com/kittoku/Open-SSTP-Client) under MIT License (https://github.com/kittoku/Open-SSTP-Client/blob/main/LICENSE)
-* [**SoftEther-Android-Module**](https://github.com/hoang-rio/SoftEther-Android-Module) under Apache License, Version 2.0 (https://github.com/hoang-rio/SoftEther-Android-Module/blob/main/LICENSE)
-
-Made with ♥ and a lot of coffee by [hoangrio](https://github.com/hoang-rio)
