@@ -28,4 +28,27 @@
     <color name="colorPrimaryAdaptive">#124097</color>
     <color name="background">#fafafa</color>
     <color name="colorSkeleton">#E0E0E0</color>
+
+    <!-- VpnG-inspired dashboard palette (connection status screen) -->
+    <color name="dashSlate950">#020617</color>
+    <color name="dashSlate900">#0F172A</color>
+    <color name="dashSlate800">#1E293B</color>
+    <color name="dashSlate700">#334155</color>
+    <color name="dashSlate600">#475569</color>
+    <color name="dashSlate500">#64748B</color>
+    <color name="dashSlate400">#94A3B8</color>
+    <color name="dashSlate300">#CBD5E1</color>
+    <color name="dashEmerald600">#059669</color>
+    <color name="dashEmerald500">#10B981</color>
+    <color name="dashEmerald400">#34D399</color>
+    <color name="dashEmerald500_20">#3310B981</color>
+    <color name="dashEmerald500_10">#1A10B981</color>
+    <color name="dashTeal500">#14B8A6</color>
+    <color name="dashCyan600">#0891B2</color>
+    <color name="dashCyan500">#06B6D4</color>
+    <color name="dashCyan500_20">#3306B6D4</color>
+    <color name="dashCyan500_10">#1A06B6D4</color>
+    <color name="dashBlue500">#3B82F6</color>
+    <color name="dashViolet400">#A78BFA</color>
+    <color name="dashViolet500_20">#33A78BFA</color>
 </resources>

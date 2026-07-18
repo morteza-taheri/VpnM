@@ -1,5 +1,7 @@
 package vn.unlimit.vpngate.fragment
 
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -14,13 +16,16 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.RemoteException
+import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -67,6 +72,10 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         const val START_VPN_SSTP: Int = 80
         const val ACTION_VPN_CONNECT: String = "kittoku.osc.connect"
         const val ACTION_VPN_DISCONNECT: String = "kittoku.osc.disconnect"
+        private const val STATE_DISCONNECTED = 0
+        private const val STATE_CONNECTING = 1
+        private const val STATE_CONNECTED = 2
+        private const val ZERO_DURATION = "00:00:00"
     }
 
     private var mVPNService: IOpenVPNServiceInternal? = null
@@ -98,6 +107,12 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
     private var isSoftEtherConnected = false
     private var lastOpenVpnInBytes = 0L
     private var lastOpenVpnOutBytes = 0L
+    // ---- VpnG-inspired shield dashboard state (see updateShieldVisuals) ----
+    private val shieldTickerHandler = Handler(Looper.getMainLooper())
+    private var shieldTickerRunnable: Runnable? = null
+    private var glowAnimators: List<ObjectAnimator>? = null
+    private var connectedStartElapsedMs = 0L
+    private var lastShieldVisualState = -1
     private var lastOpenVpnDiffInBytes = 0L
     private var lastOpenVpnDiffOutBytes = 0L
 
@@ -505,10 +520,12 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+        startShieldTicker()
     }
 
     override fun onPause() {
         super.onPause()
+        stopShieldTicker()
         try {
             TotalTraffic.saveTotal(mContext)
             requireActivity().unbindService(mConnection)
@@ -517,8 +534,154 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         }
     }
 
+    // ==== VpnG-inspired shield dashboard (connect button, glow rings, status pill, timer) ====
+    // Polls the existing btnOnOff.isActivated / isConnecting state twice a second rather than
+    // hooking every call site that changes them, so this stays independent of the rest of the
+    // (already large) connection state machine in this file.
+    private fun startShieldTicker() {
+        if (shieldTickerRunnable != null) return
+        val runnable = object : Runnable {
+            override fun run() {
+                updateShieldVisuals()
+                shieldTickerHandler.postDelayed(this, 500)
+            }
+        }
+        shieldTickerRunnable = runnable
+        shieldTickerHandler.post(runnable)
+    }
+
+    private fun stopShieldTicker() {
+        shieldTickerRunnable?.let { shieldTickerHandler.removeCallbacks(it) }
+        shieldTickerRunnable = null
+        stopGlowAnimation()
+    }
+
+    private fun updateShieldVisuals() {
+        if (!::binding.isInitialized || isDetached || mContext == null) return
+        val enabled = binding.btnOnOff.isEnabled
+        val connected = enabled && binding.btnOnOff.isActivated
+        val connecting = enabled && isConnecting
+        val state = when {
+            connecting -> STATE_CONNECTING
+            connected -> STATE_CONNECTED
+            else -> STATE_DISCONNECTED
+        }
+        if (state != lastShieldVisualState) {
+            lastShieldVisualState = state
+            when (state) {
+                STATE_CONNECTED -> {
+                    binding.btnOnOff.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_shield_connected)
+                    binding.imgShieldIcon.setImageResource(R.drawable.ic_shield_check)
+                    binding.glowRingOuter.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_glow_ring_emerald)
+                    binding.glowRingInner.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_glow_ring_emerald)
+                    binding.txtStatusPill.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_pill_connected)
+                    binding.txtStatusPill.setTextColor(
+                        ContextCompat.getColor(mContext!!, R.color.dashEmerald400)
+                    )
+                    binding.txtStatusPill.text = getString(R.string.status_pill_connected)
+                    startGlowAnimation()
+                    if (connectedStartElapsedMs == 0L) {
+                        connectedStartElapsedMs = SystemClock.elapsedRealtime()
+                    }
+                }
+
+                STATE_CONNECTING -> {
+                    binding.btnOnOff.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_shield_connecting)
+                    binding.imgShieldIcon.setImageResource(R.drawable.ic_shield_outline)
+                    binding.glowRingOuter.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_glow_ring_cyan)
+                    binding.glowRingInner.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_glow_ring_cyan)
+                    binding.txtStatusPill.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_pill_disconnected)
+                    binding.txtStatusPill.setTextColor(
+                        ContextCompat.getColor(mContext!!, R.color.dashCyan500)
+                    )
+                    binding.txtStatusPill.text = getString(R.string.status_pill_connecting)
+                    startGlowAnimation()
+                    connectedStartElapsedMs = 0L
+                    binding.txtConnectedTime.text = ZERO_DURATION
+                }
+
+                else -> {
+                    binding.btnOnOff.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_shield_disconnected)
+                    binding.imgShieldIcon.setImageResource(R.drawable.ic_shield_outline)
+                    binding.txtStatusPill.background =
+                        ContextCompat.getDrawable(mContext!!, R.drawable.bg_pill_disconnected)
+                    binding.txtStatusPill.setTextColor(
+                        ContextCompat.getColor(mContext!!, R.color.dashSlate300)
+                    )
+                    binding.txtStatusPill.text = getString(R.string.status_pill_disconnected)
+                    stopGlowAnimation()
+                    connectedStartElapsedMs = 0L
+                    binding.txtConnectedTime.text = ZERO_DURATION
+                }
+            }
+        }
+        if (state == STATE_CONNECTED && connectedStartElapsedMs > 0) {
+            binding.txtConnectedTime.text =
+                formatElapsedDuration(SystemClock.elapsedRealtime() - connectedStartElapsedMs)
+        }
+    }
+
+    private fun createPulseAnimator(target: View, duration: Long, delay: Long): ObjectAnimator {
+        target.scaleX = 0.8f
+        target.scaleY = 0.8f
+        target.alpha = 0.6f
+        val holder = ObjectAnimator.ofPropertyValuesHolder(
+            target,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 0.8f, 1.4f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.8f, 1.4f),
+            PropertyValuesHolder.ofFloat(View.ALPHA, 0.6f, 0f)
+        )
+        holder.duration = duration
+        holder.startDelay = delay
+        holder.repeatCount = ObjectAnimator.INFINITE
+        holder.repeatMode = ObjectAnimator.RESTART
+        holder.interpolator = DecelerateInterpolator()
+        return holder
+    }
+
+    private fun startGlowAnimation() {
+        if (glowAnimators != null || !::binding.isInitialized) return
+        binding.glowRingOuter.visibility = View.VISIBLE
+        binding.glowRingInner.visibility = View.VISIBLE
+        val outer = createPulseAnimator(binding.glowRingOuter, 1800L, 0L)
+        val inner = createPulseAnimator(binding.glowRingInner, 1800L, 350L)
+        outer.start()
+        inner.start()
+        glowAnimators = listOf(outer, inner)
+    }
+
+    private fun stopGlowAnimation() {
+        glowAnimators?.forEach { it.cancel() }
+        glowAnimators = null
+        if (::binding.isInitialized) {
+            binding.glowRingOuter.visibility = View.INVISIBLE
+            binding.glowRingInner.visibility = View.INVISIBLE
+            binding.glowRingOuter.alpha = 0f
+            binding.glowRingInner.alpha = 0f
+        }
+    }
+
+    private fun formatElapsedDuration(ms: Long): String {
+        val totalSeconds = ms / 1000
+        val h = totalSeconds / 3600
+        val m = (totalSeconds % 3600) / 60
+        val s = totalSeconds % 60
+        return String.format("%02d:%02d:%02d", h, m, s)
+    }
+    // ==== end shield dashboard ====
+
     override fun onDestroy() {
         super.onDestroy()
+        stopShieldTicker()
         try {
             VpnStatus.removeStateListener(this)
             VpnStatus.removeByteCountListener(this)

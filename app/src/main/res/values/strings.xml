@@ -153,6 +153,11 @@
     <string name="error_load_profile">Error load VPN profile</string>
     <string name="traffic_session">Session traffic</string>
     <string name="clear_statistics">Clear statistics</string>
+    <string name="connected_duration">Connected</string>
+    <string name="total_downloaded">Total downloaded</string>
+    <string name="status_pill_connected">Connected</string>
+    <string name="status_pill_connecting">Connecting…</string>
+    <string name="status_pill_disconnected">Disconnected</string>
     <string name="get_pro_version">Get Pro version</string>
     <string name="status">Status</string>
     <string name="tap_to_disconnect">Tap button to disconnect from %1$s</string>

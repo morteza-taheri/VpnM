@@ -4,36 +4,84 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-    <LinearLayout
-        android:layout_height="250dp"
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/btn_on_off"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginBottom="10dp"
-            android:clickable="true"
-            android:elevation="5dp"
-            android:focusable="true"
-            android:importantForAccessibility="no"
-            android:src="@drawable/selector_button_connection" />
+    <!-- ==== Connection status dashboard (VpnG-inspired) ==== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_status_card_dark"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="28dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/txt_status_pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_pill_disconnected"
+            android:text="@string/no_network"
+            android:textColor="@color/dashSlate300"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="176dp"
+            android:layout_height="176dp"
+            android:layout_marginBottom="14dp">
+
+            <View
+                android:id="@+id/glow_ring_outer"
+                android:layout_width="176dp"
+                android:layout_height="176dp"
+                android:layout_gravity="center"
+                android:alpha="0"
+                android:background="@drawable/bg_glow_ring_emerald" />
+
+            <View
+                android:id="@+id/glow_ring_inner"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="center"
+                android:alpha="0"
+                android:background="@drawable/bg_glow_ring_emerald" />
+
+            <FrameLayout
+                android:id="@+id/btn_on_off"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:layout_gravity="center"
+                android:background="@drawable/selector_shield_button"
+                android:clickable="true"
+                android:elevation="6dp"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/img_shield_icon"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_shield_outline" />
+            </FrameLayout>
+        </FrameLayout>
 
         <TextView
             android:id="@+id/txt_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:ellipsize="marquee"
             android:gravity="center"
             android:layout_gravity="center"
             android:maxLines="2"
             android:minLines="2"
-            android:paddingLeft="5dp"
-            android:paddingRight="5dp"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
             android:text="@string/no_network"
-            android:textColor="@color/colorTextSecondary"
+            android:textColor="@color/dashSlate400"
             android:textSize="13sp" />
 
         <TextView
@@ -41,12 +89,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
-            android:background="?android:attr/selectableItemBackground"
             android:padding="8dp"
             android:text="@string/exclude_apps_text"
-            android:textColor="@color/colorPrimaryAdaptive"
+            android:textColor="@color/dashEmerald400"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -63,10 +111,198 @@
             android:gravity="center"
             android:padding="7dp"
             android:text="@string/check_ip"
+            android:textColor="@color/dashCyan500"
             android:textStyle="bold"
             android:visibility="gone" />
 
+        <!-- 2x2 live stat cards -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_stat_card"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_stat_icon_emerald">
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_stat_download" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txt_download_speed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0 kbps"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/downloaded_data"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_stat_card"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_stat_icon_cyan">
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_stat_upload" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txt_upload_speed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0 kbps"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/uploaded_data"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_stat_card"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_stat_icon_violet">
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_stat_clock" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txt_connected_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="00:00:00"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/connected_duration"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_stat_card"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_stat_icon_cyan">
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_stat_data" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/txt_total_download"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0 B"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/total_downloaded"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
+    <!-- ==== end dashboard ==== -->
 
     <include layout="@layout/item_line" />
 
@@ -99,25 +335,6 @@
                     android:text="@string/uploaded_data"
                     tools:ignore="RelativeOverlap" />
 
-
-                <TextView
-                    android:id="@+id/txt_upload_speed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_toStartOf="@+id/txt_separate_upload"
-                    android:text="0 kbps"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:id="@+id/txt_separate_upload"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginRight="5dp"
-                    android:layout_toStartOf="@+id/txt_upload_session"
-                    android:text="|"
-                    tools:ignore="HardcodedText" />
-
                 <TextView
                     android:id="@+id/txt_upload_session"
                     android:layout_width="wrap_content"
@@ -139,24 +356,6 @@
                     android:layout_height="wrap_content"
                     android:text="@string/downloaded_data"
                     tools:ignore="RelativeOverlap" />
-
-                <TextView
-                    android:id="@+id/txt_download_speed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_toStartOf="@+id/txt_separate_download"
-                    android:text="0 kbps"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:id="@+id/txt_separate_download"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginRight="5dp"
-                    android:layout_toStartOf="@+id/txt_download_session"
-                    android:text="|"
-                    tools:ignore="HardcodedText" />
 
                 <TextView
                     android:id="@+id/txt_download_session"
@@ -191,28 +390,6 @@
 
                 <TextView
                     android:id="@+id/txt_total_upload"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:text="0 B"
-                    tools:ignore="HardcodedText" />
-            </RelativeLayout>
-
-            <include layout="@layout/item_line" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="10dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/downloaded_data"
-                    tools:ignore="RelativeOverlap" />
-
-                <TextView
-                    android:id="@+id/txt_total_download"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
