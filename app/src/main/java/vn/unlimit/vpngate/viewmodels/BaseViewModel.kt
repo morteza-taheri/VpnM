@@ -7,7 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request

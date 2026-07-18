@@ -4,10 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.Task
 import com.google.common.base.Strings
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,57 +23,11 @@ class DeviceViewModel(application: Application) : BaseViewModel(application) {
         const val DEVICE_INFO_KEY = "DEVICE_INFO_KEY"
     }
 
+    // Push notifications (Firebase Cloud Messaging) require Google Play Services and have
+    // been removed from this build - no Google service dependencies. Device push
+    // registration is therefore a no-op; other paid-server features are unaffected.
     fun addDevice() {
-        FirebaseMessaging.getInstance().token
-            .addOnCompleteListener(object : OnCompleteListener<String?> {
-                override fun onComplete(task: Task<String?>) {
-                    if (!task.isSuccessful) {
-                        Log.w(
-                            TAG,
-                            "Fetching FCM registration token failed",
-                            task.exception
-                        )
-                        return
-                    }
-
-                    // Get new FCM registration token
-                    val token: String? = task.result
-
-                    // Log and toast
-                    Log.d(TAG, "After login addDevice with fcmId: %s".format(token))
-                    if (token != null) {
-                        val sessionId =
-                            paidServerUtil.getStringSetting(PaidServerUtil.SESSION_ID_KEY, "")
-                        if (sessionId != null) {
-                            viewModelScope.launch {
-                                try {
-                                    val defaultNotificationSetting =
-                                        DeviceInfo.NotificationSetting()
-                                    defaultNotificationSetting.data = true
-                                    defaultNotificationSetting.ticket = true
-                                    val deviceAddResponse = deviceApiService.addDevice(
-                                        DeviceAddRequest(
-                                            fcmPushId = token,
-                                            sessionId = sessionId,
-                                            platform = PARAMS_USER_PLATFORM,
-                                            notificationSetting = defaultNotificationSetting
-                                        )
-                                    )
-                                    if (deviceAddResponse.result) {
-                                        setDeviceInfo(deviceAddResponse.userDevice!!)
-                                    }
-                                    Log.d(
-                                        TAG,
-                                        "Add device result %s".format(deviceAddResponse.toString())
-                                    )
-                                } catch (e: Throwable) {
-                                    Log.e(TAG, "Got exception when add device after login", e)
-                                }
-                            }
-                        }
-                    }
-                }
-            })
+        Log.d(TAG, "addDevice: push notifications are disabled in this build (no Google services)")
     }
 
     fun getNotificationSetting() {

@@ -22,7 +22,7 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
-import com.google.firebase.analytics.FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import de.blinkt.openvpn.core.OpenVPNService
 import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.BuildConfig

@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id 'com.android.application'
     id 'com.google.devtools.ksp'
-    id 'com.google.gms.google-services'
-    id 'com.google.firebase.crashlytics'
+    // Google Services / Firebase plugins removed: this build has no Google service
+    // dependencies (no Firebase, no Play Services, no Ads, no Play Billing).
 }
 repositories {
     mavenCentral()
@@ -63,11 +63,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            manifestPlaceholders = [crashlyticsCollectionEnabled: "true"]
         }
 
         debug {
-            manifestPlaceholders = [crashlyticsCollectionEnabled: "false"]
             versionNameSuffix "-dev"
         }
     }
@@ -102,13 +100,9 @@ dependencies {
         exclude group: "com.android.support"
         transitive = true
     }
-    implementation platform('com.google.firebase:firebase-bom:34.10.0')
-    implementation 'com.google.firebase:firebase-messaging'
-    implementation 'com.google.firebase:firebase-config'
-    implementation 'com.google.firebase:firebase-analytics'
-    // Add the Firebase Crashlytics SDK.
-    implementation 'com.google.firebase:firebase-crashlytics'
-    implementation 'com.google.android.play:app-update-ktx:2.1.0'
+    // Firebase (Analytics/Crashlytics/Messaging/Remote Config) and Play Core (in-app update)
+    // have been removed. See vn.unlimit.vpngate.compat for the local, offline replacements
+    // that keep the rest of the app working without talking to any Google service.
     implementation 'com.google.guava:guava:33.5.0-android'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.9.7'
     implementation 'androidx.navigation:navigation-ui-ktx:2.9.7'
@@ -124,12 +118,9 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.7.0'
     androidTestImplementation 'androidx.arch.core:core-testing:2.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-    implementation 'com.android.billingclient:billing-ktx:8.3.0'
+    // Google Play Billing and all ad SDKs (AdMob, UMP consent, Start.io mediation) removed:
+    // in-app purchases and ads are not available in this build.
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'com.google.android.gms:play-services-ads:25.0.0'
-    // Start.io Ads
-    implementation 'com.startapp:admob-mediation:2.9.1'
-    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
     implementation 'com.facebook.shimmer:shimmer:0.5.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'com.squareup.retrofit2:retrofit:3.0.0'

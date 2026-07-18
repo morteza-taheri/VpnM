@@ -16,7 +16,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
-import com.google.firebase.analytics.FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.R
 import vn.unlimit.vpngate.activities.MainActivity

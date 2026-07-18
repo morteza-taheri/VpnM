@@ -37,16 +37,8 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.preference.PreferenceManager
 import com.bumptech.glide.Glide
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import de.blinkt.openvpn.VpnProfile
 import de.blinkt.openvpn.core.ConfigParser
 import de.blinkt.openvpn.core.ConfigParser.ConfigParseError
@@ -100,16 +92,12 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
     private lateinit var dataUtil: DataUtil
     private var mVpnGateConnection: VPNGateConnection? = null
     private lateinit var vpnProfile: VpnProfile
-    private var mInterstitialAd: InterstitialAd? = null
-    private lateinit var adViewBellow: AdView
     private lateinit var prefs: SharedPreferences
     private lateinit var listener: OnSharedPreferenceChangeListener
     private var isConnecting = false
     private var isAuthFailed = false
-    private var isShowAds = false
     private var isSSTPConnectOrDisconnecting = false
     private var isSSTPConnected = false
-    private var isFullScreenAdLoaded = false
     private lateinit var binding: ActivityDetailBinding
     private lateinit var excludeAppsManager: vn.unlimit.vpngate.utils.ExcludeAppsManager
     private var isSoftEtherConnected = false
@@ -484,34 +472,11 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         excludeAppsManager.updateExcludeAppsButtonText { text ->
             binding.btnExcludeApps.text = text
         }
-        initAdMob()
-        initInterstitialAd()
         initSSTP()
         bindData()
         VpnStatus.addStateListener(this)
         VpnStatus.addByteCountListener(this)
         binding.txtStatus.text = ""
-    }
-
-    private fun initAdMob() {
-        try {
-            if (dataUtil.hasAds()) {
-                MobileAds.initialize(this)
-                //Banner bellow
-                adViewBellow = AdView(applicationContext)
-                adViewBellow.adUnitId = getString(R.string.admob_banner_bellow_detail)
-                adViewBellow.setAdSize(AdSize.LARGE_BANNER)
-                adViewBellow.adListener = object : AdListener() {
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        adViewBellow.visibility = View.GONE
-                    }
-                }
-                binding.lnContentDetail.addView(adViewBellow)
-                adViewBellow.loadAd(AdRequest.Builder().build())
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "initAdMob error", e)
-        }
     }
 
     public override fun onDestroy() {
@@ -607,7 +572,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
 
                     else -> binding.txtCheckIp.visibility = View.GONE
                 }
-                if (dataUtil.getBooleanSetting(DataUtil.USER_ALLOWED_VPN, false) && !isShowAds) {
+                if (dataUtil.getBooleanSetting(DataUtil.USER_ALLOWED_VPN, false)) {
                     loadAds()
                 }
             } catch (e: Exception) {
@@ -1061,48 +1026,9 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         }
     }
 
-    private fun initInterstitialAd() {
-        if (dataUtil.hasAds()) {
-            try {
-                val adRequest = AdRequest.Builder().build()
-                InterstitialAd.load(
-                    applicationContext,
-                    getString(R.string.admob_full_screen_connect),
-                    adRequest,
-                    object : InterstitialAdLoadCallback() {
-                        override fun onAdLoaded(interstitialAd: InterstitialAd) {
-                            isFullScreenAdLoaded = true
-                            mInterstitialAd = interstitialAd
-                            Log.e(TAG, "Full screen ads loaded")
-                        }
-
-                        override fun onAdFailedToLoad(var1: LoadAdError) {
-                            isFullScreenAdLoaded = false
-                            mInterstitialAd = null
-                            Log.e(TAG, String.format("Full screen ads failed to load %s", var1))
-                        }
-                    })
-            } catch (e: Exception) {
-                Log.e(TAG, "initInterstitialAd error", e)
-            }
-        }
-    }
-
+    // Interstitial ads (AdMob) have been removed from this build - no Google service
+    // dependencies. loadAds() is kept as a no-op so existing call sites don't need to change.
     private fun loadAds() {
-        try {
-            if (dataUtil.hasAds() && dataUtil.getBooleanSetting(
-                    DataUtil.USER_ALLOWED_VPN,
-                    false
-                ) && isFullScreenAdLoaded
-            ) {
-                isShowAds = true
-                if (mInterstitialAd != null) {
-                    mInterstitialAd!!.show(this)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "loadAds error", e)
-        }
     }
 
     private fun sendConnectVPN() {

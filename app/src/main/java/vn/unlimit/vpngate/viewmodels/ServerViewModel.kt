@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.analytics.FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import vn.unlimit.vpngate.activities.paid.PaidServerActivity

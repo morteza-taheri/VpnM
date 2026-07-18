@@ -19,8 +19,8 @@ import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import de.blinkt.openvpn.core.OpenVPNService
 import kittoku.osc.preference.OscPrefKey
 import vn.unlimit.vpngate.App

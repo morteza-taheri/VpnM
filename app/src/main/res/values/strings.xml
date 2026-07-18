@@ -219,6 +219,7 @@
     <string name="title_free_server">Free Server</string>
     <string name="title_personal">Personal</string>
     <string name="title_buy_data">Buy data</string>
+    <string name="purchase_not_available_message">In-app purchases are not available in this build (Google Play Billing has been removed). Your current data balance is shown above.</string>
     <string name="vpn_paid_shared_secret" translatable="false">vpngate</string>
     <string name="vpn_pw_hint">[Your password]</string>
     <!-- Login screen -->

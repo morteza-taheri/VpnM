@@ -15,7 +15,7 @@ import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.firebase.analytics.FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import vn.unlimit.vpngate.App.Companion.instance
 import vn.unlimit.vpngate.R
 import vn.unlimit.vpngate.databinding.LayoutCopyBottomDialogBinding

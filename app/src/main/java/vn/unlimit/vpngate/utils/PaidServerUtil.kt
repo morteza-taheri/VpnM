@@ -3,7 +3,7 @@ package vn.unlimit.vpngate.utils
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader

@@ -7,10 +7,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.util.Log
-import com.google.android.gms.tasks.Task
 import com.google.gson.reflect.TypeToken
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalRemoteConfigSettings as FirebaseRemoteConfigSettings
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
@@ -51,7 +50,7 @@ class DataUtil(context: Context?) {
                 .build()
             mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
             mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings)
-                .addOnCompleteListener { _: Task<Void?>? -> mFirebaseRemoteConfig.fetchAndActivate() }
+                .addOnCompleteListener { mFirebaseRemoteConfig.fetchAndActivate() }
         } catch (e: NullPointerException) {
             e.printStackTrace()
         }
@@ -221,30 +220,8 @@ class DataUtil(context: Context?) {
         editor.apply()
     }
 
-    fun hasAds(): Boolean {
-        try {
-            return this.isAcceptedPrivacyPolicy && (BuildConfig.FLAVOR == "free") && (adMobId != null)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return true
-    }
-
-    private val adMobId: String?
-        get() {
-            try {
-                val app = mContext!!.packageManager.getApplicationInfo(
-                    mContext!!.packageName, PackageManager.GET_META_DATA
-                )
-                val bundle = app.metaData
-                if (bundle != null) {
-                    return bundle.getString("com.google.android.gms.ads.APPLICATION_ID")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Got exception when get admobId", e)
-            }
-            return null
-        }
+    // Ads (AdMob) have been removed entirely from this build - no Google service dependencies.
+    fun hasAds(): Boolean = false
 
     fun hasProInstalled(): Boolean {
         try {

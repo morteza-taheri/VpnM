@@ -25,12 +25,8 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
+import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import de.blinkt.openvpn.VpnProfile
 import de.blinkt.openvpn.core.ConfigParser
 import de.blinkt.openvpn.core.ConfigParser.ConfigParseError
@@ -91,10 +87,8 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
     private var isConnecting = false
     private var isAuthFailed = false
     private var isDetached = false
-    private var mInterstitialAd: InterstitialAd? = null
     private var vpnProfile: VpnProfile? = null
     private var mContext: Context? = null
-    private var isFullScreenAdsLoaded = false
     private lateinit var binding: FragmentStatusBinding
     private lateinit var excludeAppsManager: vn.unlimit.vpngate.utils.ExcludeAppsManager
     private lateinit var prefs: SharedPreferences
@@ -245,32 +239,12 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         }
     }
 
+    // Interstitial ads (AdMob) have been removed from this build - no Google service
+    // dependencies. These are kept as no-ops so existing call sites don't need to change.
     private fun loadAdMob() {
-        if (dataUtil!!.getBooleanSetting(DataUtil.USER_ALLOWED_VPN, false)) {
-            val adRequest = AdRequest.Builder().build()
-            InterstitialAd.load(
-                mContext!!,
-                resources.getString(R.string.admob_full_screen_status),
-                adRequest,
-                object : InterstitialAdLoadCallback() {
-                    override fun onAdLoaded(interstitialAd: InterstitialAd) {
-                        mInterstitialAd = interstitialAd
-                        isFullScreenAdsLoaded = true
-                    }
-
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        mInterstitialAd = null
-                    }
-                })
-        }
     }
 
     private fun showAds() {
-        if (dataUtil!!.hasAds() && isFullScreenAdsLoaded) {
-            if (mInterstitialAd != null) {
-                mInterstitialAd!!.show(requireActivity())
-            }
-        }
     }
 
 
