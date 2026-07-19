@@ -272,6 +272,47 @@ class DataUtil(context: Context?) {
             editor.apply()
         }
 
+    /**
+     * When the VPN Gate server list was last successfully refreshed from any source
+     * (primary API, mirror, or the GitHub CSV fallback). Null if never fetched.
+     */
+    var lastServerListUpdateAt: Date?
+        get() {
+            val millis = getLongSetting(LAST_SERVER_LIST_UPDATE_AT, 0L)
+            return if (millis <= 0L) null else Date(millis)
+        }
+        set(value) {
+            setLongSetting(LAST_SERVER_LIST_UPDATE_AT, value?.time ?: 0L)
+        }
+
+    /**
+     * True when the effective app language is Persian (either explicitly chosen in Settings,
+     * or "follow system" while the device locale is Persian). Used to decide whether dates are
+     * shown in the Jalali or Gregorian calendar.
+     */
+    fun isPersianLanguage(): Boolean {
+        val setting = getIntSetting(SETTING_LANGUAGE, LANGUAGE_SYSTEM)
+        return when (setting) {
+            LANGUAGE_PERSIAN -> true
+            LANGUAGE_ENGLISH -> false
+            else -> java.util.Locale.getDefault().language == "fa"
+        }
+    }
+
+    fun setLongSetting(key: String?, value: Long) {
+        val editor = sharedPreferencesSetting!!.edit()
+        editor.putLong(key, value)
+        editor.apply()
+    }
+
+    fun getLongSetting(key: String, defVal: Long): Long {
+        return try {
+            sharedPreferencesSetting!!.getLong(key, defVal)
+        } catch (e: Exception) {
+            defVal
+        }
+    }
+
     companion object {
         const val TAG = "DataUtil"
         const val SETTING_CACHE_TIME_KEY: String = "SETTING_CACHE_TIME_KEY"
@@ -294,6 +335,15 @@ class DataUtil(context: Context?) {
         private const val USE_ALTERNATIVE_SERVER = "USE_ALTERNATIVE_SERVER"
         private const val ACCEPTED_PRIVACY_POLICY = "ACCEPTED_PRIVACY_POLICY"
         const val CONNECTION_CACHE_KEY = "CONNECTION_CACHE_KEY"
+        const val SETTING_THEME: String = "SETTING_THEME"
+        const val SETTING_LANGUAGE: String = "SETTING_LANGUAGE"
+        const val LAST_SERVER_LIST_UPDATE_AT: String = "LAST_SERVER_LIST_UPDATE_AT"
+        const val THEME_SYSTEM = 0
+        const val THEME_LIGHT = 1
+        const val THEME_DARK = 2
+        const val LANGUAGE_SYSTEM = 0
+        const val LANGUAGE_ENGLISH = 1
+        const val LANGUAGE_PERSIAN = 2
 
         /**
          * Check device connect to a network or not

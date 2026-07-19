@@ -17,8 +17,11 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.CompoundButton
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
+import androidx.work.ExistingPeriodicWorkPolicy
 import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import de.blinkt.openvpn.core.OpenVPNService
@@ -31,6 +34,7 @@ import vn.unlimit.vpngate.activities.MainActivity
 import vn.unlimit.vpngate.databinding.FragmentSettingBinding
 import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.ServerSyncWorker
 import vn.unlimit.vpngate.utils.SpinnerInit
 import vn.unlimit.vpngate.utils.SpinnerInit.OnItemSelectedIndexListener
 import java.text.DateFormat
@@ -54,6 +58,45 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
         binding = FragmentSettingBinding.inflate(layoutInflater)
         dataUtil = instance!!.dataUtil!!
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val spinnerInitTheme = SpinnerInit(context, binding.spinTheme)
+        val listTheme = resources.getStringArray(R.array.setting_theme_options)
+        spinnerInitTheme.setStringArray(
+            listTheme,
+            listTheme[dataUtil.getIntSetting(DataUtil.SETTING_THEME, DataUtil.THEME_SYSTEM)]
+        )
+        spinnerInitTheme.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
+            override fun onItemSelected(name: String?, index: Int) {
+                dataUtil.setIntSetting(DataUtil.SETTING_THEME, index)
+                val mode = when (index) {
+                    DataUtil.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+                    DataUtil.THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+                    else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                }
+                AppCompatDelegate.setDefaultNightMode(mode)
+            }
+        }
+
+        val spinnerInitLanguage = SpinnerInit(context, binding.spinLanguage)
+        val listLanguage = resources.getStringArray(R.array.setting_language_options)
+        spinnerInitLanguage.setStringArray(
+            listLanguage,
+            listLanguage[dataUtil.getIntSetting(DataUtil.SETTING_LANGUAGE, DataUtil.LANGUAGE_SYSTEM)]
+        )
+        spinnerInitLanguage.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
+            override fun onItemSelected(name: String?, index: Int) {
+                dataUtil.setIntSetting(DataUtil.SETTING_LANGUAGE, index)
+                val tag = when (index) {
+                    DataUtil.LANGUAGE_ENGLISH -> "en"
+                    DataUtil.LANGUAGE_PERSIAN -> "fa"
+                    else -> null
+                }
+                AppCompatDelegate.setApplicationLocales(
+                    if (tag == null) LocaleListCompat.getEmptyLocaleList()
+                    else LocaleListCompat.forLanguageTags(tag)
+                )
+            }
+        }
+
         binding.spinCacheTime.onItemSelectedListener = this
         binding.btnClearCache.setOnClickListener(this)
         binding.lnBlockAds.setOnClickListener(this)
@@ -74,6 +117,7 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
                 params.putString("selected_cache_value", listCacheTime[index])
                 FirebaseAnalytics.getInstance(mContext).logEvent("Change_Cache_Time_Setting", params)
                 dataUtil.setIntSetting(DataUtil.SETTING_CACHE_TIME_KEY, index)
+                ServerSyncWorker.schedule(mContext, ExistingPeriodicWorkPolicy.UPDATE)
             }
         }
         onHiddenChanged(false)
@@ -93,6 +137,26 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
         binding.txtDns2.setFilters(inputFilters)
         binding.txtDns2.setText(dataUtil.getStringSetting(DataUtil.CUSTOM_DNS_IP_2, ""))
         binding.txtDns2.onFocusChangeListener = this
+
+        val dnsPresets = listOf(
+            null, // 0 = Custom, don't overwrite the manually-entered fields
+            Pair("178.22.122.100", "185.51.200.2"),   // Shecan
+            Pair("78.157.42.100", "78.157.42.101"),   // Electro
+            Pair("1.1.1.1", "1.0.0.1"),                 // Cloudflare
+            Pair("8.8.8.8", "8.8.4.4"),                 // Google
+            Pair("208.67.222.222", "208.67.220.220")   // OpenDNS
+        )
+        val spinnerInitDnsPreset = SpinnerInit(context, binding.spinDnsPreset)
+        spinnerInitDnsPreset.setStringArray(
+            resources.getStringArray(R.array.setting_dns_presets),
+            resources.getStringArray(R.array.setting_dns_presets)[0]
+        )
+        spinnerInitDnsPreset.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
+            override fun onItemSelected(name: String?, index: Int) {
+                val preset = dnsPresets.getOrNull(index) ?: return
+                applyDnsPreset(preset.first, preset.second)
+            }
+        }
         binding.lnDomain.setOnClickListener(this)
         binding.swDomain.setChecked(dataUtil.getBooleanSetting(DataUtil.USE_DOMAIN_TO_CONNECT, false))
         binding.swDomain.setOnCheckedChangeListener(this)
@@ -170,6 +234,29 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
                 }
             return filters
         }
+
+    private fun applyDnsPreset(ip1: String, ip2: String) {
+        dataUtil.setStringSetting(DataUtil.CUSTOM_DNS_IP_1, ip1)
+        dataUtil.setStringSetting(DataUtil.CUSTOM_DNS_IP_2, ip2)
+        binding.txtDns1.setText(ip1)
+        binding.txtDns2.setText(ip2)
+        if (binding.swBlockAds.isChecked) {
+            binding.swBlockAds.isChecked = false
+            dataUtil.setBooleanSetting(DataUtil.SETTING_BLOCK_ADS, false)
+        }
+        if (!binding.swDns.isChecked) {
+            // Flips the switch which already persists everything (OSC prefs included).
+            binding.swDns.isChecked = true
+        } else {
+            // Switch was already on, so its listener won't fire again - persist directly.
+            val editor = prefs.edit()
+            editor.putString(OscPrefKey.DNS_CUSTOM_ADDRESS.toString(), ip1)
+            editor.putString(OscPrefKey.DNS_CUSTOM_ADDRESS_SECONDARY.toString(), ip2)
+            editor.putBoolean(OscPrefKey.DNS_DO_USE_CUSTOM_SERVER.toString(), true)
+            editor.apply()
+            binding.lnDnsIp.visibility = View.VISIBLE
+        }
+    }
 
     override fun onFocusChange(view: View, isFocus: Boolean) {
         if (!isFocus) {

@@ -3,7 +3,10 @@ package vn.unlimit.vpngate
 import android.annotation.SuppressLint
 import android.app.Application
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.room.Room
+import androidx.work.ExistingPeriodicWorkPolicy
 import de.blinkt.openvpn.core.OpenVPNService
 import vn.unlimit.vpngate.activities.DetailActivity
 import vn.unlimit.vpngate.activities.MainActivity
@@ -15,6 +18,7 @@ import vn.unlimit.vpngate.db.VPNGateItemDao
 import vn.unlimit.vpngate.models.ExcludedApp
 import vn.unlimit.vpngate.utils.DataUtil
 import vn.unlimit.vpngate.utils.PaidServerUtil
+import vn.unlimit.vpngate.utils.ServerSyncWorker
 
 class App : Application() {
     var dataUtil: DataUtil? = null
@@ -51,6 +55,9 @@ class App : Application() {
         // removed from this build - no Google service dependencies.
         instance = this
         dataUtil = DataUtil(this)
+        applySavedTheme()
+        applySavedLanguage()
+        ServerSyncWorker.schedule(this, ExistingPeriodicWorkPolicy.KEEP)
         // Make notification open DetailActivity
         OpenVPNService.setNotificationActivityClass(
             if (dataUtil!!.getIntSetting(
@@ -69,6 +76,26 @@ class App : Application() {
                         FirebaseRemoteConfig.getInstance().getBoolean("vpn_import_open_vpn")
                 }
             }
+    }
+
+    private fun applySavedTheme() {
+        val mode = when (dataUtil!!.getIntSetting(DataUtil.SETTING_THEME, DataUtil.THEME_SYSTEM)) {
+            DataUtil.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            DataUtil.THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
+    }
+
+    private fun applySavedLanguage() {
+        val tag = when (dataUtil!!.getIntSetting(DataUtil.SETTING_LANGUAGE, DataUtil.LANGUAGE_SYSTEM)) {
+            DataUtil.LANGUAGE_ENGLISH -> "en"
+            DataUtil.LANGUAGE_PERSIAN -> "fa"
+            else -> null
+        }
+        AppCompatDelegate.setApplicationLocales(
+            if (tag == null) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+        )
     }
 
     private fun initializeDefaultExcludedApps() {

@@ -33,6 +33,7 @@ import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.JalaliDateUtil
 import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
 
 /**
@@ -116,6 +117,7 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
         vpnGateListAdapter!!.setOnItemLongClickListener(this)
         vpnGateListAdapter!!.setOnScrollListener(this)
         binding.btnToTop.setOnClickListener(this)
+        updateLastUpdatedLabel()
         return binding.root
     }
 
@@ -307,7 +309,24 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
                 binding.rcvConnection.visibility = View.VISIBLE
                 vpnGateListAdapter!!.initialize(vpnGateConnectionList)
                 binding.lnSwipeRefresh.isRefreshing = false
+                updateLastUpdatedLabel()
             }
+        }
+    }
+
+    private fun updateLastUpdatedLabel() {
+        try {
+            val date = dataUtil?.lastServerListUpdateAt
+            binding.txtLastUpdated.text = if (date == null) {
+                getString(R.string.server_list_never_updated)
+            } else {
+                getString(
+                    R.string.server_list_updated_at,
+                    JalaliDateUtil.format(date, dataUtil!!.isPersianLanguage())
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateLastUpdatedLabel error", e)
         }
     }
 

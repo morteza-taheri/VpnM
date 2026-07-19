@@ -37,6 +37,7 @@ import de.blinkt.openvpn.core.ConfigParser
 import de.blinkt.openvpn.core.ConfigParser.ConfigParseError
 import de.blinkt.openvpn.core.ConnectionStatus
 import de.blinkt.openvpn.core.IOpenVPNServiceInternal
+import de.blinkt.openvpn.core.LogItem
 import de.blinkt.openvpn.core.OpenVPNManagement
 import de.blinkt.openvpn.core.OpenVPNService
 import de.blinkt.openvpn.core.ProfileManager
@@ -60,13 +61,16 @@ import vn.unlimit.vpngate.utils.DataUtil
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Created by hoangnd on 2/9/2018.
  */
 class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener,
-    ByteCountListener, SoftEtherVpnService.StateListener, SoftEtherVpnService.TrafficListener,
-    SstpVpnService.TrafficListener {
+    VpnStatus.LogListener, ByteCountListener, SoftEtherVpnService.StateListener,
+    SoftEtherVpnService.TrafficListener, SstpVpnService.TrafficListener {
     companion object {
         private const val TAG = "StatusFragment"
         const val START_VPN_SSTP: Int = 80
@@ -76,6 +80,7 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         private const val STATE_CONNECTING = 1
         private const val STATE_CONNECTED = 2
         private const val ZERO_DURATION = "00:00:00"
+        private const val MAX_LOG_LINES = 300
     }
 
     private var mVPNService: IOpenVPNServiceInternal? = null
@@ -113,6 +118,8 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
     private var glowAnimators: List<ObjectAnimator>? = null
     private var connectedStartElapsedMs = 0L
     private var lastShieldVisualState = -1
+    private val logBuffer = StringBuilder()
+    private var logLineCount = 0
     private var lastOpenVpnDiffInBytes = 0L
     private var lastOpenVpnDiffOutBytes = 0L
 
@@ -131,6 +138,7 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         binding.btnOnOff.setOnClickListener(this)
         binding.btnExcludeApps?.setOnClickListener(this)
         binding.btnClearStatistics.setOnClickListener(this)
+        binding.btnClearLog.setOnClickListener(this)
         binding.txtCheckIp?.setOnClickListener(this)
 
         // Initialize exclude apps manager
@@ -184,6 +192,8 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         initSSTP()
         onHiddenChanged(true)
         VpnStatus.addStateListener(this)
+        VpnStatus.addLogListener(this)
+        preloadLogBuffer()
         VpnStatus.addByteCountListener(this)
         SoftEtherVpnService.addStateListener(this)
         SoftEtherVpnService.addTrafficListener(this)
@@ -265,6 +275,9 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
 
 
     override fun onClick(view: View) {
+        if (view == binding.btnClearLog) {
+            clearLogConsole()
+        }
         if (view == binding.btnExcludeApps) {
             // Open exclude apps manager
             excludeAppsManager.openExcludeAppsManager(parentFragmentManager)
@@ -679,11 +692,68 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
     }
     // ==== end shield dashboard ====
 
+    // ==== Connection log console ====
+    private fun preloadLogBuffer() {
+        val ctx = mContext ?: return
+        try {
+            val items = VpnStatus.getlogbuffer()
+            for (item in items.takeLast(MAX_LOG_LINES)) {
+                appendLogLine(item.getString(ctx), redraw = false)
+            }
+            redrawLogConsole()
+        } catch (e: Exception) {
+            Log.e(TAG, "preloadLogBuffer error", e)
+        }
+    }
+
+    override fun newLog(logItem: LogItem) {
+        val ctx = mContext ?: return
+        val line = try {
+            logItem.getString(ctx)
+        } catch (e: Exception) {
+            return
+        }
+        Handler(Looper.getMainLooper()).post {
+            appendLogLine(line, redraw = true)
+        }
+    }
+
+    private fun appendLogLine(line: String, redraw: Boolean) {
+        if (line.isBlank()) return
+        val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+        logBuffer.append("[$time] ").append(line).append('\n')
+        logLineCount++
+        if (logLineCount > MAX_LOG_LINES) {
+            // Trim from the front so the buffer doesn't grow unbounded.
+            val firstNewline = logBuffer.indexOf("\n")
+            if (firstNewline >= 0) {
+                logBuffer.delete(0, firstNewline + 1)
+                logLineCount--
+            }
+        }
+        if (redraw) redrawLogConsole()
+    }
+
+    private fun redrawLogConsole() {
+        if (!::binding.isInitialized) return
+        binding.txtLogConsole.text =
+            if (logBuffer.isEmpty()) getString(R.string.log_console_empty) else logBuffer.toString()
+        binding.scrollLog.post { binding.scrollLog.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    private fun clearLogConsole() {
+        logBuffer.clear()
+        logLineCount = 0
+        redrawLogConsole()
+    }
+    // ==== end connection log console ====
+
     override fun onDestroy() {
         super.onDestroy()
         stopShieldTicker()
         try {
             VpnStatus.removeStateListener(this)
+            VpnStatus.removeLogListener(this)
             VpnStatus.removeByteCountListener(this)
             SoftEtherVpnService.removeStateListener(this)
             SoftEtherVpnService.removeTrafficListener(this)

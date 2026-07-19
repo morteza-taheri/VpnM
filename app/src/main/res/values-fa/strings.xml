@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="paid_server">سرور پولی</string>
+    <string name="navigation_drawer_open">باز کردن منو</string>
+    <string name="navigation_drawer_close">بستن منو</string>
+    <string name="search">جستجو</string>
+    <string name="sort">مرتب‌سازی</string>
+    <string name="filter">فیلتر</string>
+    <string name="filter_server_protocol">نمایش سرور با پروتکل</string>
+    <string name="reset">بازنشانی</string>
+    <string name="show_tcp_server">سرور TCP</string>
+    <string name="show_udp_server">سرور UDP</string>
+    <string name="show_l2tp_server">سرور L2TP</string>
+    <string name="show_sstp_server">سرور MS-SSTP</string>
+    <string name="must_check_at_least_1_protocol">برای ادامه باید حداقل یک پروتکل سرور را انتخاب کنید</string>
+    <string-array name="number_filter_operator">
+        <item>مساوی (=)</item>
+        <item>بزرگتر از (&gt;)</item>
+        <item>بزرگتر یا مساوی (&gt;=)</item>
+        <item>کوچکتر از (&lt;)</item>
+        <item>کوچکتر یا مساوی (&lt;=)</item>
+    </string-array>
+    <string name="about">درباره</string>
+    <string name="setting">تنظیمات</string>
+    <string name="help">راهنما</string>
+    <string name="speed">سرعت</string>
+    <string name="hostname">نام میزبان</string>
+    <string name="score">امتیاز</string>
+    <string name="score_short">امتیاز</string>
+    <string name="ping">پینگ</string>
+    <string name="session">نشست</string>
+    <string name="max_session">حداکثر نشست</string>
+    <string name="domain">دامنه</string>
+    <string name="good">خوب</string>
+    <string name="medium">متوسط</string>
+    <string name="full">پر</string>
+    <string name="uptime">مدت‌زمان فعالیت</string>
+    <string name="owner">مالک</string>
+    <string name="l2tp_support">پشتیبانی L2TP</string>
+    <string name="l2tp_supported">بله</string>
+    <string name="sstp_support">پشتیبانی MS-SSTP</string>
+    <string name="ms_sstp">MS-SSTP</string>
+    <string name="days">روز</string>
+    <string name="hours">ساعت</string>
+    <string name="minutes">دقیقه</string>
+    <string name="seconds">ثانیه</string>
+    <string name="cancel_connection">قطع اتصال</string>
+    <string name="pauseVPN">توقف موقت وی‌پی‌ان</string>
+    <string name="resumevpn">ادامه‌ی وی‌پی‌ان</string>
+    <string name="state_connected">متصل</string>
+    <string name="connection_error">خطا در دریافت اطلاعات از سرور. برای تلاش دوباره ضربه بزنید!</string>
+    <string name="no_network">دستگاه شما به هیچ شبکه‌ای متصل نیست\nلطفاً به وای‌فای متصل شوید یا داده‌ی موبایل را روشن کنید</string>
+    <string name="loading_text">اپ در حال دریافت اطلاعات از سرور است\nلطفاً کمی صبر کنید</string>
+    <string name="search_hint">کشور، آی‌پی، نام میزبان، اپراتور</string>
+    <string name="to_top">بازگشت به بالا</string>
+    <string name="country">کشور</string>
+    <string name="sort_property">مرتب‌سازی بر اساس</string>
+    <string name="sort_type">نوع مرتب‌سازی</string>
+    <string name="sort_asc">صعودی</string>
+    <string name="sort_desc">نزولی</string>
+    <string name="apply">اعمال</string>
+    <string name="cancel">لغو</string>
+    <string name="feature_not_available">در حال حاضر امکان انجام این عملیات وجود ندارد</string>
+    <!--- Settings -->
+    <string name="enable_notification_speed">نمایش سرعت/آمار در اعلان</string>
+    <string name="setting_startup_screen">صفحه‌ی شروع</string>
+    <string-array name="startup_screen">
+        <item>صفحه‌ی لیست سرورها</item>
+        <item>صفحه‌ی وضعیت اتصال</item>
+    </string-array>
+    <string name="setting_startup_screen_subtitle">صفحه‌ای که پس از باز شدن اپ نمایش داده می‌شود را انتخاب کنید (در صورت وجود حداقل یک اتصال موفق قبلی).\nاگر اتصال موفقی وجود نداشته باشد، همیشه صفحه‌ی لیست نمایش داده می‌شود.\nاین تنظیم هنگام ضربه زدن روی اعلان هم اعمال می‌شود.</string>
+    <string name="enable_notification_speed_hint">نمایش سرعت/آمار در اعلان. در صورت خاموش بودن، فقط وضعیت اتصال نمایش داده می‌شود و مصرف باتری کمتر خواهد بود.</string>
+    <string name="setting_cache_label">مدت زمان ذخیره‌سازی کش</string>
+    <string name="setting_cache_subtitle">مدت زمانی که اطلاعات پس از دریافت از سرور، روی دستگاه ذخیره می‌ماند</string>
+    <string name="setting_cache_auto_clear_label">پاکسازی خودکار کش در:</string>
+    <string name="setting_cache_clear">پاک کردن الان</string>
+    <string name="setting_clear_cache_success">کش با موفقیت پاک شد</string>
+    <string name="setting_clear_cache_error">مشکلی پیش آمد. کش پاک نشد</string>
+    <string-array name="setting_cache_time">
+        <item>۱۵ دقیقه</item>
+        <item>۳۰ دقیقه</item>
+        <item>۱ ساعت</item>
+        <item>۲ ساعت</item>
+        <item>۴ ساعت</item>
+        <item>۶ ساعت</item>
+        <item>۱۲ ساعت</item>
+    </string-array>
+    <string name="press_back_again_to_exit">برای خروج دوباره دکمه‌ی بازگشت را بزنید</string>
+    <string name="setting_default_protocol">پروتکل پیش‌فرض</string>
+    <string name="setting_protocol_subtitle">پروتکل پیش‌فرض برای اتصال زمانی که سرور هم TCP و هم UDP دارد</string>
+    <string-array name="list_protocol">
+        <item>همیشه بپرس</item>
+        <item>TCP</item>
+        <item>UDP</item>
+    </string-array>
+    <!-- Detail -->
+    <string name="total_user">کل کاربران</string>
+    <string name="total_traffic">کل ترافیک</string>
+    <string name="log_type">نوع لاگ</string>
+    <string name="connect_to_this_server">اتصال به این سرور</string>
+    <string name="install_openvpn">نصب OpenVPN Connect</string>
+    <string name="save_config_file">ذخیره‌ی فایل تنظیمات OpenVPN</string>
+    <string name="saved_ovpn_file_in">فایل ovpn در %1$s ذخیره شد. برای استفاده آن را در OpenVPN Connect وارد کنید</string>
+    <string name="connect_via_l2tp">اتصال از طریق L2TP VPN</string>
+    <string name="connect_via_sstp">اتصال از طریق MS-SSTP</string>
+    <string name="connect_use_protocol">اتصال با پروتکل:</string>
+    <string name="retry_connect">تلاش دوباره برای اتصال</string>
+    <string name="vpn_auth_failure">خطای احراز هویت</string>
+    <string name="connecting">در حال اتصال…</string>
+    <string name="sstp_connecting">در حال اتصال MS-SSTP…</string>
+    <string name="disconnect">قطع اتصال</string>
+    <string name="disconnect_sstp">قطع MS-SSTP</string>
+    <string name="cancel_sstp">لغو MS-SSTP</string>
+    <string name="disconnecting">در حال قطع اتصال…</string>
+    <string name="sstp_disconnecting">در حال قطع MS-SSTP…</string>
+    <string name="sstp_disconnected">MS-SSTP قطع شد</string>
+    <string name="sstp_connected">MS-SSTP با آی‌پی %1$s متصل شد</string>
+    <string name="sstp_disconnected_by_error">MS-SSTP به دلیل خطا یا مشکل بیرونی قطع شد</string>
+    <string name="canceled">لغو شد</string>
+    <string name="copy_ip">کپی آی‌پی در کلیپ‌بورد</string>
+    <string name="copy_hostname">کپی نام میزبان در کلیپ‌بورد</string>
+    <string name="copied">کپی شد</string>
+    <string name="connecting_use_protocol">در حال اتصال به سرور وی‌پی‌ان با پروتکل [%1$s].</string>
+    <!--VPN String -->
+    <string name="unknown_state">نامشخص</string>
+    <string name="check_ip">بررسی آی‌پی عمومی فعلی شما</string>
+    <string name="about_html">%1$s برنامه‌ای برای اتصال به سرورهای رایگان وی‌پی‌ان است که توسط داوطلبان سراسر دنیا از طریق پروژه‌ی متن‌باز VPN Gate ارائه می‌شود. اطلاعات بیشتر درباره‌ی پروژه‌ی VPN Gate در لینک زیر.</string>
+    <string name="license_html">%1$s بخشی از کد کتابخانه‌ی ICS OpenVPN و Open SSTP Client for Android را استفاده می‌کند. لایسنس کامل را در لینک زیر ببینید.</string>
+    <string name="version">نسخه:</string>
+    <string name="license">لایسنس</string>
+    <string name="operator_message">پیام اپراتور</string>
+    <string name="hide_op_message_5time">پنهان کردن همه‌ی پیام‌ها برای ۵ اتصال بعدی</string>
+    <string name="close">بستن</string>
+    <string name="name_hint">نام شما. حداقل %1$d کاراکتر</string>
+    <string name="content_hint">به چه کمکی نیاز دارید؟\nحداقل %1$d کاراکتر</string>
+    <string name="btn_send">ارسال</string>
+    <string name="name_error_message">نام باید بیشتر از %1$d کاراکتر باشد</string>
+    <string name="content_error_message">محتوا باید بیشتر از %1$d کاراکتر باشد</string>
+    <string name="uploaded_data">آپلود شده</string>
+    <string name="downloaded_data">دانلود شده</string>
+    <string name="help_request_from">[وی‌پی‌ان] درخواست کمک از: </string>
+    <string name="send_email">ارسال ایمیل</string>
+    <string name="email_error_fix">لطفاً ابتدا خطا را برطرف کنید</string>
+    <string name="error_load_profile">خطا در بارگذاری پروفایل وی‌پی‌ان</string>
+    <string name="traffic_session">ترافیک نشست</string>
+    <string name="clear_statistics">پاک کردن آمار</string>
+    <string name="connected_duration">مدت اتصال</string>
+    <string name="total_downloaded">کل دانلود</string>
+    <string name="status_pill_connected">متصل</string>
+    <string name="status_pill_connecting">در حال اتصال…</string>
+    <string name="status_pill_disconnected">قطع</string>
+    <string name="server_list_never_updated">لیست سرورها هنوز به‌روزرسانی نشده</string>
+    <string name="server_list_updated_at">آخرین به‌روزرسانی لیست سرورها: %1$s</string>
+    <string name="setting_theme_label">تم</string>
+    <string name="setting_language_label">زبان</string>
+    <string-array name="setting_theme_options">
+        <item>پیرو سیستم</item>
+        <item>روشن</item>
+        <item>تیره</item>
+    </string-array>
+    <string-array name="setting_language_options">
+        <item>پیرو سیستم</item>
+        <item>English</item>
+        <item>فارسی</item>
+    </string-array>
+    <string name="setting_dns_preset_label">DNS های پیشنهادی</string>
+    <string-array name="setting_dns_presets">
+        <item>دلخواه</item>
+        <item>شکن (178.22.122.100)</item>
+        <item>الکترو (78.157.42.100)</item>
+        <item>کلادفلر (1.1.1.1)</item>
+        <item>گوگل (8.8.8.8)</item>
+        <item>OpenDNS (208.67.222.222)</item>
+    </string-array>
+    <string name="log_console_title">لاگ اتصال</string>
+    <string name="log_console_empty">هنوز پیامی ثبت نشده</string>
+    <string name="log_console_clear">پاک کردن</string>
+    <string name="get_pro_version">دریافت نسخه‌ی Pro</string>
+    <string name="status">وضعیت</string>
+    <string name="tap_to_disconnect">برای قطع اتصال از %1$s ضربه بزنید</string>
+    <string name="tap_to_connect_last">برای اتصال به %1$s ضربه بزنید</string>
+    <string name="connected_to">متصل به %1$s</string>
+    <string name="no_last_vpn_server">لطفاً ابتدا یک سرور وی‌پی‌ان از صفحه‌ی اصلی انتخاب کنید</string>
+    <string name="connect_one_warning">برای دسترسی به این بخش باید ابتدا به حداقل یک سرور وی‌پی‌ان متصل شوید</string>
+    <string name="disconnected">قطع شد</string>
+    <string name="feature_available_in_pro">این ویژگی فقط در نسخه‌ی Pro موجود است</string>
+    <string name="block_ads_setting_label">مسدودسازی تبلیغات (فقط Pro)</string>
+    <string name="block_ads_setting_hint">مسدود کردن تبلیغات در همه‌ی اپ‌ها و مرورگر هنگام اتصال وی‌پی‌ان با استفاده از DNS</string>
+    <string name="udp_setting_label">شامل سرورهای UDP</string>
+    <string name="udp_setting_hint">شامل کردن سرورهای UDP در لیست سرورها</string>
+    <string name="setting_apply_on_next_connection_time">این تنظیم در اتصال بعدی اعمال خواهد شد</string>
+    <string name="dns_setting_label">استفاده از DNS دلخواه</string>
+    <string name="dns_setting_hint">استفاده از DNS دلخواه هنگام اتصال به سرور وی‌پی‌ان به‌جای DNS پیش‌فرض گوگل (8.8.8.8/8.8.4.4).\nفعال کردن این تنظیم، تنظیم مسدودسازی تبلیغات را خاموش می‌کند</string>
+    <string name="dns_ip_2">DNS دوم (اختیاری)</string>
+    <string name="use_domain_label">استفاده از دامنه برای اتصال</string>
+    <string name="use_domain_hint">استفاده از دامنه‌ی .opengw.net برای اتصال به سرور وی‌پی‌ان به‌جای آی‌پی سرور</string>
+    <string name="empty_search_result">سروری با کلیدواژه‌ی «%1$s» یافت نشد</string>
+    <string name="empty_filter_result">سروری با فیلتر فعلی یافت نشد</string>
+    <!-- Privacy policy -->
+    <string name="privacy_policy_title">حریم خصوصی</string>
+    <string name="btn_accept">پذیرفتن</string>
+    <string name="btn_decide">تصمیم‌گیری و خروج</string>
+    <string name="must_accept_privacy_policy">برای استفاده از اپ باید حریم خصوصی را بپذیرید</string>
+    <string name="no_webview_installed_you_must_install_system_webview_from_playstore_to_continue">هیچ WebView نصب نیست. برای ادامه باید System WebView را از Play Store نصب کنید.</string>
+    <!-- L2TPConnect -->
+    <string name="l2tp_connect_title">اتصال به «%1$s» از طریق L2TP/IPSec</string>
+    <string name="l2tp_connect_hint">برای اتصال به سرور «%1$s» از طریق L2TP/IPSec، مراحل زیر را دنبال کنید</string>
+    <string name="l2tp_connect_add">۱. یک اتصال وی‌پی‌ان جدید مطابق این تصویر در تنظیمات وی‌پی‌ان اضافه کنید</string>
+    <string name="l2tp_tap_to_connect">۲. روی اتصال وی‌پی‌ان ایجادشده ضربه بزنید تا متصل شوید</string>
+    <!-- PaidServer -->
+    <string name="invite_paid_server_title">به‌تازگی ویژگی سرور پولی را منتشر کرده‌ایم.</string>
+    <string name="invite_paid_server_message">آیا مایلید همین حالا امتحانش کنید؟</string>
+    <string name="title_activity_paid_server">سرور پولی</string>
+    <string name="title_activity_account_activate">فعال‌سازی کاربر</string>
+    <string name="title_home">خانه</string>
+    <string name="title_servers">سرورها</string>
+    <string name="title_free_server">سرور رایگان</string>
+    <string name="title_personal">شخصی</string>
+    <string name="title_buy_data">خرید حجم</string>
+    <string name="purchase_not_available_message">خرید درون‌برنامه‌ای در این نسخه موجود نیست (سرویس Google Play Billing حذف شده). موجودی فعلی شما در بالا نمایش داده شده است.</string>
+    <string name="vpn_pw_hint">[رمز عبور شما]</string>
+    <!-- Login screen -->
+    <string name="title_activity_login">ورود به سرور پولی</string>
+    <string name="title_activity_signup">ثبت‌نام حساب سرور پولی جدید</string>
+    <string name="prompt_user">نام کاربری</string>
+    <string name="prompt_full_name">نام کامل</string>
+    <string name="prompt_password">رمز عبور</string>
+    <string name="action_sign_in">ورود</string>
+    <string name="action_sign_up">ثبت‌نام</string>
+    <string name="action_forgot_pass">فراموشی رمز عبور؟</string>
+    <string name="action_back_to_free">بازگشت به سرور رایگان</string>
+    <string name="invalid_username">نام کاربری معتبر نیست</string>
+    <string name="invalid_password">رمز عبور باید بیشتر از ۵ کاراکتر باشد</string>
+    <string name="login_failed">ورود ناموفق. نام کاربری یا رمز عبور اشتباه است</string>
+    <string name="please_activate_account_first">ورود ممکن نیست. لطفاً ابتدا ایمیل را باز کرده و حساب خود را فعال کنید.</string>
+    <string name="login_loading_text">در حال ورود…</string>
+    <string name="action_hide_password">پنهان کردن</string>
+    <string name="action_show_password">نمایش</string>
+    <string name="default_loading_text">در حال بارگذاری…</string>
+    <string name="username_and_password_is_required">نام کاربری و رمز عبور الزامی است</string>
+    <string name="account_is_banned_no_reason">حساب شما مسدود شده است.</string>
+    <string name="account_did_not_exists">حساب کاربری وجود ندارد.</string>
+    <string name="account_is_banned">حساب شما با دلیل زیر مسدود شده: %1$s</string>
+    <string name="session_expires">نشست ورود منقضی شد. لطفاً دوباره وارد شوید!</string>
+    <!-- Sign up screen -->
+    <string name="prompt_email">ایمیل</string>
+    <string name="prompt_birthday">تاریخ تولد</string>
+    <string name="timezone_field">منطقه‌ی زمانی</string>
+    <string name="prompt_timezone">منطقه‌ی زمانی. مثال: Asia/Tehran</string>
+    <string name="prompt_retype_password">تکرار رمز عبور</string>
+    <string name="validate_field_cannot_empty">%1$s نمی‌تواند خالی باشد</string>
+    <string name="validate_field_exist_in_system">%1$s قبلاً استفاده شده. لطفاً یکی دیگر انتخاب کنید</string>
+    <string name="hint_captcha_label">به سؤال ریاضی زیر پاسخ دهید</string>
+    <string name="prompt_captcha_answer">پاسخ کپچا</string>
+    <string name="error_get_captcha">خطا در دریافت کپچا از سرور. لطفاً دوباره تلاش کنید</string>
+    <string name="reloading_captcha">در حال بارگذاری مجدد کپچا…</string>
+    <string name="hint_captcha_tap_to_reload">برای تغییر تصویر، روی کپچا ضربه بزنید</string>
+    <string name="invalid_timezone">منطقه‌ی زمانی نامعتبر است. کلیدواژه را تایپ کرده و از لیست انتخاب کنید.</string>
+    <string name="register_success">ثبت‌نام موفق بود. برای فعال‌سازی حساب، ایمیل خود را بررسی کنید</string>
+    <string name="register_failed_title">ثبت‌نام ناموفق بود. لطفاً لیست خطاها را بررسی کنید</string>
+    <string name="username_is_invalid">نام کاربری نامعتبر است. باید بین ۵ تا ۳۰ کاراکتر شامل حروف و اعداد باشد</string>
+    <string name="password_is_invalid">رمز عبور نامعتبر است. باید بین ۵ تا ۳۰ کاراکتر شامل حروف، اعداد و کاراکترهای خاص ($ ! * . -) باشد</string>
+    <string name="email_is_invalid">ایمیل نامعتبر است، لطفاً بررسی کنید.</string>
+    <string name="re_type_password_does_not_match">تکرار رمز عبور مطابقت ندارد</string>
+    <string name="birthday_is_invalid">تاریخ تولد نامعتبر است</string>
+    <string name="captcha_answer_is_not_correct">پاسخ کپچا صحیح نیست</string>
+    <!-- Activate screen -->
+    <string name="account_activate_failed">فعال‌سازی حساب ناموفق بود: %1$s</string>
+    <string name="account_activate_failed_already_activate">حساب قبلاً فعال شده است</string>
+    <string name="account_activate_failed_invalid_request">درخواست فعال‌سازی حساب نامعتبر است</string>
+    <string name="account_activating">در حال فعال‌سازی حساب…</string>
+    <string name="account_activate_successful">فعال‌سازی حساب موفقیت‌آمیز بود</string>
+    <!-- Forgot pass screen -->
+    <string name="title_activity_forgot_pass">فراموشی رمز عبور</string>
+    <string name="action_reset_pass">بازنشانی رمز عبور</string>
+    <string name="request_forgot_pass_success">درخواست فراموشی رمز عبور موفق بود. برای ادامه ایمیل خود را بررسی کنید.</string>
+    <string name="request_forgot_pass_failure">درخواست فراموشی رمز عبور ناموفق بود. لطفاً دوباره تلاش کنید.</string>
+    <string name="account_did_not_exist">حساب کاربری وجود ندارد</string>
+    <!-- Reset pass screen -->
+    <string name="title_activity_reset_pass">بازنشانی رمز عبور</string>
+    <string name="prompt_new_password">رمز عبور جدید</string>
+    <string name="prompt_re_new_password">تکرار رمز عبور جدید</string>
+    <string name="action_reset_password">بازنشانی رمز عبور</string>
+    <string name="reset_pass_token_can_not_empty">توکن بازنشانی رمز عبور نمی‌تواند خالی باشد. از صفحه‌ی بازنشانی خارج شد.</string>
+    <string name="checking_reset_pass_token">در حال بررسی توکن بازنشانی رمز عبور\nلطفاً چند ثانیه صبر کنید</string>
+    <string name="invalid_reset_pass_token">توکن بازنشانی رمز عبور نامعتبر است. برای بازگشت از دکمه‌ی زیر استفاده کنید.</string>
+    <string name="password_updated_you_can_login_now">رمز عبور به‌روزرسانی شد. اکنون می‌توانید وارد شوید!</string>
+    <string name="this_password_is_used_before_please_choose_another">این رمز عبور قبلاً استفاده شده است. لطفاً رمز عبور دیگری انتخاب کنید!</string>
+    <string name="change_password_failed_with_unknown_error">بازنشانی رمز عبور با خطای ناشناخته مواجه شد. لطفاً دوباره تلاش کنید!</string>
+    <!-- Home screen -->
+    <string name="home_paid_welcome">سلام %1$s</string>
+    <string name="remaining_data_size">حجم باقی‌مانده</string>
+    <string name="action_buy_data">خرید حجم</string>
+    <string name="action_purchase_history">تاریخچه‌ی خرید</string>
+    <string name="calculating_data_size">در حال محاسبه…</string>
+    <string name="app_author_server">سرور نویسنده‌ی اپ</string>
+    <string name="community_server">انجمن</string>
+    <string name="usage_chart">نمودار مصرف</string>
+    <string name="session_list">لیست نشست‌ها</string>
+    <string name="chart_transferred">مگابایت منتقل‌شده</string>
+    <array name="chart_type">
+        <item>ساعتی</item>
+        <item>روزانه</item>
+        <item>ماهانه</item>
+    </array>
+    <string name="server_name">نام سرور:</string>
+    <string name="client_ip">آی‌پی کاربر:</string>
+    <string name="transferred_data">داده‌ی منتقل‌شده:</string>
+    <string name="session_id">شناسه‌ی نشست:</string>
+    <string name="view_detail">مشاهده‌ی جزئیات</string>
+    <string name="disconnect_session">قطع اتصال</string>
+    <string name="open_detail_server">مشاهده‌ی جزئیات سرور</string>
+    <string name="created">ایجادشده:</string>
+    <string name="updated">به‌روزشده:</string>
+    <string name="you_have_not_any_connected_session">هیچ نشست متصلی ندارید.</string>
+    <string name="client_public_ip">آی‌پی عمومی کاربر:</string>
+    <string name="alert_disconnect_confirm">آیا مطمئنید می‌خواهید نشست (%1$s) را قطع کرده و آی‌پی (%2$s) را برای ۳۰ دقیقه از اتصال مجدد به سرور (%3$s) مسدود کنید؟</string>
+    <string name="sure_btn">مطمئنم</string>
+    <string name="cancel_btn">لغو</string>
+    <string name="disconnecting_session">در حال قطع نشست</string>
+    <string name="disconnect_success">قطع شد (%1$s)</string>
+    <string name="disconnect_failed">قطع (%1$s) ناموفق بود</string>
+    <string name="current_session">[نشست فعلی]</string>
+    <string name="disconnect_in_notification_or_detail_server">در اعلان یا جزئیات سرور قطع کنید.</string>
+    <!-- Buy data -->
+    <string name="btn_buy_data">خرید با %1$s (%2$s%3$s/گیگابایت)</string>
+    <string name="get_sku_list_error">خطا در دریافت لیست بسته‌ها. لطفاً دوباره تلاش کنید</string>
+    <string name="purchase_successful">خرید بسته‌ی [%1$s] موفقیت‌آمیز بود</string>
+    <string name="invalid_purchase_request">درخواست خرید نامعتبر شناسایی شد. لطفاً دوباره تلاش کنید!</string>
+    <string name="duplicate_purchase_create_request">این خرید قبلاً تکمیل شده است. لطفاً تاریخچه‌ی خرید را بررسی کنید</string>
+    <string name="invalid_product_id">محصول نامعتبر است. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.</string>
+    <string name="processing_text">در حال پردازش…</string>
+    <string name="sku_item_click_error">خطایی هنگام خرید حجم رخ داد. در حال بارگذاری مجدد لیست بسته‌ها هستیم.</string>
+    <!-- Purchase history -->
+    <string name="title_purchase_history">تاریخچه‌ی خرید</string>
+    <string name="history_plat_form">پلتفرم</string>
+    <string name="history_data_size">حجم بسته</string>
+    <string name="history_data_size_receive">حجم دریافتی</string>
+    <string name="history_price">قیمت</string>
+    <string name="history_date_time">تاریخ و ساعت</string>
+    <string name="history_have_not_purchase">شما هیچ خریدی نداشته‌اید.</string>
+    <!-- Personal -->
+    <string name="personal_notification_setting">تنظیمات اعلان</string>
+    <string name="personal_profile">پروفایل</string>
+    <string name="personal_change_password">تغییر رمز عبور</string>
+    <string name="delete_account_btn">حذف حساب</string>
+    <string name="delete_account_dialog_title">تأیید حذف حساب</string>
+    <string name="delete_account_description">آیا مطمئنید می‌خواهید حساب خود را حذف کنید؟\nتوجه داشته باشید که این عملیات قابل بازگشت نیست</string>
+    <string name="account_deleted">حساب حذف شد!</string>
+    <string name="account_delete_failed">حذف حساب ناموفق بود!</string>
+    <!-- Notification setting -->
+    <string name="receive_notification">دریافت اعلان روی این دستگاه</string>
+    <string name="notification_setting_hint">زمانی که حجم حساب شما رو به اتمام باشد یا اطلاعات کاربری تغییر کند، اعلان ارسال می‌کنیم</string>
+    <!-- Change pass -->
+    <string name="password_changed">رمز عبور تغییر کرد. لطفاً دوباره وارد شوید!</string>
+    <string name="incorrect_current_password">رمز عبور فعلی اشتباه است</string>
+    <string name="action_save">ذخیره</string>
+    <string name="new_password_is_invalid">رمز عبور جدید نامعتبر است. رمز عبور باید بین ۵ تا ۳۰ کاراکتر شامل حروف، اعداد و کاراکترهای خاص ($ ! * . -) باشد</string>
+    <string name="new_password_must_not_same_as_current_password">رمز عبور جدید نباید با رمز عبور فعلی یکسان باشد.</string>
+    <!-- Profile -->
+    <string name="update_profile_success">به‌روزرسانی پروفایل موفقیت‌آمیز بود!</string>
+    <string name="update_profile_error">خطا در به‌روزرسانی پروفایل. لطفاً دوباره تلاش کنید!</string>
+    <!-- Check app install source error message -->
+    <string name="install_source_error_title">نصب نامعتبر</string>
+    <string name="install_source_error_message">شما از نسخه‌ی غیرمجاز استفاده می‌کنید. لطفاً نسخه‌ی مجاز را از Play Store نصب کنید</string>
+    <string name="install_source_error_open_play_store">باز کردن Play Store</string>
+    <string name="notification_channel_name">اتمام حجم</string>
+    <!-- Exclude Apps -->
+    <string name="app_icon">آیکون اپ</string>
+    <string name="add_apps_to_exclude">افزودن اپ‌ها به استثناها</string>
+    <string name="exclude_app_description">اپ‌های انتخاب‌شده از تونل وی‌پی‌ان عبور نکرده و از اینترنت عادی شما استفاده می‌کنند</string>
+    <string name="exclude_apps_text">%d اپ از وی‌پی‌ان مستثنی شده</string>
+    <string name="search_apps_hint">جستجوی اپ‌ها…</string>
+    <string name="apps_updated_successfully">اپ‌ها با موفقیت به‌روزرسانی شدند</string>
+    <string name="vpn_restarted_for_settings">وی‌پی‌ان برای اعمال تنظیمات جدید، مجدداً راه‌اندازی شد.</string>
+    <string name="error_saving_apps">خطا در ذخیره‌ی اپ‌ها</string>
+    <string name="error_opening_app_selection">خطا در باز کردن انتخاب اپ‌ها</string>
+    <!-- VPN Protocol Selection Dialog -->
+    <string name="select_vpn_protocol">انتخاب پروتکل وی‌پی‌ان</string>
+    <string name="available_protocols">پروتکل‌های موجود</string>
+    <string name="openvpn_tcp">OpenVPN (TCP)</string>
+    <string name="openvpn_udp">OpenVPN (UDP)</string>
+    <string name="softether_vpn_tcp">SoftEther VPN (TCP)</string>
+    <string name="softether_vpn_udp">SoftEther VPN (UDP)</string>
+    <string name="protocol_available_port">در دسترس روی پورت %1$d</string>
+    <string name="protocol_not_available">در دسترس نیست</string>
+    <string name="softether_available">پروتکل SSL-VPN</string>
+    <string name="softether_not_available">در دسترس نیست</string>
+    <string name="openvpn_tcp_not_available">OpenVPN TCP برای این سرور موجود نیست</string>
+    <string name="openvpn_udp_not_available">OpenVPN UDP برای این سرور موجود نیست</string>
+    <string name="softether_not_available_toast">SoftEther برای این سرور موجود نیست</string>
+    <string name="connecting_softether">در حال اتصال SoftEther…</string>
+    <string name="disconnect_softether">قطع SoftEther</string>
+    <string name="cancel_softether">لغو SoftEther</string>
+    <string name="softether_connected">SoftEther با آی‌پی %1$s متصل شد</string>
+    <string name="softether_disconnected">SoftEther قطع شد</string>
+    <string name="softether_disconnected_by_error">SoftEther به دلیل خطا قطع شد</string>
+    <string name="vpn_permission_denied">دسترسی وی‌پی‌ان رد شد</string>
+    <string name="softether_connecting">در حال اتصال SoftEther…</string>
+    <string name="softether_tls_handshake">در حال برقراری دست‌دهی TLS برای SoftEther…</string>
+    <string name="softether_protocol_handshake">در حال مذاکره‌ی پروتکل SoftEther…</string>
+    <string name="softether_authenticating">در حال احراز هویت نشست SoftEther…</string>
+    <string name="softether_session_setup">در حال برقراری نشست وی‌پی‌ان SoftEther…</string>
+    <string name="softether_disconnecting">در حال قطع SoftEther…</string>
+    <string name="error_unknown">خطای ناشناخته‌ای رخ داد. لطفاً دوباره تلاش کنید.</string>
+</resources>
