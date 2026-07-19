@@ -175,6 +175,14 @@
     <string name="log_console_title">لاگ اتصال</string>
     <string name="log_console_empty">هنوز پیامی ثبت نشده</string>
     <string name="log_console_clear">پاک کردن</string>
+    <string name="bookmark_toggle">بوکمارک این سرور</string>
+    <string name="bookmark_offline">بوکمارک‌شده - در حال حاضر آفلاین</string>
+    <string name="bookmark_added">سرور بوکمارک شد</string>
+    <string name="bookmark_removed">بوکمارک حذف شد</string>
+    <string name="ping_test">تست پینگ</string>
+    <string name="ping_testing">در حال تست…</string>
+    <string name="ping_test_failed">غیرقابل دسترسی</string>
+    <string name="bookmarks_filter_label">بوکمارک‌ها</string>
     <string name="get_pro_version">دریافت نسخه‌ی Pro</string>
     <string name="status">وضعیت</string>
     <string name="tap_to_disconnect">برای قطع اتصال از %1$s ضربه بزنید</string>

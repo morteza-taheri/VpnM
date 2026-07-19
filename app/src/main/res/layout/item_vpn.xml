@@ -45,6 +45,17 @@
             android:paddingLeft="5dp"
             android:paddingRight="5dp">
 
+            <TextView
+                android:id="@+id/txt_offline_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="3dp"
+                android:background="@drawable/bg_pill_disconnected"
+                android:text="@string/bookmark_offline"
+                android:textColor="@color/dashSlate300"
+                android:textSize="10sp"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -326,6 +337,40 @@
                     android:layout_height="wrap_content"
                     android:text="@string/l2tp_supported" />
             </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="top"
+            android:layout_marginStart="4dp"
+            android:orientation="vertical"
+            android:paddingTop="2dp">
+
+            <ImageView
+                android:id="@+id/img_bookmark"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center_horizontal"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/bookmark_toggle"
+                android:focusable="true"
+                android:padding="3dp"
+                android:src="@drawable/ic_bookmark_border" />
+
+            <ImageView
+                android:id="@+id/btn_ping_test"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/ping_test"
+                android:focusable="true"
+                android:padding="3dp"
+                android:src="@drawable/ic_ping_test" />
         </LinearLayout>
     </LinearLayout>
 

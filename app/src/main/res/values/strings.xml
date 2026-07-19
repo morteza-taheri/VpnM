@@ -184,6 +184,14 @@
     <string name="log_console_title">Connection log</string>
     <string name="log_console_empty">No log messages yet</string>
     <string name="log_console_clear">Clear</string>
+    <string name="bookmark_toggle">Bookmark this server</string>
+    <string name="bookmark_offline">Bookmarked - currently offline</string>
+    <string name="bookmark_added">Server bookmarked</string>
+    <string name="bookmark_removed">Bookmark removed</string>
+    <string name="ping_test">Test ping now</string>
+    <string name="ping_testing">Testing…</string>
+    <string name="ping_test_failed">Unreachable</string>
+    <string name="bookmarks_filter_label">Bookmarks</string>
     <string name="get_pro_version">Get Pro version</string>
     <string name="status">Status</string>
     <string name="tap_to_disconnect">Tap button to disconnect from %1$s</string>
