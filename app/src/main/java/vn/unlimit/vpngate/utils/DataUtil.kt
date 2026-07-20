@@ -347,6 +347,15 @@ class DataUtil(context: Context?) {
         const val SETTING_LANGUAGE: String = "SETTING_LANGUAGE"
         const val LAST_SERVER_LIST_UPDATE_AT: String = "LAST_SERVER_LIST_UPDATE_AT"
         const val CONNECTED_SERVER_HOSTNAME: String = "CONNECTED_SERVER_HOSTNAME"
+        // Server-list source management (Settings -> Server sources)
+        const val SOURCE_PRIMARY_ENABLED = "SOURCE_PRIMARY_ENABLED"
+        const val SOURCE_PRIMARY_URL = "SOURCE_PRIMARY_URL"
+        const val SOURCE_MIRROR_ENABLED = "SOURCE_MIRROR_ENABLED"
+        const val SOURCE_GITHUB_ENABLED = "SOURCE_GITHUB_ENABLED"
+        const val SOURCE_GITHUB_URL = "SOURCE_GITHUB_URL"
+        const val DEFAULT_PRIMARY_API_URL = "https://www.vpngate.net/api/iphone/"
+        const val DEFAULT_GITHUB_CSV_URL =
+            "https://raw.githubusercontent.com/morteza-taheri/VpnM/master/Servers.csv"
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1
         const val THEME_DARK = 2

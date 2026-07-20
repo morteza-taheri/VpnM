@@ -605,6 +605,207 @@
                 </LinearLayout>
 
             </LinearLayout>
+
+            <!-- ==== Server list sources ==== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:theme="@style/AppTheme.Setting.Item">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="5dp"
+                    android:text="@string/server_sources_label"
+                    android:theme="@style/label"
+                    android:textStyle="bold" />
+
+                <!-- Primary API -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp">
+
+                    <TextView
+                        android:id="@+id/txt_source_primary_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/img_edit_source_primary"
+                        android:text="@string/source_primary_api"
+                        android:theme="@style/label" />
+
+                    <ImageView
+                        android:id="@+id/img_edit_source_primary"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/sw_source_primary"
+                        android:layout_marginEnd="10dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/edit_source_url"
+                        android:focusable="true"
+                        android:padding="2dp"
+                        android:src="@drawable/ic_edit_source" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_source_primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="3dp"
+                    android:layout_marginBottom="3dp"
+                    android:background="@color/lineColor" />
+
+                <!-- Mirror web pages: toggle only, no editable URL -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/sw_source_mirror"
+                        android:text="@string/source_mirror_pages"
+                        android:theme="@style/label" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_source_mirror"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="3dp"
+                    android:layout_marginBottom="3dp"
+                    android:background="@color/lineColor" />
+
+                <!-- GitHub fallback -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp">
+
+                    <TextView
+                        android:id="@+id/txt_source_github_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/img_edit_source_github"
+                        android:text="@string/source_github_fallback"
+                        android:theme="@style/label" />
+
+                    <ImageView
+                        android:id="@+id/img_edit_source_github"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/sw_source_github"
+                        android:layout_marginEnd="10dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/edit_source_url"
+                        android:focusable="true"
+                        android:padding="2dp"
+                        android:src="@drawable/ic_edit_source" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_source_github"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <Button
+                    android:id="@+id/btn_refresh_server_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/selector_apply_button"
+                    android:text="@string/refresh_server_list_now"
+                    android:textAllCaps="false"
+                    android:textColor="@color/colorWhite" />
+
+                <!-- Sync log -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/sync_log_title"
+                            android:textColor="@color/colorWhite"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btn_clear_sync_log"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="?android:attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="6dp"
+                            android:text="@string/log_console_clear"
+                            android:textColor="@color/dashCyan500"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <ScrollView
+                        android:id="@+id/scroll_sync_log"
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@color/dashSlate950"
+                        android:padding="8dp"
+                        android:scrollbars="vertical">
+
+                        <TextView
+                            android:id="@+id/txt_sync_log"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:text="@string/sync_log_empty"
+                            android:textColor="@color/dashEmerald400"
+                            android:textIsSelectable="true"
+                            android:textSize="10sp" />
+                    </ScrollView>
+                </LinearLayout>
+            </LinearLayout>
+            <!-- ==== end server list sources ==== -->
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

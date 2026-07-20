@@ -13,10 +13,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.CompoundButton
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
@@ -203,6 +209,8 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
             binding.lnStartupScreen.visibility = View.GONE
         }
 
+        setupServerSourcesUI()
+
         return binding.root
     }
 
@@ -257,6 +265,94 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
             binding.lnDnsIp.visibility = View.VISIBLE
         }
     }
+
+    // ==== Server list sources (Settings -> Server sources) ====
+    private fun setupServerSourcesUI() {
+        binding.swSourcePrimary.isChecked =
+            dataUtil.getBooleanSetting(DataUtil.SOURCE_PRIMARY_ENABLED, true)
+        binding.swSourcePrimary.setOnCheckedChangeListener { _, isChecked ->
+            dataUtil.setBooleanSetting(DataUtil.SOURCE_PRIMARY_ENABLED, isChecked)
+        }
+        binding.imgEditSourcePrimary.setOnClickListener {
+            showEditUrlDialog(
+                currentUrl = dataUtil.getStringSetting(
+                    DataUtil.SOURCE_PRIMARY_URL, DataUtil.DEFAULT_PRIMARY_API_URL
+                ) ?: DataUtil.DEFAULT_PRIMARY_API_URL,
+                defaultUrl = DataUtil.DEFAULT_PRIMARY_API_URL
+            ) { newUrl -> dataUtil.setStringSetting(DataUtil.SOURCE_PRIMARY_URL, newUrl) }
+        }
+
+        binding.swSourceMirror.isChecked =
+            dataUtil.getBooleanSetting(DataUtil.SOURCE_MIRROR_ENABLED, true)
+        binding.swSourceMirror.setOnCheckedChangeListener { _, isChecked ->
+            dataUtil.setBooleanSetting(DataUtil.SOURCE_MIRROR_ENABLED, isChecked)
+        }
+
+        binding.swSourceGithub.isChecked =
+            dataUtil.getBooleanSetting(DataUtil.SOURCE_GITHUB_ENABLED, true)
+        binding.swSourceGithub.setOnCheckedChangeListener { _, isChecked ->
+            dataUtil.setBooleanSetting(DataUtil.SOURCE_GITHUB_ENABLED, isChecked)
+        }
+        binding.imgEditSourceGithub.setOnClickListener {
+            showEditUrlDialog(
+                currentUrl = dataUtil.getStringSetting(
+                    DataUtil.SOURCE_GITHUB_URL, DataUtil.DEFAULT_GITHUB_CSV_URL
+                ) ?: DataUtil.DEFAULT_GITHUB_CSV_URL,
+                defaultUrl = DataUtil.DEFAULT_GITHUB_CSV_URL
+            ) { newUrl -> dataUtil.setStringSetting(DataUtil.SOURCE_GITHUB_URL, newUrl) }
+        }
+
+        binding.btnRefreshServerList.setOnClickListener { refreshServerListNow() }
+        binding.btnClearSyncLog.setOnClickListener { SyncLogBus.clear() }
+
+        SyncLogBus.entries.observe(viewLifecycleOwner) { lines ->
+            binding.txtSyncLog.text =
+                if (lines.isEmpty()) getString(R.string.sync_log_empty) else lines.joinToString("\n")
+            binding.scrollSyncLog.post { binding.scrollSyncLog.fullScroll(View.FOCUS_DOWN) }
+        }
+    }
+
+    private fun showEditUrlDialog(currentUrl: String, defaultUrl: String, onSave: (String) -> Unit) {
+        val input = EditText(mContext)
+        input.setText(currentUrl)
+        input.setSelection(input.text.length)
+        AlertDialog.Builder(mContext)
+            .setTitle(R.string.edit_source_url_dialog_title)
+            .setView(input)
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                val newUrl = input.text.toString().trim()
+                if (newUrl.isEmpty()) {
+                    Toast.makeText(mContext, R.string.url_cannot_be_empty, Toast.LENGTH_SHORT).show()
+                } else {
+                    onSave(newUrl)
+                }
+            }
+            .setNeutralButton(R.string.reset_to_default) { _, _ -> onSave(defaultUrl) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun refreshServerListNow() {
+        binding.btnRefreshServerList.isEnabled = false
+        Toast.makeText(mContext, R.string.refreshing_server_list, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val count = withContext(Dispatchers.IO) {
+                    vn.unlimit.vpngate.utils.ServerListRepository.syncNow(mContext)
+                }
+                Toast.makeText(
+                    mContext, getString(R.string.refresh_server_list_success, count), Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                Toast.makeText(mContext, R.string.refresh_server_list_failed, Toast.LENGTH_SHORT).show()
+            } finally {
+                if (isAdded) {
+                    binding.btnRefreshServerList.isEnabled = true
+                }
+            }
+        }
+    }
+    // ==== end server list sources ====
 
     override fun onFocusChange(view: View, isFocus: Boolean) {
         if (!isFocus) {
