@@ -803,19 +803,150 @@ Default Protocol: SoftEther VPN over TCP
 
 User Options:
 
-Protocol: SoftEther, OpenVPN, MS-SSTP
+The application provides a comprehensive protocol selection mechanism with two modes:
 
-Transport: TCP or UDP (where applicable)
+7.4.1 Manual Protocol Selection
+Users can set a default protocol from the available options:
 
-Port Configuration: Default ports or custom ports
+Protocol	Transport	Description
+SoftEther VPN	TCP	Default - Most stable and widely supported
+SoftEther VPN	UDP	Faster but may be blocked in some networks
+OpenVPN	TCP	Highly secure and reliable
+OpenVPN	UDP	Faster performance, good for streaming
+MS-SSTP	TCP	Works well in restricted networks (port 443)
+L2TP/IPsec	—	Native Android support (Android 12+ deprecated)
+Default: SoftEther VPN over TCP
+
+7.4.2 "Always Ask" Mode
+New Feature: Users can select "Always Ask" as their default protocol preference.
+
+Behavior:
+
+When "Always Ask" is selected, the application will prompt the user to choose a protocol each time they attempt to connect to a server.
+
+The prompt will display all available protocols that the selected server supports.
+
+The user can select a protocol for that specific connection attempt.
+
+The selected protocol is used for that connection only; the next connection will again prompt for protocol selection.
+
+Use Case:
+
+Users who want flexibility in choosing different protocols for different scenarios.
+
+Power users who know which protocol works best for their current network conditions.
+
+Troubleshooting scenarios where users want to test different protocols.
+
+UI Implementation:
+
+kotlin
+@Composable
+fun ProtocolSelectionDialog(
+    availableProtocols: List<Protocol>,
+    onProtocolSelected: (Protocol) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select VPN Protocol") },
+        text = {
+            Column {
+                Text("Choose a protocol for this connection:")
+                Spacer(modifier = Modifier.height(8.dp))
+                availableProtocols.forEach { protocol ->
+                    ListItem(
+                        headlineText = { Text(protocol.displayName) },
+                        supportingText = { Text(protocol.description) },
+                        leadingContent = { 
+                            Icon(
+                                protocol.icon, 
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.clickable { 
+                            onProtocolSelected(protocol) 
+                        }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+7.4.3 Protocol Selection Settings
+Settings Screen Options:
+
+Default Protocol: Dropdown with all protocols + "Always Ask" option
 
 Protocol-Specific Settings:
 
-SoftEther: Anonymous authentication (free servers) or credentials
+SoftEther: Authentication method (Anonymous / Credentials)
 
 OpenVPN: Configuration file import option
 
-MS-SSTP: Username/password authentication
+MS-SSTP: Username/Password authentication
+
+L2TP/IPsec: Pre-shared key configuration
+
+Example Settings Screen:
+
+text
+┌─────────────────────────────────────────────┐
+│  VPN Protocol Settings                      │
+├─────────────────────────────────────────────┤
+│  Default Protocol:                          │
+│  [SoftEther (TCP) ▼]                       │
+│    ├─ SoftEther (TCP)                      │
+│    ├─ SoftEther (UDP)                      │
+│    ├─ OpenVPN (TCP)                       │
+│    ├─ OpenVPN (UDP)                       │
+│    ├─ MS-SSTP                             │
+│    ├─ L2TP/IPsec                          │
+│    └─ Always Ask                          │
+├─────────────────────────────────────────────┤
+│  [Show advanced settings]                   │
+│                                             │
+│  SoftEther Authentication:                  │
+│  ○ Anonymous                                │
+│  ● Use credentials:                         │
+│    Username: [___________]                  │
+│    Password: [___________]                  │
+│                                             │
+│  OpenVPN Config:                            │
+│  [Import .ovpn file]                        │
+│                                             │
+│  MS-SSTP Authentication:                    │
+│    Username: [___________]                  │
+│    Password: [___________]                  │
+└─────────────────────────────────────────────┘
+7.4.4 Protocol Validation
+When a server is selected, the app checks which protocols the server supports.
+
+If the user's default protocol is not supported by the server, the app will:
+
+Display a warning message.
+Offer to automatically switch to a supported protocol or prompt the user to choose.
+Example Warning:
+
+text
+"Server doesn't support OpenVPN (TCP). 
+Would you like to use SoftEther (TCP) instead?"
+[Yes] [Choose Another]
+7.4.5 Protocol Priority for Auto-Connect
+When auto-connect is enabled, the application will:
+
+Use the user's default protocol if set (not "Always Ask").
+
+If "Always Ask" is selected, use SoftEther (TCP) as the default for auto-connect, but allow the user to override manually.
+
+Test servers that support the selected protocol first.
+
+If no servers support the selected protocol, fallback to the next best protocol.
 
 8. Data Management
 8.1 Local Storage
@@ -1168,6 +1299,8 @@ Quaternary: Mirror sites HTML (ultimate fallback)
 ✅ Multi-protocol support (SoftEther, OpenVPN, MS-SSTP, L2TP/IPsec)
 
 ✅ Default protocol: SoftEther VPN over TCP
+
+✅ "Always Ask" mode for protocol selection (prompt user each time)
 
 ✅ Icon processing from source icon.jpg
 
