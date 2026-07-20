@@ -32,11 +32,13 @@ Local Storage: Room database for caching server lists, user preferences, and app
 
 Remote Data Sources:
 
-VPN Gate CSV API
+VPN Gate CSV API (Official)
 
-VPN Gate HTML page (primary website)
+VPN Gate HTML page (Primary website)
 
-Mirror sites
+Mirror CSV (Backup source)
+
+Mirror sites (HTML fallback)
 
 Domain Layer
 Use Cases: Server selection, connection management, protocol switching
@@ -77,16 +79,22 @@ L2TP/IPsec: Android OS built-in client (Android 12 and below only)
 SoftEther VPN over TCP shall be the default protocol.
 
 4. Server Management
-4.1 Server List Sources (Simultaneous Fetching)
-To maximize the number of available servers and ensure the most comprehensive coverage, the application will simultaneously fetch server data from three distinct sources on every update cycle. The results from all sources will be merged and deduplicated.
+4.1 Server List Sources (Three-Tier Strategy)
+To maximize availability, coverage, and reliability, the application will fetch server data from three distinct sources using a strategic priority system.
 
-4.1.1 Primary Source: VPN Gate CSV API
+4.1.1 Primary Source: Official VPN Gate CSV API
 Endpoint: http://www.vpngate.net/api/iphone/
 
-Description: Provides a structured CSV file containing detailed server information, including hostname, country, score, ping, uptime, and Base64-encoded OpenVPN configurations. This source is always fetched.
+Format: CSV with specific column headers (see section 4.2)
+
+Description: The official and most up-to-date source. Provides comprehensive server information including hostname, country, score, ping, uptime, and Base64-encoded OpenVPN configurations.
+
+Priority: Highest - Always attempt this source first.
 
 4.1.2 Secondary Source: HTML Page Parsing (Always Active)
 Endpoint: https://www.vpngate.net/en/
+
+Format: HTML table with server listings
 
 Description: The main VPN Gate web page displays a comprehensive table of all active public VPN relay servers. The application will always fetch and parse this HTML page alongside the CSV API.
 
@@ -106,20 +114,62 @@ Connection Details: For each supported protocol, the HTML provides hostname and 
 
 Operator Name and Score
 
-Important Note: For now, we are NOT extracting OpenVPN configuration files from the HTML. That will be handled in a later phase.
+Priority: Secondary - Always fetched in parallel with primary source.
 
-4.1.3 Tertiary Source: Mirror Sites (Fallback & Additional Coverage)
+4.1.3 Tertiary Source: Mirror CSV (Backup Source)
+Endpoint: https://raw.githubusercontent.com/morteza-taheri/VpnM/refs/heads/master/Servers.csv
+
+Format: CSV with exactly the same column structure as the official VPN Gate API
+
+Description: This is a static mirror copy of the official API data, hosted on GitHub. It serves as a reliable backup when the official API is unavailable.
+
+Column Structure: Identical to the official API (see section 4.2 for details):
+
+#HostName, IP, Score, Ping, Speed, CountryLong, CountryShort, NumVpnSessions, Uptime, TotalUsers, TotalTraffic, LogType, Operator, Message, OpenVPN_ConfigData_Base64
+
+Priority: Tertiary - Only used if both primary and secondary sources fail.
+
+Advantages:
+
+Provides a complete backup with all necessary data.
+
+Same format as official API, so parsing logic can be reused.
+
+Hosted on GitHub, which is generally more stable and accessible.
+
+4.1.4 Quaternary Source: Mirror Sites (HTML Fallback)
 Source Page: https://www.vpngate.net/en/sites.aspx
 
 Description: This page provides a list of mirror sites that host identical content to the primary website. The application will:
 
 Fetch the mirror list.
 
-Always attempt to fetch and parse HTML from at least one mirror to discover servers that might be exclusive to that mirror or to provide redundancy.
+If the primary website is unreachable and other sources fail, attempt to fetch and parse HTML from mirror sites.
 
-If the primary website is unreachable, mirrors become the primary fallback.
+Priority: Lowest - Ultimate fallback if all other sources fail.
 
-4.1.4 Extracting MS-SSTP Configuration from Other Protocols (Important)
+4.2 Server Data Structure (CSV Format)
+Both the official API and the mirror CSV share the exact same column structure:
+
+Column Name	Type	Description
+#HostName	String	Server DDNS hostname
+IP	String	Server IP address
+Score	Integer	Quality score (higher = better)
+Ping	Integer	Response time in milliseconds
+Speed	Integer	Bandwidth speed in Mbps
+CountryLong	String	Full country name (e.g., "Japan")
+CountryShort	String	Country code (e.g., "JP")
+NumVpnSessions	Integer	Current active VPN sessions
+Uptime	String	Server uptime (e.g., "21 days")
+TotalUsers	Integer	Cumulative users count
+TotalTraffic	String	Total traffic in GB
+LogType	String	Logging policy (e.g., "2 Weeks")
+Operator	String	Volunteer operator name
+Message	String	Operator's message
+OpenVPN_ConfigData_Base64	String	Base64-encoded OpenVPN configuration
+Note: The HTML source does not provide OpenVPN_ConfigData_Base64, so this field is populated only from CSV sources.
+
+4.3 Extracting MS-SSTP Configuration from Other Protocols (Important)
 Key Observation:
 Based on analysis of both the HTML table and the CSV data, the connection details for MS-SSTP protocol (specifically the hostname and port) are identical to those of OpenVPN (TCP) or SSL-VPN (SoftEther TCP) for each server that supports SSTP.
 
@@ -128,7 +178,7 @@ In the HTML table, for each server that supports MS-SSTP, the "Connect guide" li
 
 This hostname and port are exactly the same as the OpenVPN TCP hostname and port displayed in the "Config file" column.
 
-Example from the provided image:
+Example:
 
 Server: vpn363918091.opengw.net (Russian Federation)
 
@@ -139,7 +189,7 @@ MS-SSTP Hostname: vpn363918091.opengw.net:1805 → Identical
 Evidence from CSV:
 The CSV file provides OpenVPN configuration data (Base64-encoded), which contains the hostname and port for OpenVPN TCP.
 
-The CSV does not have a dedicated column for SSTP hostname/port, but it does indicate SSTP support via other means (e.g., protocol flags).
+The CSV does not have a dedicated column for SSTP hostname/port, but it does indicate SSTP support via other means.
 
 For servers that support SSTP, the SSTP connection details can be reliably derived from the OpenVPN TCP hostname and port.
 
@@ -152,7 +202,7 @@ If OpenVPN TCP is not available, fallback to SSL-VPN (SoftEther TCP) column.
 
 When parsing CSV:
 
-If the CSV indicates SSTP support, use the OpenVPN TCP hostname and port (parsed from the OpenVPN config) as the SSTP hostname and port.
+If the CSV indicates SSTP support (via protocol flags or other indicators), use the OpenVPN TCP hostname and port (parsed from the OpenVPN config) as the SSTP hostname and port.
 
 If OpenVPN TCP is not available, fallback to SSL-VPN (SoftEther TCP) hostname and port.
 
@@ -179,25 +229,7 @@ Efficiency: Avoids redundant data extraction and reduces parsing complexity.
 
 Reliability: Guarantees that SSTP works even if the CSV or HTML doesn't explicitly list SSTP hostname/port.
 
-Code Example (Pseudo):
-kotlin
-data class Server(
-    val hostName: String,
-    val country: String,
-    // ... other fields
-    val supportsSSTP: Boolean,
-    val openVpnTcpHost: String?,
-    val openVpnTcpPort: Int?,
-    val sslVpnTcpHost: String?,
-    val sslVpnTcpPort: Int?
-) {
-    val sstpHostname: String?
-        get() = openVpnTcpHost ?: sslVpnTcpHost
-        
-    val sstpPort: Int?
-        get() = openVpnTcpPort ?: sslVpnTcpPort
-}
-4.2 Server Data Structure
+4.4 Unified Server Model
 The application will standardize data from all sources into a unified model with the following fields:
 
 HostName: Server hostname (DDNS)
@@ -226,32 +258,37 @@ SstpHostname: Derived from OpenVPN/SSL-VPN hostname (for SSTP support)
 
 SstpPort: Derived from OpenVPN/SSL-VPN port (for SSTP support)
 
-4.3 Server List Update Strategy
+Source: Indicates which source provided the data (API, HTML, Mirror)
+
+4.5 Server List Update Strategy
 Automatic Update: Every 2 hours by default.
 
 User Configurable: The update interval will be adjustable in the app settings.
 
 Background Updates: Using WorkManager for efficient background processing.
 
-Parallel Fetching Strategy (Always Active):
+Priority-Based Fetching Strategy:
 
-Concurrently fetch the CSV API, the primary website HTML, and the mirror sites list.
-Parse all HTML pages and the CSV file in parallel.
-Merge and deduplicate servers from all sources (based on IP or hostname).
-If one source fails (e.g., CSV API timeout), the others continue and the merged list is still generated from the successful sources.
-Store the final merged list in the local database.
-Data Deduplication: The app will merge and deduplicate servers from all sources based on their IP address or hostname to create a single, comprehensive list. In case of conflicting data (e.g., different ping values), the most recent or highest-quality value will be retained.
+Primary Attempt: Fetch from official CSV API (http://www.vpngate.net/api/iphone/) and HTML page (https://www.vpngate.net/en/) concurrently.
+If Primary Succeeds: Parse both sources, merge, deduplicate, and store in database. Mark source as "API" or "HTML".
+If Primary Fails: Attempt to fetch from Mirror CSV (https://raw.githubusercontent.com/morteza-taheri/VpnM/refs/heads/master/Servers.csv).
+If Mirror CSV Succeeds: Parse the CSV, merge with any HTML data (if available), and store. Mark source as "Mirror CSV".
+If All CSV Sources Fail: Attempt to fetch from Mirror Sites HTML (from https://www.vpngate.net/en/sites.aspx).
+If All Sources Fail: Use cached server list from local database (with a warning to the user).
+Data Deduplication: The app will merge and deduplicate servers from all sources based on their IP address or hostname to create a single, comprehensive list. In case of conflicting data, the most recent or highest-quality value will be retained.
 
-4.4 Benefits of This Approach
-Maximum Server Coverage: Combining CSV, HTML, and mirrors yields the largest possible list of available servers.
+4.6 Benefits of This Three-Tier Approach
+High Availability: Multiple fallback sources ensure the app always has a server list to display.
+
+Maximum Server Coverage: Combining all sources yields the largest possible list of available servers.
 
 Redundancy: Failure of one source does not compromise the entire update cycle.
 
-Freshness: HTML parsing captures servers that might be listed on the website but not yet reflected in the CSV API.
+Freshness: Primary API provides the most up-to-date data, while HTML parsing captures additional details.
 
-Protocol Awareness: By reading the green checkmarks in the HTML table, the app knows exactly which protocols each server supports, allowing for intelligent filtering and connection selection.
+Protocol Awareness: By reading the green checkmarks in the HTML table, the app knows exactly which protocols each server supports.
 
-SSTP Reliability: By deriving SSTP details from OpenVPN/SSL-VPN, we ensure SSTP connections work seamlessly without needing extra data fields.
+SSTP Reliability: By deriving SSTP details from OpenVPN/SSL-VPN, we ensure SSTP connections work seamlessly.
 
 5. User Interface & Experience
 5.1 Modern UI Requirements
@@ -694,8 +731,6 @@ Improved usability for managing multiple servers and switching between them.
 
 Professional appearance with consistent visual language throughout the app.
 
-Note: This feature is critical for user interaction and should be implemented with high priority. The visual distinction between selected and connected states should be obvious and intuitive, even for first-time users.
-
 7. Core Features
 7.1 Auto-Connect & Fallback Mechanism
 Functionality:
@@ -1017,6 +1052,7 @@ implementation("androidx.navigation:navigation-compose:2.7.5")
 // Networking
 implementation("com.squareup.retrofit2:retrofit:2.9.0")
 implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+implementation("com.squareup.retrofit2:converter-scalars:2.9.0") // For HTML parsing
 
 // Database
 implementation("androidx.room:room-runtime:2.6.0")
@@ -1032,6 +1068,9 @@ implementation("com.google.dagger:hilt-android:2.48")
 // SoftEther-Android-Module
 // OpenVPN for Android
 // Open SSTP Client
+
+// HTML Parsing
+implementation("org.jsoup:jsoup:1.17.2")
 12.3 Icon Generation Script
 A Gradle task or external tool should be used to generate all required icon sizes from icon.jpg:
 
@@ -1083,11 +1122,13 @@ Performance Tests: Server list updates, connection speed
 15. References
 Base Project: vpngate-connector
 
-VPN Gate API: http://www.vpngate.net/api/iphone/
+Official VPN Gate API: http://www.vpngate.net/api/iphone/
 
 Primary Website (HTML): https://www.vpngate.net/en/
 
-Mirror Sites: https://www.vpngate.net/en/sites.aspx
+Mirror CSV (Backup): https://raw.githubusercontent.com/morteza-taheri/VpnM/refs/heads/master/Servers.csv
+
+Mirror Sites List: https://www.vpngate.net/en/sites.aspx
 
 SoftEther Protocol: SoftEther VPN Project
 
@@ -1102,7 +1143,15 @@ Summary of Key Features
 
 ✅ Dark & Light themes with dynamic color
 
-✅ Simultaneous server fetching from CSV API, HTML page, and mirror sites
+✅ Three-tier server fetching strategy:
+
+Primary: Official CSV API (http://www.vpngate.net/api/iphone/)
+
+Secondary: HTML page parsing (https://www.vpngate.net/en/)
+
+Tertiary: Mirror CSV backup (https://raw.githubusercontent.com/morteza-taheri/VpnM/refs/heads/master/Servers.csv)
+
+Quaternary: Mirror sites HTML (ultimate fallback)
 
 ✅ HTML table parsing to extract supported protocols (green checkmarks)
 
