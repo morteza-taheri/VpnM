@@ -16,7 +16,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versions
   protocol/ping/speed/session filters.
 - **Multi-source server list sync**: tries the official VPN Gate API, its configured mirror
   domain, up to 3 mirrors scraped live from vpngate.net's own mirror-sites page, and finally a
-  CSV snapshot (`servers.csv`) hosted in this repo, in that order.
+  CSV snapshot (`Servers.csv`) hosted in this repo, in that order.
 - **Background sync**: WorkManager job refreshing the server list automatically (default: every
   2 hours, configurable in Settings, minimum 15 minutes).
 - **"Last updated" banner** on the server list, showing when it was last successfully refreshed.
@@ -47,8 +47,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versions
 ### Known limitations
 - The connection log console currently only captures OpenVPN log messages (SoftEther/SSTP are
   not wired in yet).
-- `servers.csv` (the GitHub fallback source) needs to be created and kept up to date in this
-  repo for that fallback tier to do anything.
+- `Servers.csv` now exists at the repo root (added directly via GitHub) - keep it reasonably
+  up to date, since it's what the app falls back to if every live source is unreachable.
 - No automated CI version-bump/git-hook is set up; version numbers in `app/build.gradle` are
   bumped by hand alongside each notable batch of changes (see this file).
 

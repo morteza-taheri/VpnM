@@ -44,7 +44,7 @@ object ServerListRepository {
     // GitHub repo. Update this file periodically (e.g. via a scheduled GitHub Action) so it
     // doesn't go stale; it's only used when every live source above fails.
     const val GITHUB_CSV_FALLBACK_URL =
-        "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/servers.csv"
+        "https://raw.githubusercontent.com/morteza-taheri/VpnM/master/Servers.csv"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
