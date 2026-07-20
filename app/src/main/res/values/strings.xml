@@ -8,6 +8,7 @@
     <string name="sort">Sort</string>
     <string name="filter">Filter</string>
     <string name="filter_server_protocol">Show server with protocol</string>
+    <string name="filter_all_countries">All countries</string>
     <string name="reset">Reset</string>
     <string name="show_tcp_server">TCP Server</string>
     <string name="show_udp_server">UDP Server</string>

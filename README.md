@@ -2,6 +2,8 @@
 
 [![Android CI](https://github.com/hoang-rio/vpngate-connector/actions/workflows/android-ci.yml/badge.svg)](https://github.com/hoang-rio/vpngate-connector/actions/workflows/android-ci.yml)
 
+See [CHANGELOG.md](CHANGELOG.md) for what's changed in this fork.
+
 ## A de-googled VPN Gate client for Android, for personal/sideload use
 
 This is a personal fork of [hoang-rio/vpngate-connector](https://github.com/hoang-rio/vpngate-connector), a VPN Gate client supporting **SoftEther VPN** (native implementation, no third-party client required), **OpenVPN**, **MS-SSTP**, and **L2TP/IPsec** (Android 12 and below only), across both free and paid VPN Gate servers.

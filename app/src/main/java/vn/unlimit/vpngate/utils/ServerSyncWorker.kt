@@ -14,8 +14,9 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Refreshes the cached VPN Gate server list in the background on the interval configured in
- * Settings ("Cache save time" - [DataUtil.SETTING_CACHE_TIME_KEY], minimum 15 minutes since
- * that's WorkManager's own minimum periodic interval). New servers are added and servers that
+ * Settings ("Cache save time" - [DataUtil.SETTING_CACHE_TIME_KEY], defaulting to 2 hours;
+ * WorkManager's own floor for periodic work is 15 minutes if the user picks that option instead).
+ * New servers are added and servers that
  * disappeared from every source are dropped, because [ServerListRepository.syncNow] replaces the
  * whole local snapshot on each successful run.
  */
@@ -48,7 +49,7 @@ class ServerSyncWorker(context: Context, params: WorkerParameters) : CoroutineWo
          */
         fun schedule(context: Context, policy: ExistingPeriodicWorkPolicy) {
             val dataUtil = App.instance?.dataUtil ?: return
-            val index = dataUtil.getIntSetting(DataUtil.SETTING_CACHE_TIME_KEY, 0)
+            val index = dataUtil.getIntSetting(DataUtil.SETTING_CACHE_TIME_KEY, DataUtil.DEFAULT_CACHE_TIME_INDEX)
                 .coerceIn(0, cacheMinutesByIndex.lastIndex)
             val minutes = cacheMinutesByIndex[index].coerceAtLeast(15)
 

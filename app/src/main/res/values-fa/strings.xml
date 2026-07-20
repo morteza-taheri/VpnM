@@ -7,6 +7,7 @@
     <string name="sort">مرتب‌سازی</string>
     <string name="filter">فیلتر</string>
     <string name="filter_server_protocol">نمایش سرور با پروتکل</string>
+    <string name="filter_all_countries">همه‌ی کشورها</string>
     <string name="reset">بازنشانی</string>
     <string name="show_tcp_server">سرور TCP</string>
     <string name="show_udp_server">سرور UDP</string>

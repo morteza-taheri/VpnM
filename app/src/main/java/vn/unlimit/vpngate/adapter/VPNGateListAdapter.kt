@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import vn.unlimit.vpngate.App.Companion.instance
 import vn.unlimit.vpngate.R
+import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import vn.unlimit.vpngate.utils.DataUtil
 
@@ -20,7 +21,8 @@ import vn.unlimit.vpngate.utils.DataUtil
  * Created by hoangnd on 1/29/2018.
  *
  * Native ads (AdMob) have been removed from this build - no Google service dependencies.
- * This adapter now only ever renders VPN server rows.
+ * This adapter now only ever renders VPN server rows, plus bookmark star / live ping-test
+ * affordances per row (see [BookmarkManager][vn.unlimit.vpngate.utils.BookmarkManager]).
  */
 class VPNGateListAdapter(private val mContext: Context) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -29,7 +31,22 @@ class VPNGateListAdapter(private val mContext: Context) :
     private var onItemClickListener: OnItemClickListener? = null
     private var onItemLongClickListener: OnItemLongClickListener? = null
     private var onScrollListener: OnScrollListener? = null
+    private var onBookmarkToggleListener: OnBookmarkToggleListener? = null
+    private var onPingTestListener: OnPingTestListener? = null
     private var lastPosition = 0
+    private var bookmarkedHostNames: Set<String> = emptySet()
+    private var offlineHostNames: Set<String> = emptySet()
+    // hostName -> "testing" / a formatted ping string, shown instead of the cached CSV ping
+    // value once the user taps the per-row ping-test button.
+    private val livePingResults = HashMap<String, String>()
+
+    interface OnBookmarkToggleListener {
+        fun onBookmarkToggle(item: VPNGateConnection, position: Int)
+    }
+
+    interface OnPingTestListener {
+        fun onPingTest(item: VPNGateConnection, position: Int)
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun initialize(vpnGateConnectionList: VPNGateConnectionList?) {
@@ -45,6 +62,25 @@ class VPNGateListAdapter(private val mContext: Context) :
         }
     }
 
+    /** Updates which rows show a filled star / an "offline" badge, without reloading server data. */
+    @SuppressLint("NotifyDataSetChanged")
+    fun setBookmarkState(bookmarked: Set<String>, offline: Set<String>) {
+        bookmarkedHostNames = bookmarked
+        offlineHostNames = offline
+        notifyDataSetChanged()
+    }
+
+    /** Called by the fragment once a per-row live ping test finishes. */
+    fun updatePingResult(hostName: String, displayText: String) {
+        livePingResults[hostName] = displayText
+        for (i in 0 until _list.size()) {
+            if (_list.get(i).hostName == hostName) {
+                notifyItemChanged(i)
+                return
+            }
+        }
+    }
+
     fun setOnItemClickListener(inOnItemClickListener: OnItemClickListener?) {
         this.onItemClickListener = inOnItemClickListener
     }
@@ -55,6 +91,14 @@ class VPNGateListAdapter(private val mContext: Context) :
 
     fun setOnScrollListener(inOnScrollListener: OnScrollListener?) {
         this.onScrollListener = inOnScrollListener
+    }
+
+    fun setOnBookmarkToggleListener(listener: OnBookmarkToggleListener?) {
+        this.onBookmarkToggleListener = listener
+    }
+
+    fun setOnPingTestListener(listener: OnPingTestListener?) {
+        this.onPingTestListener = listener
     }
 
     override fun onBindViewHolder(
@@ -99,10 +143,32 @@ class VPNGateListAdapter(private val mContext: Context) :
         var txtUDP: TextView = itemView.findViewById(R.id.txt_udp_port)
         var lnL2TP: View = itemView.findViewById(R.id.ln_l2tp)
         var lnSSTP: View = itemView.findViewById(R.id.ln_sstp)
+        var txtOfflineBadge: TextView = itemView.findViewById(R.id.txt_offline_badge)
+        var imgBookmark: ImageView = itemView.findViewById(R.id.img_bookmark)
+        var btnPingTest: ImageView = itemView.findViewById(R.id.btn_ping_test)
 
         init {
             itemView.setOnLongClickListener(this)
             itemView.setOnClickListener(this)
+            imgBookmark.setOnClickListener {
+                try {
+                    val item = _list.get(adapterPosition)
+                    onBookmarkToggleListener?.onBookmarkToggle(item, adapterPosition)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            btnPingTest.setOnClickListener {
+                try {
+                    val item = _list.get(adapterPosition)
+                    livePingResults[item.hostName ?: ""] =
+                        mContext.getString(R.string.ping_testing)
+                    notifyItemChanged(adapterPosition)
+                    onPingTestListener?.onPingTest(item, adapterPosition)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
 
         fun bindViewHolder(position: Int) {
@@ -119,7 +185,7 @@ class VPNGateListAdapter(private val mContext: Context) :
                 txtScore.text = vpnGateConnection.scoreAsString
                 txtUptime.text = vpnGateConnection.getCalculateUpTime(mContext)
                 txtSpeed.text = vpnGateConnection.calculateSpeed
-                txtPing.text = vpnGateConnection.pingAsString
+                txtPing.text = livePingResults[vpnGateConnection.hostName] ?: vpnGateConnection.pingAsString
                 txtSession.text = vpnGateConnection.numVpnSessionAsString
                 txtOwner.text = vpnGateConnection.operator
                 val dataUtil = instance!!.dataUtil
@@ -140,6 +206,14 @@ class VPNGateListAdapter(private val mContext: Context) :
                     if (vpnGateConnection.isL2TPSupport()) View.VISIBLE else View.GONE
                 lnSSTP.visibility =
                     if (vpnGateConnection.isSSTPSupport()) View.VISIBLE else View.GONE
+
+                val hostName = vpnGateConnection.hostName ?: ""
+                imgBookmark.setImageResource(
+                    if (hostName in bookmarkedHostNames) R.drawable.ic_bookmark_filled
+                    else R.drawable.ic_bookmark_border
+                )
+                txtOfflineBadge.visibility =
+                    if (hostName in offlineHostNames) View.VISIBLE else View.GONE
             } catch (e: Exception) {
                 Log.e(TAG, "bindViewHolder error", e)
                 e.printStackTrace()

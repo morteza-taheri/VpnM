@@ -109,7 +109,7 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
         val listCacheTime = resources.getStringArray(R.array.setting_cache_time)
         spinnerInit.setStringArray(
             listCacheTime,
-            listCacheTime[dataUtil.getIntSetting(DataUtil.SETTING_CACHE_TIME_KEY, 0)]
+            listCacheTime[dataUtil.getIntSetting(DataUtil.SETTING_CACHE_TIME_KEY, DataUtil.DEFAULT_CACHE_TIME_INDEX)]
         )
         spinnerInit.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
             override fun onItemSelected(name: String?, index: Int) {

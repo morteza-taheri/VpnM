@@ -3,6 +3,7 @@ package vn.unlimit.vpngate.utils
 import android.content.Context
 import android.util.Log
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import vn.unlimit.vpngate.App
@@ -21,22 +22,27 @@ import java.util.concurrent.TimeUnit
  *
  *  1. The official VPN Gate API (`vpn_udp_api` / `.../api/iphone/`)
  *  2. The configured mirror domain (`vpn_alternative_api`)
- *  3. A CSV snapshot kept in this project's own GitHub repo, as a last-resort fallback
+ *  3. Community mirror sites, scraped live from vpngate.net's own mirror-sites page
+ *     (https://www.vpngate.net/en/sites.aspx lists `http://IP:PORT/en/` mirrors; each mirror
+ *     serves the same `/api/iphone/` CSV endpoint as the primary site)
+ *  4. A CSV snapshot kept in this project's own GitHub repo, as the final last-resort fallback
  *
  * On success the list is saved to the local Room database (replacing the previous snapshot) and
  * [DataUtil.lastServerListUpdateAt] is updated. Used by both [vn.unlimit.vpngate.viewmodels.ConnectionListViewModel]
  * (manual/pull-to-refresh) and [ServerSyncWorker] (periodic background refresh).
- *
- * NOTE: scraping vpngate.net's own HTML page directly (as opposed to its CSV API) was assessed
- * but not implemented - the HTML table encodes server configs differently from the CSV API and
- * is fragile to changes upstream, so it's a separate, higher-risk piece of work left for later.
  */
 object ServerListRepository {
     private const val TAG = "ServerListRepository"
 
+    private const val MIRROR_SITES_LIST_URL = "https://www.vpngate.net/en/sites.aspx"
+    // Matches the "http://IP:PORT/en/" mirror entries vpngate.net publishes on that page.
+    private val MIRROR_URL_PATTERN =
+        Regex("""https?://\d{1,3}(?:\.\d{1,3}){3}:\d{2,5}/en/""")
+    private const val MAX_SCRAPED_MIRRORS = 3
+
     // Last-resort fallback: a CSV snapshot of the server list mirrored in this project's own
     // GitHub repo. Update this file periodically (e.g. via a scheduled GitHub Action) so it
-    // doesn't go stale; it's only used when both live sources above fail.
+    // doesn't go stale; it's only used when every live source above fails.
     const val GITHUB_CSV_FALLBACK_URL =
         "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/servers.csv"
 
@@ -73,6 +79,28 @@ object ServerListRepository {
     }
 
     /**
+     * Downloads vpngate.net's own mirror-sites page and extracts up to [MAX_SCRAPED_MIRRORS]
+     * `.../api/iphone/` URLs from the `http://IP:PORT/en/` entries it lists. Returns an empty
+     * list on any failure (this is itself just one tier of a multi-tier fallback chain).
+     */
+    private fun fetchMirrorApiUrls(): List<String> {
+        return try {
+            val request = Request.Builder().url(MIRROR_SITES_LIST_URL).build()
+            client.newCall(request).execute().use { response ->
+                val body = response.body?.string() ?: return emptyList()
+                MIRROR_URL_PATTERN.findAll(body)
+                    .map { it.value.removeSuffix("/en/") + "/api/iphone/" }
+                    .distinct()
+                    .take(MAX_SCRAPED_MIRRORS)
+                    .toList()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch mirror sites list: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
      * Tries each source in turn and persists the first one that returns a non-empty list.
      * Returns the number of servers stored. Throws if every source failed.
      */
@@ -87,28 +115,58 @@ object ServerListRepository {
             dataUtil.baseUrl + "/api/iphone/"
         }
         val mirrorUrl = FirebaseRemoteConfig.getInstance().getString("vpn_alternative_api") + "/api/iphone/"
-        val sources = listOf(primaryUrl, mirrorUrl, GITHUB_CSV_FALLBACK_URL).distinct()
 
+        // The mirror-sites page is only fetched if both direct sources fail below - no need to
+        // pay for that extra request on the (overwhelmingly common) happy path.
         var lastError: Throwable? = null
-        for ((index, url) in sources.withIndex()) {
+        val directSources = listOf(primaryUrl, mirrorUrl).distinct()
+        for ((index, url) in directSources.withIndex()) {
             try {
-                val isFallback = url == GITHUB_CSV_FALLBACK_URL
-                val csv = service.getCsvString(url, if (isFallback) null else version)
+                val csv = service.getCsvString(url, version)
                 val list = parseCsv(csv)
                 if (list.size() > 0) {
-                    val items = list.toVPNGateItems()
-                    App.instance!!.vpnGateItemDao.deleteAll()
-                    App.instance!!.vpnGateItemDao.insertAll(*items.toTypedArray())
-                    dataUtil.connectionsCache = list
-                    dataUtil.lastServerListUpdateAt = Date()
-                    Log.i(TAG, "Synced ${items.size} servers from source #$index ($url)")
-                    return items.size
+                    return persist(list, dataUtil, "direct source #$index ($url)")
                 }
             } catch (e: Throwable) {
                 lastError = e
                 Log.w(TAG, "Server list source #$index failed ($url): ${e.message}")
             }
         }
+
+        for (mirrorApiUrl in fetchMirrorApiUrls()) {
+            try {
+                val csv = service.getCsvString(mirrorApiUrl, version)
+                val list = parseCsv(csv)
+                if (list.size() > 0) {
+                    return persist(list, dataUtil, "scraped mirror ($mirrorApiUrl)")
+                }
+            } catch (e: Throwable) {
+                lastError = e
+                Log.w(TAG, "Scraped mirror failed ($mirrorApiUrl): ${e.message}")
+            }
+        }
+
+        try {
+            val csv = service.getCsvString(GITHUB_CSV_FALLBACK_URL, null)
+            val list = parseCsv(csv)
+            if (list.size() > 0) {
+                return persist(list, dataUtil, "GitHub CSV fallback")
+            }
+        } catch (e: Throwable) {
+            lastError = e
+            Log.w(TAG, "GitHub CSV fallback failed: ${e.message}")
+        }
+
         throw lastError ?: IllegalStateException("All server list sources returned empty results")
+    }
+
+    private fun persist(list: VPNGateConnectionList, dataUtil: DataUtil, sourceDescription: String): Int {
+        val items = list.toVPNGateItems()
+        App.instance!!.vpnGateItemDao.deleteAll()
+        App.instance!!.vpnGateItemDao.insertAll(*items.toTypedArray())
+        dataUtil.connectionsCache = list
+        dataUtil.lastServerListUpdateAt = Date()
+        Log.i(TAG, "Synced ${items.size} servers from $sourceDescription")
+        return items.size
     }
 }

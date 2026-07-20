@@ -18,11 +18,17 @@ import vn.unlimit.vpngate.utils.SpinnerInit
 import vn.unlimit.vpngate.utils.SpinnerInit.OnItemSelectedIndexListener
 
 
-class FilterBottomSheetDialog(filter: VPNGateConnectionList.Filter?) : BottomSheetDialogFragment() {
+class FilterBottomSheetDialog(
+    filter: VPNGateConnectionList.Filter?,
+    private val countries: List<Pair<String, String>> = emptyList()
+) : BottomSheetDialogFragment() {
     companion object {
         @JvmStatic
-        fun newInstance(filter: VPNGateConnectionList.Filter?): FilterBottomSheetDialog {
-            return FilterBottomSheetDialog(filter)
+        fun newInstance(
+            filter: VPNGateConnectionList.Filter?,
+            countries: List<Pair<String, String>> = emptyList()
+        ): FilterBottomSheetDialog {
+            return FilterBottomSheetDialog(filter, countries)
         }
     }
 
@@ -123,6 +129,23 @@ class FilterBottomSheetDialog(filter: VPNGateConnectionList.Filter?) : BottomShe
         spinnerInitSession.onItemSelectedIndexListener = object: OnItemSelectedIndexListener {
             override fun onItemSelected(name: String?, index: Int) {
                 mFilter.sessionCountFilterOperator = listOperatorEnum[index]
+            }
+        }
+
+        // Country filter - "All countries" (index 0, clears the filter) plus every distinct
+        // country currently present in the server list, passed in from the caller.
+        val allCountriesLabel = resources.getString(R.string.filter_all_countries)
+        val countryShortCodes = listOf<String?>(null) + countries.map { it.first }
+        val countryLabels = listOf(allCountriesLabel) + countries.map { it.second }
+        val spinnerInitCountry = SpinnerInit(context, binding.spinnerCountry)
+        val selectedCountryIndex = countryShortCodes.indexOf(mFilter.countryShort).let { if (it < 0) 0 else it }
+        spinnerInitCountry.setStringArray(
+            countryLabels.toTypedArray(),
+            countryLabels[selectedCountryIndex]
+        )
+        spinnerInitCountry.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
+            override fun onItemSelected(name: String?, index: Int) {
+                mFilter.countryShort = countryShortCodes.getOrNull(index)
             }
         }
     }

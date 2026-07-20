@@ -492,8 +492,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
         }
 
         if (itemId == R.id.action_filter && vpnGateConnectionList != null) {
+            val countries = LinkedHashMap<String, String>()
+            for (i in 0 until vpnGateConnectionList!!.size()) {
+                val item = vpnGateConnectionList!!.get(i)
+                val short = item.countryShort
+                val long = item.countryLong
+                if (!short.isNullOrBlank() && !long.isNullOrBlank()) {
+                    countries[short] = long
+                }
+            }
+            val countryPairs = countries.entries
+                .map { it.key to it.value }
+                .sortedBy { it.second }
             val filterBottomSheetDialog = newInstance(
-                vpnGateConnectionList!!.filter
+                vpnGateConnectionList!!.filter,
+                countryPairs
             )
             filterBottomSheetDialog.onButtonClickListener =
                 object : OnButtonClickListener {

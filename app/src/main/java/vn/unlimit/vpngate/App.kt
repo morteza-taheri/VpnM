@@ -13,6 +13,7 @@ import vn.unlimit.vpngate.activities.MainActivity
 import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import vn.unlimit.vpngate.compat.LocalTask as Task
 import vn.unlimit.vpngate.db.AppDatabase
+import vn.unlimit.vpngate.db.BookmarkedServerDao
 import vn.unlimit.vpngate.db.ExcludedAppDao
 import vn.unlimit.vpngate.db.VPNGateItemDao
 import vn.unlimit.vpngate.models.ExcludedApp
@@ -28,6 +29,7 @@ class App : Application() {
     private lateinit var appDatabase: AppDatabase
     lateinit var vpnGateItemDao: VPNGateItemDao
     lateinit var excludedAppDao: ExcludedAppDao
+    lateinit var bookmarkedServerDao: BookmarkedServerDao
 
     override fun onCreate() {
         super.onCreate()
@@ -44,10 +46,12 @@ class App : Application() {
                 }
             })
             .addMigrations(AppDatabase.MIGRATION_2_3)
+            .addMigrations(AppDatabase.MIGRATION_3_4)
             .allowMainThreadQueries() // Allow main thread queries for VPN profile configuration
             .build()
         vpnGateItemDao = appDatabase.vpnGateItemDao()
         excludedAppDao = appDatabase.excludedAppDao()
+        bookmarkedServerDao = appDatabase.bookmarkedServerDao()
 
         // Initialize default excluded apps
         initializeDefaultExcludedApps()

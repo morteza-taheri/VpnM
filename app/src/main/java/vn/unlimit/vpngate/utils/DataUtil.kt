@@ -99,7 +99,7 @@ class DataUtil(context: Context?) {
                 val calendar = Calendar.getInstance()
                 //Cache in minute get from setting
                 val cacheTime = intArrayOf(15, 30, 60, 120, 240, 480, 960)
-                val minute = cacheTime[getIntSetting(SETTING_CACHE_TIME_KEY, 0)]
+                val minute = cacheTime[getIntSetting(SETTING_CACHE_TIME_KEY, DEFAULT_CACHE_TIME_INDEX)]
                 calendar.add(Calendar.MINUTE, minute)
                 cache.expires = calendar.time
                 val outFile = File(mContext!!.filesDir, CONNECTION_CACHE_KEY)
@@ -316,6 +316,8 @@ class DataUtil(context: Context?) {
     companion object {
         const val TAG = "DataUtil"
         const val SETTING_CACHE_TIME_KEY: String = "SETTING_CACHE_TIME_KEY"
+        // Index into the 7-item cache-time array [15,30,60,120,240,480,960 minutes] - 3 = 2 hours.
+        const val DEFAULT_CACHE_TIME_INDEX = 3
         const val SETTING_HIDE_OPERATOR_MESSAGE_COUNT: String =
             "SETTING_HIDE_OPERATOR_MESSAGE_COUNT"
         const val USER_ALLOWED_VPN: String = "USER_ALLOWED_VPN"

@@ -137,6 +137,10 @@ class VPNGateConnectionList : Parcelable {
 
     private fun getWhereQuery(): String {
         var whereQuery = ""
+        if (!filter?.countryShort.isNullOrBlank()) {
+            val escaped = filter!!.countryShort!!.replace("'", "''")
+            whereQuery = appendQuery(whereQuery, "countryShort = '$escaped'")
+        }
         if (filter?.ping != null) {
             whereQuery = "ping ${getOperator(filter!!.pingFilterOperator)} ${filter!!.ping}"
         }
@@ -236,6 +240,7 @@ class VPNGateConnectionList : Parcelable {
         var isShowUDP: Boolean = true
         var isShowL2TP: Boolean = true
         var isShowSSTP: Boolean = true
+        var countryShort: String? = null
         var ping: Int? = null
         var pingFilterOperator: NumberFilterOperator = NumberFilterOperator.LESS_OR_EQUAL
         var speed: Int? = null

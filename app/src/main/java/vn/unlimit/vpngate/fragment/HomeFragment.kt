@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -33,6 +34,7 @@ import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.BookmarkManager
 import vn.unlimit.vpngate.utils.JalaliDateUtil
 import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
 
@@ -40,7 +42,8 @@ import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
  * Created by hoangnd on 1/30/2018.
  */
 class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItemClickListener,
-    OnItemLongClickListener, OnScrollListener {
+    OnItemLongClickListener, OnScrollListener, VPNGateListAdapter.OnBookmarkToggleListener,
+    VPNGateListAdapter.OnPingTestListener {
     companion object {
         private const val TAG = "HOME_FREE"
     }
@@ -116,6 +119,8 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
         vpnGateListAdapter!!.setOnItemClickListener(this)
         vpnGateListAdapter!!.setOnItemLongClickListener(this)
         vpnGateListAdapter!!.setOnScrollListener(this)
+        vpnGateListAdapter!!.setOnBookmarkToggleListener(this)
+        vpnGateListAdapter!!.setOnPingTestListener(this)
         binding.btnToTop.setOnClickListener(this)
         updateLastUpdatedLabel()
         return binding.root
@@ -303,11 +308,23 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
                     mActivity!!.sortType
                 )
             }
+            val liveHostNames = HashSet<String>()
+            for (i in 0 until (vpnGateConnectionList?.size() ?: 0)) {
+                vpnGateConnectionList?.get(i)?.hostName?.let { liveHostNames.add(it) }
+            }
+            val bookmarkedHostNames = BookmarkManager.getAllHostNames()
+            val offlineBookmarks = BookmarkManager.getOfflineBookmarks(liveHostNames)
+            // Bookmarked-but-missing servers are shown first, as read-only "offline" rows.
+            val merged = VPNGateConnectionList()
+            offlineBookmarks.forEach { merged.add(it) }
+            vpnGateConnectionList?.let { merged.addAll(it) }
+            val offlineHostNames = offlineBookmarks.mapNotNull { it.hostName }.toSet()
             withContext(Dispatchers.Main) {
-                mActivity!!.vpnGateConnectionList = vpnGateConnectionList
+                mActivity!!.vpnGateConnectionList = merged
                 binding.txtEmpty.visibility = View.GONE
                 binding.rcvConnection.visibility = View.VISIBLE
-                vpnGateListAdapter!!.initialize(vpnGateConnectionList)
+                vpnGateListAdapter!!.initialize(merged)
+                vpnGateListAdapter!!.setBookmarkState(bookmarkedHostNames, offlineHostNames)
                 binding.lnSwipeRefresh.isRefreshing = false
                 updateLastUpdatedLabel()
             }
@@ -338,6 +355,55 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e(TAG, e.message, e)
+        }
+    }
+
+    override fun onBookmarkToggle(item: VPNGateConnection, position: Int) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val nowBookmarked = BookmarkManager.toggleBookmark(item)
+                val allBookmarked = BookmarkManager.getAllHostNames()
+                withContext(Dispatchers.Main) {
+                    vpnGateListAdapter?.setBookmarkState(allBookmarked, emptySet())
+                    Toast.makeText(
+                        mContext,
+                        getString(if (nowBookmarked) R.string.bookmark_added else R.string.bookmark_removed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "onBookmarkToggle error", e)
+            }
+        }
+    }
+
+    override fun onPingTest(item: VPNGateConnection, position: Int) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val hostName = item.hostName ?: return@launch
+            val displayText = try {
+                val port = when {
+                    item.tcpPort != 0 -> item.tcpPort
+                    item.udpPort != 0 -> item.udpPort
+                    item.seTcpPort != 0 -> item.seTcpPort
+                    else -> 443
+                }
+                val ip = item.ip
+                if (ip.isNullOrBlank()) {
+                    getString(R.string.ping_test_failed)
+                } else {
+                    val start = System.currentTimeMillis()
+                    java.net.Socket().use { socket ->
+                        socket.connect(java.net.InetSocketAddress(ip, port), 4000)
+                    }
+                    val elapsed = System.currentTimeMillis() - start
+                    "${elapsed}ms"
+                }
+            } catch (e: Exception) {
+                getString(R.string.ping_test_failed)
+            }
+            withContext(Dispatchers.Main) {
+                vpnGateListAdapter?.updatePingResult(hostName, displayText)
+            }
         }
     }
 }
