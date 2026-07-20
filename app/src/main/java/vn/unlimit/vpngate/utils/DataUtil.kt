@@ -299,6 +299,12 @@ class DataUtil(context: Context?) {
         }
     }
 
+    /** Hostname of the server currently connected via VPN (any protocol), or null if none. Used
+     *  to highlight the connected row in the server list. */
+    var connectedServerHostName: String?
+        get() = getStringSetting(CONNECTED_SERVER_HOSTNAME, null)
+        set(value) = setStringSetting(CONNECTED_SERVER_HOSTNAME, value)
+
     fun setLongSetting(key: String?, value: Long) {
         val editor = sharedPreferencesSetting!!.edit()
         editor.putLong(key, value)
@@ -340,6 +346,7 @@ class DataUtil(context: Context?) {
         const val SETTING_THEME: String = "SETTING_THEME"
         const val SETTING_LANGUAGE: String = "SETTING_LANGUAGE"
         const val LAST_SERVER_LIST_UPDATE_AT: String = "LAST_SERVER_LIST_UPDATE_AT"
+        const val CONNECTED_SERVER_HOSTNAME: String = "CONNECTED_SERVER_HOSTNAME"
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1
         const val THEME_DARK = 2

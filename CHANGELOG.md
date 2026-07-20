@@ -1,10 +1,30 @@
 # Changelog
 
 All notable changes to this fork of vpngate-connector are documented here.
-Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versions follow
+Format follows [Keep a Changelog](https://keepachangelog.com/), versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [2.4.0 / 2.3.0 (pro)] - Unreleased
+## [Unreleased]
+
+### Added
+- **Connected-server highlight**: the row for the server currently connected via VPN (any
+  protocol - SoftEther, OpenVPN, or MS-SSTP) is highlighted green in the server list, so it's
+  clear at a glance which server is active.
+
+### Known limitations (carried over, still true)
+- The connection log console only captures OpenVPN log messages (SoftEther/SSTP not wired in).
+- No automated CI version-bump/git-hook; version numbers in `app/build.gradle` are bumped by
+  hand alongside each notable batch of changes.
+- HTML-page parsing of vpngate.net (in addition to its CSV API) and vpngate.net mirror-sites
+  *HTML* fallback (as opposed to the CSV mirror-scraping already implemented) are not
+  implemented - assessed as high-risk/fragile without a way to test against the live page
+  structure repeatedly; deferred.
+- Kill switch (block all traffic if the VPN drops) and DNS-over-HTTPS are not implemented.
+- Auto-connect / automatic fallback to the next-best server on disconnect is not implemented.
+- The server list has no dedicated "show only bookmarks" filter tab yet (bookmarks are pinned
+  to the top of the normal list instead).
+
+## [2.4.0 / 2.3.0 (pro)] - 2026-07-19
 
 ### Added
 - **Bookmarks**: star any server to keep it permanently, in a database table that survives
@@ -43,14 +63,6 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versions
   Values that used to come from Firebase Remote Config are now fixed local defaults (see
   `vn.unlimit.vpngate.compat`). This build cannot show ads, sell in-app purchases, send push
   notifications, or report analytics/crashes anywhere - by design.
-
-### Known limitations
-- The connection log console currently only captures OpenVPN log messages (SoftEther/SSTP are
-  not wired in yet).
-- `Servers.csv` now exists at the repo root (added directly via GitHub) - keep it reasonably
-  up to date, since it's what the app falls back to if every live source is unreachable.
-- No automated CI version-bump/git-hook is set up; version numbers in `app/build.gradle` are
-  bumped by hand alongside each notable batch of changes (see this file).
 
 ## Earlier history
 

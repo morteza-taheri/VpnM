@@ -186,6 +186,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     isSoftEtherConnected = true
                     isConnecting = false
                     isSoftEtherConnecting = false
+                    dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                     binding.btnConnect.background = ResourcesCompat.getDrawable(
                         resources, R.drawable.selector_red_button, null
                     )
@@ -212,6 +213,9 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     isSoftEtherConnected = false
                     isConnecting = false
                     isSoftEtherConnecting = false
+                    if (dataUtil.connectedServerHostName == mVpnGateConnection?.hostName) {
+                        dataUtil.connectedServerHostName = null
+                    }
                     binding.btnConnect.background = ResourcesCompat.getDrawable(
                         resources, R.drawable.selector_primary_button, null
                     )
@@ -308,6 +312,9 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         isSSTPConnected = false
                         isConnecting = false
                         isSSTPConnectOrDisconnecting = false
+                        if (dataUtil.connectedServerHostName == mVpnGateConnection?.hostName) {
+                            dataUtil.connectedServerHostName = null
+                        }
                         binding.txtCheckIp.visibility = View.GONE
                         binding.txtNetStats.visibility = View.GONE
                         binding.btnConnect.background = ResourcesCompat.getDrawable(
@@ -321,6 +328,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     if (connectedIp!!.isNotEmpty()) {
                         binding.txtStatus.text = getString(R.string.sstp_connected, connectedIp)
                         dataUtil.setBooleanSetting(DataUtil.IS_LAST_CONNECTED_PAID, false)
+                        dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                         isSSTPConnected = true
                         isConnecting = false
                         isSSTPConnectOrDisconnecting = false
@@ -506,6 +514,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                 when (status) {
                     ConnectionStatus.LEVEL_CONNECTED -> {
                         if (isCurrent) {
+                            dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                             binding.btnConnect.background = ResourcesCompat.getDrawable(
                                 resources, R.drawable.selector_red_button, null
                             )
@@ -542,6 +551,9 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     }
 
                     ConnectionStatus.LEVEL_NOTCONNECTED -> if (!isConnecting && !isAuthFailed) {
+                        if (dataUtil.connectedServerHostName == mVpnGateConnection?.hostName) {
+                            dataUtil.connectedServerHostName = null
+                        }
                         if (!isSSTPConnected) {
                             binding.txtCheckIp.visibility = View.GONE
                         }

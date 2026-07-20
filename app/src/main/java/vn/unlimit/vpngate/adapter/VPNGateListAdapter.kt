@@ -36,6 +36,7 @@ class VPNGateListAdapter(private val mContext: Context) :
     private var lastPosition = 0
     private var bookmarkedHostNames: Set<String> = emptySet()
     private var offlineHostNames: Set<String> = emptySet()
+    private var connectedHostName: String? = null
     // hostName -> "testing" / a formatted ping string, shown instead of the cached CSV ping
     // value once the user taps the per-row ping-test button.
     private val livePingResults = HashMap<String, String>()
@@ -67,6 +68,14 @@ class VPNGateListAdapter(private val mContext: Context) :
     fun setBookmarkState(bookmarked: Set<String>, offline: Set<String>) {
         bookmarkedHostNames = bookmarked
         offlineHostNames = offline
+        notifyDataSetChanged()
+    }
+
+    /** Highlights the row for the server currently connected via VPN (any protocol), if any. */
+    @SuppressLint("NotifyDataSetChanged")
+    fun setConnectedHostName(hostName: String?) {
+        if (connectedHostName == hostName) return
+        connectedHostName = hostName
         notifyDataSetChanged()
     }
 
@@ -127,6 +136,7 @@ class VPNGateListAdapter(private val mContext: Context) :
 
     private inner class VHTypeVPN(itemView: View) : RecyclerView.ViewHolder(itemView),
         View.OnClickListener, OnLongClickListener {
+        var lnItemRoot: View = itemView.findViewById(R.id.ln_item_root)
         var imgFlag: ImageView = itemView.findViewById(R.id.img_flag)
         var txtCountry: TextView = itemView.findViewById(R.id.txt_country)
         var txtIp: TextView = itemView.findViewById(R.id.txt_ip)
@@ -214,6 +224,11 @@ class VPNGateListAdapter(private val mContext: Context) :
                 )
                 txtOfflineBadge.visibility =
                     if (hostName in offlineHostNames) View.VISIBLE else View.GONE
+                lnItemRoot.background = if (hostName.isNotEmpty() && hostName == connectedHostName) {
+                    androidx.core.content.ContextCompat.getDrawable(mContext, R.drawable.bg_item_connected)
+                } else {
+                    null
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "bindViewHolder error", e)
                 e.printStackTrace()

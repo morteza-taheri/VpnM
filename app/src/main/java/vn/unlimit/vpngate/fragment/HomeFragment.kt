@@ -126,6 +126,11 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        vpnGateListAdapter?.setConnectedHostName(dataUtil?.connectedServerHostName)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         lifecycleScope.launch(Dispatchers.IO) {
             if ("" != mActivity!!.sortProperty) {
