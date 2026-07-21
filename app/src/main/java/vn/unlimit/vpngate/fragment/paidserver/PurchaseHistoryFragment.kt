@@ -57,7 +57,7 @@ class PurchaseHistoryFragment : Fragment(), View.OnClickListener,
             if (purchaseList.size > 0) {
                 binding.lnNoPurchase.visibility = View.GONE
                 binding.lnSwipeRefresh.visibility = View.VISIBLE
-                purchaseHistoryAdapter?.initialize(purchaseList)
+                purchaseHistoryAdapter?.initialize(ArrayList(purchaseList))
             } else {
                 binding.lnSwipeRefresh.visibility = View.GONE
                 binding.lnNoPurchase.visibility = View.VISIBLE
