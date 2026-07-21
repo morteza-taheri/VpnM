@@ -264,13 +264,12 @@ class DataUtil(context: Context?) {
         editor.apply()
     }
 
+    // The in-app "accept privacy policy" gate has been removed entirely per user request - the
+    // getter always returns true so nothing in the app blocks on it anymore. The setter is kept
+    // as a harmless no-op so existing call sites don't need to change.
     var isAcceptedPrivacyPolicy: Boolean
-        get() = sharedPreferencesSetting!!.getBoolean(ACCEPTED_PRIVACY_POLICY, false)
-        set(isAccepted) {
-            val editor = sharedPreferencesSetting!!.edit()
-            editor.putBoolean(ACCEPTED_PRIVACY_POLICY, isAccepted)
-            editor.apply()
-        }
+        get() = true
+        set(_) {}
 
     /**
      * When the VPN Gate server list was last successfully refreshed from any source
