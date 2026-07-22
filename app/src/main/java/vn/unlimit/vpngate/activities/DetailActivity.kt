@@ -1080,7 +1080,11 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         if (!dataUtil.getBooleanSetting(DataUtil.SETTING_AUTO_CONNECT, false)) return
         if (isFinishing || isDestroyed) return
         if (autoReconnectAttempts >= MAX_AUTO_RECONNECT_ATTEMPTS) {
-            Log.w(TAG, "Auto-reconnect: giving up after $autoReconnectAttempts attempts")
+            Log.i(
+                TAG,
+                "Auto-reconnect: giving up on this server after $autoReconnectAttempts attempts - trying the next-best server instead"
+            )
+            switchToNextBestServerAndReconnect()
             return
         }
         autoReconnectAttempts++
@@ -1092,6 +1096,39 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                 showVpnProtocolSelectionDialog()
             }
         }, AUTO_RECONNECT_DELAY_MS)
+    }
+
+    /**
+     * Auto-connect fallback (spec 7.1): when the same server keeps failing, move on to the
+     * next-best-scoring server instead of retrying forever. Relaunches DetailActivity for that
+     * server (reusing the normal, already-tested startup/auto-connect path) rather than trying
+     * to swap servers inside this live Activity instance.
+     */
+    private fun switchToNextBestServerAndReconnect() {
+        val currentHostName = mVpnGateConnection?.hostName
+        Thread {
+            try {
+                val next = App.instance!!.vpnGateItemDao.getAll()
+                    .filter { it.hostName != currentHostName }
+                    .maxByOrNull { it.score }
+                if (next != null) {
+                    val nextConnection = VPNGateConnection().fromVPNGateItem(next)
+                    Handler(Looper.getMainLooper()).post {
+                        if (!isFinishing && !isDestroyed) {
+                            val intent = Intent(this, DetailActivity::class.java)
+                            intent.putExtra(BaseProvider.PASS_DETAIL_VPN_CONNECTION, nextConnection)
+                            intent.putExtra(EXTRA_AUTO_CONNECT_ON_LAUNCH, true)
+                            startActivity(intent)
+                            finish()
+                        }
+                    }
+                } else {
+                    Log.w(TAG, "Auto-reconnect: no other server available to fall back to")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "switchToNextBestServerAndReconnect error", e)
+            }
+        }.start()
     }
 
     private fun sendConnectVPN() {

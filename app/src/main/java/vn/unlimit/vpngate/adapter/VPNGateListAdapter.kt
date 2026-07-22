@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import vn.unlimit.vpngate.App.Companion.instance
 import vn.unlimit.vpngate.R
@@ -37,6 +38,7 @@ class VPNGateListAdapter(private val mContext: Context) :
     private var bookmarkedHostNames: Set<String> = emptySet()
     private var offlineHostNames: Set<String> = emptySet()
     private var connectedHostName: String? = null
+    private var selectedHostName: String? = null
     // hostName -> "testing" / a formatted ping string, shown instead of the cached CSV ping
     // value once the user taps the per-row ping-test button.
     private val livePingResults = HashMap<String, String>()
@@ -76,6 +78,15 @@ class VPNGateListAdapter(private val mContext: Context) :
     fun setConnectedHostName(hostName: String?) {
         if (connectedHostName == hostName) return
         connectedHostName = hostName
+        notifyDataSetChanged()
+    }
+
+    /** Highlights the row for the last server the user connected to/attempted, if not already
+     *  shown as connected (connected takes precedence - see bindViewHolder). */
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSelectedHostName(hostName: String?) {
+        if (selectedHostName == hostName) return
+        selectedHostName = hostName
         notifyDataSetChanged()
     }
 
@@ -196,6 +207,17 @@ class VPNGateListAdapter(private val mContext: Context) :
                 txtUptime.text = vpnGateConnection.getCalculateUpTime(mContext)
                 txtSpeed.text = vpnGateConnection.calculateSpeed
                 txtPing.text = livePingResults[vpnGateConnection.hostName] ?: vpnGateConnection.pingAsString
+                txtPing.setTextColor(
+                    ContextCompat.getColor(
+                        mContext,
+                        when {
+                            vpnGateConnection.ping in 1..99 -> R.color.dashEmerald400
+                            vpnGateConnection.ping in 100..300 -> R.color.dashCyan500
+                            vpnGateConnection.ping > 300 -> R.color.colorRed
+                            else -> R.color.colorTextPrimary
+                        }
+                    )
+                )
                 txtSession.text = vpnGateConnection.numVpnSessionAsString
                 txtOwner.text = vpnGateConnection.operator
                 val dataUtil = instance!!.dataUtil
@@ -224,10 +246,12 @@ class VPNGateListAdapter(private val mContext: Context) :
                 )
                 txtOfflineBadge.visibility =
                     if (hostName in offlineHostNames) View.VISIBLE else View.GONE
-                lnItemRoot.background = if (hostName.isNotEmpty() && hostName == connectedHostName) {
-                    androidx.core.content.ContextCompat.getDrawable(mContext, R.drawable.bg_item_connected)
-                } else {
-                    null
+                lnItemRoot.background = when {
+                    hostName.isNotEmpty() && hostName == connectedHostName ->
+                        ContextCompat.getDrawable(mContext, R.drawable.bg_item_connected)
+                    hostName.isNotEmpty() && hostName == selectedHostName ->
+                        ContextCompat.getDrawable(mContext, R.drawable.bg_item_selected)
+                    else -> null
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "bindViewHolder error", e)

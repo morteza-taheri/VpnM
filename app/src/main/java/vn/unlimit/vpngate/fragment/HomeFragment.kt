@@ -129,6 +129,7 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
     override fun onResume() {
         super.onResume()
         vpnGateListAdapter?.setConnectedHostName(dataUtil?.connectedServerHostName)
+        vpnGateListAdapter?.setSelectedHostName(dataUtil?.lastVPNConnection?.hostName)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -330,6 +331,8 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
                 binding.rcvConnection.visibility = View.VISIBLE
                 vpnGateListAdapter!!.initialize(merged)
                 vpnGateListAdapter!!.setBookmarkState(bookmarkedHostNames, offlineHostNames)
+                vpnGateListAdapter!!.setConnectedHostName(dataUtil?.connectedServerHostName)
+                vpnGateListAdapter!!.setSelectedHostName(dataUtil?.lastVPNConnection?.hostName)
                 binding.lnSwipeRefresh.isRefreshing = false
                 updateLastUpdatedLabel()
             }
