@@ -83,6 +83,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     var sortType: Int = VPNGateConnectionList.ORDER.ASC
         private set
     private var disallowLoadHome = false
+    private var autoConnectAttemptedThisSession = false
     private var isInFront = false
     private lateinit var binding: ActivityMainBinding
     private val broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -248,8 +249,26 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
     /**
      * Check network and process first state
      */
+    /**
+     * Settings -> Auto-connect: if enabled and nothing is currently connected, reconnect to the
+     * last-used server automatically (once per app process). DetailActivity does the actual
+     * connecting - see its EXTRA_AUTO_CONNECT_ON_LAUNCH handling.
+     */
+    private fun maybeAutoConnectOnStartup() {
+        if (autoConnectAttemptedThisSession) return
+        if (!dataUtil!!.getBooleanSetting(DataUtil.SETTING_AUTO_CONNECT, false)) return
+        if (dataUtil!!.connectedServerHostName != null) return
+        val lastConnection = dataUtil!!.lastVPNConnection ?: return
+        autoConnectAttemptedThisSession = true
+        val intent = Intent(this, DetailActivity::class.java)
+        intent.putExtra(BaseProvider.PASS_DETAIL_VPN_CONNECTION, lastConnection)
+        intent.putExtra(DetailActivity.EXTRA_AUTO_CONNECT_ON_LAUNCH, true)
+        startActivity(intent)
+    }
+
     private fun initState() {
         checkStatusMenu()
+        maybeAutoConnectOnStartup()
         if (dataUtil!!.getIntSetting(
                 DataUtil.SETTING_STARTUP_SCREEN,
                 0

@@ -207,6 +207,9 @@
     <string name="sync_log_title">Server sync log</string>
     <string name="sync_log_empty">No sync activity yet</string>
     <string name="url_cannot_be_empty">URL cannot be empty</string>
+    <string name="server_flag">Server flag</string>
+    <string name="auto_connect_label">Auto-Connect</string>
+    <string name="default_protocol_label">Default protocol</string>
     <string name="get_pro_version">Get Pro version</string>
     <string name="status">Status</string>
     <string name="tap_to_disconnect">Tap button to disconnect from %1$s</string>

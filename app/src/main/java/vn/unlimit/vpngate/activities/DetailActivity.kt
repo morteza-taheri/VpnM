@@ -98,6 +98,11 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
     private var isAuthFailed = false
     private var isSSTPConnectOrDisconnecting = false
     private var isSSTPConnected = false
+    // Auto-reconnect (Settings -> Auto-connect): only re-triggered when the drop wasn't caused
+    // by the user tapping Disconnect/Cancel themselves, and capped so a persistently failing
+    // server doesn't retry forever.
+    private var isUserInitiatedDisconnect = false
+    private var autoReconnectAttempts = 0
     private lateinit var binding: ActivityDetailBinding
     private lateinit var excludeAppsManager: vn.unlimit.vpngate.utils.ExcludeAppsManager
     private var isSoftEtherConnected = false
@@ -187,6 +192,8 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     isConnecting = false
                     isSoftEtherConnecting = false
                     dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
+                    autoReconnectAttempts = 0
+                    isUserInitiatedDisconnect = false
                     binding.btnConnect.background = ResourcesCompat.getDrawable(
                         resources, R.drawable.selector_red_button, null
                     )
@@ -223,6 +230,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     binding.txtStatus.text = getString(R.string.softether_disconnected)
                     binding.txtNetStats.visibility = View.GONE
                     binding.txtCheckIp.visibility = View.GONE
+                    attemptAutoReconnect()
                 }
                 SoftEtherVpnService.STATE_ERROR -> {
                     isSoftEtherConnected = false
@@ -235,6 +243,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     binding.txtStatus.text = getString(R.string.softether_disconnected_by_error)
                     binding.txtNetStats.visibility = View.GONE
                     binding.txtCheckIp.visibility = View.GONE
+                    attemptAutoReconnect()
                 }
                 else -> Log.w(TAG, "Unknown SoftEther state: $state")
             }
@@ -321,6 +330,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                             resources, R.drawable.selector_primary_button, null
                         )
                         binding.btnConnect.setText(R.string.connect_to_this_server)
+                        attemptAutoReconnect()
                     }
                 }
                 if (OscPrefKey.HOME_CONNECTED_IP.toString() == key) {
@@ -329,6 +339,8 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         binding.txtStatus.text = getString(R.string.sstp_connected, connectedIp)
                         dataUtil.setBooleanSetting(DataUtil.IS_LAST_CONNECTED_PAID, false)
                         dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
+                    autoReconnectAttempts = 0
+                    isUserInitiatedDisconnect = false
                         isSSTPConnected = true
                         isConnecting = false
                         isSSTPConnectOrDisconnecting = false
@@ -485,6 +497,11 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         VpnStatus.addStateListener(this)
         VpnStatus.addByteCountListener(this)
         binding.txtStatus.text = ""
+        if (intent.getBooleanExtra(EXTRA_AUTO_CONNECT_ON_LAUNCH, false) &&
+            mVpnGateConnection != null && !checkStatus() && !isSoftEtherConnected && !isSSTPConnected
+        ) {
+            Handler(Looper.getMainLooper()).postDelayed({ showVpnProtocolSelectionDialog() }, 400)
+        }
     }
 
     public override fun onDestroy() {
@@ -515,6 +532,8 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     ConnectionStatus.LEVEL_CONNECTED -> {
                         if (isCurrent) {
                             dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
+                    autoReconnectAttempts = 0
+                    isUserInitiatedDisconnect = false
                             binding.btnConnect.background = ResourcesCompat.getDrawable(
                                 resources, R.drawable.selector_red_button, null
                             )
@@ -563,6 +582,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         )
                         binding.txtStatus.setText(R.string.disconnected)
                         binding.txtNetStats.visibility = View.GONE
+                        attemptAutoReconnect()
                     }
 
                     ConnectionStatus.LEVEL_AUTH_FAILED -> {
@@ -827,9 +847,11 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                 if (!isConnecting) {
                     if (isSoftEtherConnected) {
                         // Disconnect active SoftEther connection
+                        isUserInitiatedDisconnect = true
                         disconnectSoftEther()
                     } else if (isSSTPConnected) {
                         // Disconnect active MS-SSTP connection
+                        isUserInitiatedDisconnect = true
                         handleSSTPBtn()
                     } else if (checkStatus() && isCurrent) {
                         val params = Bundle()
@@ -839,6 +861,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         params.putString("country", mVpnGateConnection!!.countryLong)
                         FirebaseAnalytics.getInstance(applicationContext)
                             .logEvent("Disconnect_VPN", params)
+                        isUserInitiatedDisconnect = true
                         stopVpn()
                         binding.btnConnect.background =
                             resources.getDrawable(R.drawable.selector_primary_button, resources.newTheme())
@@ -846,6 +869,8 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         binding.txtStatus.setText(R.string.disconnecting)
                     } else {
                         // Show VPN Protocol Selection Dialog
+                        isUserInitiatedDisconnect = false
+                        autoReconnectAttempts = 0
                         showVpnProtocolSelectionDialog()
                     }
                 } else {
@@ -855,6 +880,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     params.putString("ip", mVpnGateConnection!!.ip)
                     params.putString("country", mVpnGateConnection!!.countryLong)
                     FirebaseAnalytics.getInstance(applicationContext).logEvent("Cancel_VPN", params)
+                    isUserInitiatedDisconnect = true
                     // Check if it's a SoftEther connection being canceled
                     if (isSoftEtherConnecting) {
                         disconnectSoftEther()
@@ -1041,6 +1067,31 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
     // Interstitial ads (AdMob) have been removed from this build - no Google service
     // dependencies. loadAds() is kept as a no-op so existing call sites don't need to change.
     private fun loadAds() {
+    }
+
+    /**
+     * Called from each protocol's "we just dropped/failed" branch. Retries the connection to
+     * this same server (bypassing the protocol dialog when only one protocol is available - see
+     * [showVpnProtocolSelectionDialog]) unless the user tapped Disconnect/Cancel themselves, the
+     * activity is going away, or we've already retried too many times in a row.
+     */
+    private fun attemptAutoReconnect() {
+        if (isUserInitiatedDisconnect) return
+        if (!dataUtil.getBooleanSetting(DataUtil.SETTING_AUTO_CONNECT, false)) return
+        if (isFinishing || isDestroyed) return
+        if (autoReconnectAttempts >= MAX_AUTO_RECONNECT_ATTEMPTS) {
+            Log.w(TAG, "Auto-reconnect: giving up after $autoReconnectAttempts attempts")
+            return
+        }
+        autoReconnectAttempts++
+        Log.i(TAG, "Auto-reconnect: attempt $autoReconnectAttempts in ${AUTO_RECONNECT_DELAY_MS}ms")
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!isFinishing && !isDestroyed && !isConnecting &&
+                !isSoftEtherConnected && !isSSTPConnected
+            ) {
+                showVpnProtocolSelectionDialog()
+            }
+        }, AUTO_RECONNECT_DELAY_MS)
     }
 
     private fun sendConnectVPN() {
@@ -1531,11 +1582,14 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         const val TYPE_FROM_NOTIFY: Int = 1001
         const val TYPE_NORMAL: Int = 1000
         const val TYPE_START: String = "vn.unlimit.vpngate.TYPE_START"
+        const val EXTRA_AUTO_CONNECT_ON_LAUNCH: String = "vn.unlimit.vpngate.AUTO_CONNECT_ON_LAUNCH"
         const val START_VPN_PROFILE: Int = 70
         const val START_VPN_SSTP: Int = 80
         const val REQUEST_NOTIFICATION_PERMISSION: Int = 90
         const val ACTION_VPN_CONNECT: String = "kittoku.osc.connect"
         const val ACTION_VPN_DISCONNECT: String = "kittoku.osc.disconnect"
+        private const val MAX_AUTO_RECONNECT_ATTEMPTS = 5
+        private const val AUTO_RECONNECT_DELAY_MS = 4000L
         private const val TAG = "DetailActivity"
         private var mVPNService: IOpenVPNServiceInternal? = null
     }

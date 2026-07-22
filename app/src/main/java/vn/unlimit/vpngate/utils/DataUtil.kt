@@ -352,6 +352,7 @@ class DataUtil(context: Context?) {
         const val SOURCE_MIRROR_ENABLED = "SOURCE_MIRROR_ENABLED"
         const val SOURCE_GITHUB_ENABLED = "SOURCE_GITHUB_ENABLED"
         const val SOURCE_GITHUB_URL = "SOURCE_GITHUB_URL"
+        const val SETTING_AUTO_CONNECT = "SETTING_AUTO_CONNECT"
         const val DEFAULT_PRIMARY_API_URL = "https://www.vpngate.net/api/iphone/"
         const val DEFAULT_GITHUB_CSV_URL =
             "https://raw.githubusercontent.com/morteza-taheri/VpnM/master/Servers.csv"

@@ -30,6 +30,7 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
+import com.bumptech.glide.Glide
 import vn.unlimit.vpngate.compat.LocalAnalytics as FirebaseAnalytics
 import vn.unlimit.vpngate.compat.LocalRemoteConfig as FirebaseRemoteConfig
 import de.blinkt.openvpn.VpnProfile
@@ -198,6 +199,7 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         SoftEtherVpnService.addStateListener(this)
         SoftEtherVpnService.addTrafficListener(this)
         SstpVpnService.addTrafficListener(this)
+        setupQuickControls()
         return binding.root
     }
 
@@ -225,6 +227,16 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
     private fun bindData() {
         try {
             mVpnGateConnection = dataUtil!!.lastVPNConnection
+            if (mVpnGateConnection != null) {
+                binding.imgStatusFlag.visibility = View.VISIBLE
+                Glide.with(this)
+                    .load(dataUtil!!.baseUrl + "/images/flags/" + mVpnGateConnection!!.countryShort + ".png")
+                    .placeholder(R.color.colorOverlay)
+                    .error(R.color.colorOverlay)
+                    .into(binding.imgStatusFlag)
+            } else {
+                binding.imgStatusFlag.visibility = View.GONE
+            }
             if (isFreeConnected) {
                 binding.btnOnOff.isActivated = true
                 binding.txtStatus.text =
@@ -547,7 +559,38 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         }
     }
 
-    // ==== VpnG-inspired shield dashboard (connect button, glow rings, status pill, timer) ====
+    // ==== Quick controls: Auto-Connect + default protocol shortcut ====
+    private fun setupQuickControls() {
+        val du = dataUtil ?: return
+        binding.swAutoConnect.isChecked = du.getBooleanSetting(DataUtil.SETTING_AUTO_CONNECT, false)
+        binding.swAutoConnect.setOnCheckedChangeListener { _, isChecked ->
+            du.setBooleanSetting(DataUtil.SETTING_AUTO_CONNECT, isChecked)
+        }
+
+        val protocolLabels = resources.getStringArray(R.array.list_protocol)
+        fun refreshProtocolLabel() {
+            val index = du.getIntSetting(DataUtil.SETTING_DEFAULT_PROTOCOL, 0)
+                .coerceIn(0, protocolLabels.lastIndex)
+            binding.txtDefaultProtocolValue.text = protocolLabels[index]
+        }
+        refreshProtocolLabel()
+        binding.lnProtocolQuickSelect.setOnClickListener {
+            val current = du.getIntSetting(DataUtil.SETTING_DEFAULT_PROTOCOL, 0)
+                .coerceIn(0, protocolLabels.lastIndex)
+            androidx.appcompat.app.AlertDialog.Builder(mContext)
+                .setTitle(R.string.setting_default_protocol)
+                .setSingleChoiceItems(protocolLabels, current) { dialog, which ->
+                    du.setIntSetting(DataUtil.SETTING_DEFAULT_PROTOCOL, which)
+                    refreshProtocolLabel()
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+    // ==== end quick controls ====
+
+
     // Polls the existing btnOnOff.isActivated / isConnecting state twice a second rather than
     // hooking every call site that changes them, so this stays independent of the rest of the
     // (already large) connection state machine in this file.
