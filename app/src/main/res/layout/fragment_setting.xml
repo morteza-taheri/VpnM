@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/dashSlate950"
     android:orientation="vertical"
     android:theme="@style/AppTheme.Setting">
 
@@ -15,12 +16,16 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="10dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -54,7 +59,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -88,7 +96,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -139,7 +150,10 @@
                 android:id="@+id/ln_startup_screen"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -188,7 +202,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -239,7 +256,10 @@
                 android:id="@+id/ln_default_protocol"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -289,7 +309,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -339,7 +362,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <RelativeLayout
@@ -386,7 +412,10 @@
                 android:id="@+id/ln_clear_cache"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <View
@@ -439,7 +468,10 @@
                 android:id="@+id/ln_block_ads_wrap"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <View
@@ -490,7 +522,10 @@
                 android:id="@+id/ln_dns_wrap"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <View
@@ -610,7 +645,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:theme="@style/AppTheme.Setting.Item">
 
                 <TextView
