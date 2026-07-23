@@ -577,7 +577,8 @@ class StatusFragment : Fragment(), View.OnClickListener, VpnStatus.StateListener
         binding.lnProtocolQuickSelect.setOnClickListener {
             val current = du.getIntSetting(DataUtil.SETTING_DEFAULT_PROTOCOL, 0)
                 .coerceIn(0, protocolLabels.lastIndex)
-            androidx.appcompat.app.AlertDialog.Builder(mContext)
+            val ctx = mContext ?: return@setOnClickListener
+            androidx.appcompat.app.AlertDialog.Builder(ctx)
                 .setTitle(R.string.setting_default_protocol)
                 .setSingleChoiceItems(protocolLabels, current) { dialog, which ->
                     du.setIntSetting(DataUtil.SETTING_DEFAULT_PROTOCOL, which)
