@@ -353,6 +353,10 @@ class DataUtil(context: Context?) {
         const val SOURCE_GITHUB_ENABLED = "SOURCE_GITHUB_ENABLED"
         const val SOURCE_GITHUB_URL = "SOURCE_GITHUB_URL"
         const val SETTING_AUTO_CONNECT = "SETTING_AUTO_CONNECT"
+        const val SETTING_AUTO_CONNECT_TIMEOUT_INDEX = "SETTING_AUTO_CONNECT_TIMEOUT_INDEX"
+        // Index into [5,10,15,20,30,60] seconds - default index 2 = 15 seconds.
+        const val DEFAULT_AUTO_CONNECT_TIMEOUT_INDEX = 2
+        val AUTO_CONNECT_TIMEOUT_SECONDS = intArrayOf(5, 10, 15, 20, 30, 60)
         const val DEFAULT_PRIMARY_API_URL = "https://www.vpngate.net/api/iphone/"
         const val DEFAULT_GITHUB_CSV_URL =
             "https://raw.githubusercontent.com/morteza-taheri/VpnM/master/Servers.csv"

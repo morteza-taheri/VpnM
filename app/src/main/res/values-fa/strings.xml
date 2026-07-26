@@ -184,6 +184,22 @@
     <string name="ping_testing">در حال تست…</string>
     <string name="ping_test_failed">غیرقابل دسترسی</string>
     <string name="bookmarks_filter_label">بوکمارک‌ها</string>
+    <string name="exclude_apps_settings_label">اپ‌های مستثنی‌شده</string>
+    <string name="manage_button">مدیریت</string>
+    <string name="auto_connect_timeout_label">تایم‌اوت اتصال خودکار</string>
+    <string name="auto_connect_timeout_subtitle">چقدر صبر کنه قبل از تلاش مجدد/تعویض سرور بعد از قطع اتصال</string>
+    <string-array name="auto_connect_timeout_options">
+        <item>۵ ثانیه</item>
+        <item>۱۰ ثانیه</item>
+        <item>۱۵ ثانیه</item>
+        <item>۲۰ ثانیه</item>
+        <item>۳۰ ثانیه</item>
+        <item>۶۰ ثانیه</item>
+    </string-array>
+    <string name="log_module_all">همه‌ی ماژول‌ها</string>
+    <string name="log_module_softether">SoftEther</string>
+    <string name="log_module_openvpn">OpenVPN</string>
+    <string name="log_module_sstp">MS-SSTP</string>
     <string name="server_sources_label">منابع لیست سرورها</string>
     <string name="source_primary_api">API اصلی</string>
     <string name="source_mirror_pages">صفحات آینه (Mirror)</string>

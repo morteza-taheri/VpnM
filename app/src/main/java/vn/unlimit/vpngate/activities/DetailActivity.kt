@@ -64,6 +64,7 @@ import vn.unlimit.vpngate.dialog.MessageDialog
 import vn.unlimit.vpngate.dialog.VpnProtocolSelectionDialog
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.provider.BaseProvider
+import vn.unlimit.vpngate.utils.AppLogBus
 import vn.unlimit.vpngate.utils.DataUtil
 import vn.unlimit.vpngate.utils.NotificationUtil
 import java.io.ByteArrayInputStream
@@ -191,6 +192,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     isSoftEtherConnected = true
                     isConnecting = false
                     isSoftEtherConnecting = false
+                    AppLogBus.log("SoftEther", "Connected to ${mVpnGateConnection?.calculateHostName}")
                     dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                     autoReconnectAttempts = 0
                     isUserInitiatedDisconnect = false
@@ -230,6 +232,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     binding.txtStatus.text = getString(R.string.softether_disconnected)
                     binding.txtNetStats.visibility = View.GONE
                     binding.txtCheckIp.visibility = View.GONE
+                    AppLogBus.log("SoftEther", "Disconnected")
                     attemptAutoReconnect()
                 }
                 SoftEtherVpnService.STATE_ERROR -> {
@@ -243,6 +246,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     binding.txtStatus.text = getString(R.string.softether_disconnected_by_error)
                     binding.txtNetStats.visibility = View.GONE
                     binding.txtCheckIp.visibility = View.GONE
+                    AppLogBus.log("SoftEther", "Connection error")
                     attemptAutoReconnect()
                 }
                 else -> Log.w(TAG, "Unknown SoftEther state: $state")
@@ -330,6 +334,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                             resources, R.drawable.selector_primary_button, null
                         )
                         binding.btnConnect.setText(R.string.connect_to_this_server)
+                        AppLogBus.log("MS-SSTP", "Disconnected")
                         attemptAutoReconnect()
                     }
                 }
@@ -338,6 +343,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                     if (connectedIp!!.isNotEmpty()) {
                         binding.txtStatus.text = getString(R.string.sstp_connected, connectedIp)
                         dataUtil.setBooleanSetting(DataUtil.IS_LAST_CONNECTED_PAID, false)
+                        AppLogBus.log("MS-SSTP", "Connected to ${mVpnGateConnection?.calculateHostName} ($connectedIp)")
                         dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                     autoReconnectAttempts = 0
                     isUserInitiatedDisconnect = false
@@ -531,6 +537,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                 when (status) {
                     ConnectionStatus.LEVEL_CONNECTED -> {
                         if (isCurrent) {
+                            AppLogBus.log("OpenVPN", "Connected to ${mVpnGateConnection?.calculateHostName}")
                             dataUtil.connectedServerHostName = mVpnGateConnection?.hostName
                     autoReconnectAttempts = 0
                     isUserInitiatedDisconnect = false
@@ -582,6 +589,7 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
                         )
                         binding.txtStatus.setText(R.string.disconnected)
                         binding.txtNetStats.visibility = View.GONE
+                        AppLogBus.log("OpenVPN", "Disconnected")
                         attemptAutoReconnect()
                     }
 
@@ -1088,14 +1096,18 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
             return
         }
         autoReconnectAttempts++
-        Log.i(TAG, "Auto-reconnect: attempt $autoReconnectAttempts in ${AUTO_RECONNECT_DELAY_MS}ms")
+        val timeoutIndex = dataUtil.getIntSetting(
+            DataUtil.SETTING_AUTO_CONNECT_TIMEOUT_INDEX, DataUtil.DEFAULT_AUTO_CONNECT_TIMEOUT_INDEX
+        ).coerceIn(0, DataUtil.AUTO_CONNECT_TIMEOUT_SECONDS.lastIndex)
+        val delayMs = DataUtil.AUTO_CONNECT_TIMEOUT_SECONDS[timeoutIndex] * 1000L
+        Log.i(TAG, "Auto-reconnect: attempt $autoReconnectAttempts in ${delayMs}ms")
         Handler(Looper.getMainLooper()).postDelayed({
             if (!isFinishing && !isDestroyed && !isConnecting &&
                 !isSoftEtherConnected && !isSSTPConnected
             ) {
                 showVpnProtocolSelectionDialog()
             }
-        }, AUTO_RECONNECT_DELAY_MS)
+        }, delayMs)
     }
 
     /**
@@ -1626,7 +1638,6 @@ class DetailActivity : AppCompatActivity(), View.OnClickListener, VpnStatus.Stat
         const val ACTION_VPN_CONNECT: String = "kittoku.osc.connect"
         const val ACTION_VPN_DISCONNECT: String = "kittoku.osc.disconnect"
         private const val MAX_AUTO_RECONNECT_ATTEMPTS = 5
-        private const val AUTO_RECONNECT_DELAY_MS = 4000L
         private const val TAG = "DetailActivity"
         private var mVPNService: IOpenVPNServiceInternal? = null
     }

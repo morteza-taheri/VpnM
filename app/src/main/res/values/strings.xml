@@ -193,6 +193,22 @@
     <string name="ping_testing">Testing…</string>
     <string name="ping_test_failed">Unreachable</string>
     <string name="bookmarks_filter_label">Bookmarks</string>
+    <string name="exclude_apps_settings_label">Excluded apps</string>
+    <string name="manage_button">Manage</string>
+    <string name="auto_connect_timeout_label">Auto-Connect timeout</string>
+    <string name="auto_connect_timeout_subtitle">How long to wait before retrying/switching servers after a dropped connection</string>
+    <string-array name="auto_connect_timeout_options">
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>15 seconds</item>
+        <item>20 seconds</item>
+        <item>30 seconds</item>
+        <item>60 seconds</item>
+    </string-array>
+    <string name="log_module_all">All modules</string>
+    <string name="log_module_softether">SoftEther</string>
+    <string name="log_module_openvpn">OpenVPN</string>
+    <string name="log_module_sstp">MS-SSTP</string>
     <string name="server_sources_label">Server list sources</string>
     <string name="source_primary_api">Primary API</string>
     <string name="source_mirror_pages">Mirror web pages</string>

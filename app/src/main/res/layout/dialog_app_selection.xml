@@ -2,41 +2,58 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/dashSlate900"
     android:orientation="vertical"
     android:padding="16dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:text="@string/exclude_app_description"
-        android:textSize="14sp"
-        android:textColor="@color/colorTextSecondary"
-        android:layout_marginBottom="8dp" />
+        android:textColor="@color/dashSlate300"
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/excluded_count_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textColor="@color/colorPrimaryAdaptive"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        android:gravity="center" />
+        android:layout_marginBottom="14dp"
+        android:gravity="center"
+        android:textColor="@color/dashEmerald400"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/search_input"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:hint="@string/search_apps_hint"
-        android:drawableStart="@drawable/ic_search_gray"
-        android:drawablePadding="12dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/colorPrimaryAdaptive"
-        android:inputType="text"
-        android:maxLines="1"
-        android:singleLine="true" />
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_pill_disconnected"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_search_gray" />
+
+        <EditText
+            android:id="@+id/search_input"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:background="@null"
+            android:hint="@string/search_apps_hint"
+            android:inputType="text"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorWhite"
+            android:textColorHint="@color/dashSlate400"
+            android:textSize="14sp" />
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/list_container"
@@ -61,18 +78,18 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginTop="16dp"
-        android:gravity="end">
+        android:gravity="end"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:layout_marginEnd="15dp"
-            android:layout_marginRight="15dp"
+            android:layout_height="38dp"
+            android:layout_marginEnd="12dp"
             android:background="@drawable/selector_red_button"
-            android:padding="5dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:text="@string/cancel"
             android:textAllCaps="false"
             android:textColor="@color/colorWhite" />
@@ -80,11 +97,10 @@
         <Button
             android:id="@+id/btn_add"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginRight="10dp"
+            android:layout_height="38dp"
             android:background="@drawable/selector_apply_button"
-            android:padding="5dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:text="@string/apply"
             android:textAllCaps="false"
             android:textColor="@color/colorWhite" />

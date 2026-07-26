@@ -123,8 +123,29 @@ class HomeFragment : Fragment(), OnRefreshListener, View.OnClickListener, OnItem
         vpnGateListAdapter!!.setOnPingTestListener(this)
         binding.btnToTop.setOnClickListener(this)
         updateLastUpdatedLabel()
+        setupHomeLogConsole()
         return binding.root
     }
+
+    // ==== Multi-module connection log console (SoftEther/OpenVPN/MS-SSTP) ====
+    private fun setupHomeLogConsole() {
+        binding.lnHomeLogHeader.setOnClickListener {
+            val expanded = binding.lnHomeLogBody.visibility == View.VISIBLE
+            binding.lnHomeLogBody.visibility = if (expanded) View.GONE else View.VISIBLE
+            binding.imgHomeLogToggle.setImageResource(
+                if (expanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less
+            )
+        }
+        binding.btnClearHomeLog.setOnClickListener {
+            vn.unlimit.vpngate.utils.AppLogBus.clear()
+        }
+        vn.unlimit.vpngate.utils.AppLogBus.entries.observe(viewLifecycleOwner) { lines ->
+            binding.txtHomeLogConsole.text =
+                if (lines.isEmpty()) getString(R.string.log_console_empty) else lines.joinToString("\n")
+            binding.scrollHomeLog.post { binding.scrollHomeLog.fullScroll(View.FOCUS_DOWN) }
+        }
+    }
+    // ==== end log console ====
 
     override fun onResume() {
         super.onResume()

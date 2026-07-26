@@ -641,6 +641,106 @@
 
             </LinearLayout>
 
+            <!-- Auto-Connect timeout -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:theme="@style/AppTheme.Setting.Item">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="@string/auto_connect_timeout_label"
+                        android:theme="@style/label" />
+
+                    <androidx.appcompat.widget.AppCompatSpinner
+                        android:id="@+id/spin_auto_connect_timeout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@color/colorAccent"
+                        android:minWidth="100dp"
+                        android:minHeight="30dp"
+                        android:popupBackground="@color/colorPrimary"
+                        android:popupElevation="3dp" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/auto_connect_timeout_subtitle"
+                    android:textColor="@color/dashSlate400"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Excluded apps (split tunneling) -->
+            <LinearLayout
+                android:id="@+id/ln_excluded_apps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_stat_card"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:theme="@style/AppTheme.Setting.Item">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="@string/exclude_apps_settings_label"
+                        android:theme="@style/label" />
+
+                    <TextView
+                        android:id="@+id/txt_excluded_apps_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/btn_manage_excluded_apps"
+                        android:layout_marginEnd="8dp"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/btn_manage_excluded_apps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/bg_pill_connected"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="8dp"
+                        android:text="@string/manage_button"
+                        android:textColor="@color/dashEmerald400"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/exclude_app_description"
+                    android:textColor="@color/dashSlate400"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
             <!-- ==== Server list sources ==== -->
             <LinearLayout
                 android:layout_width="match_parent"

@@ -211,6 +211,8 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
         }
 
         setupServerSourcesUI()
+        setupExcludedAppsUI()
+        setupAutoConnectTimeoutUI()
 
         return binding.root
     }
@@ -354,6 +356,50 @@ class SettingFragment : Fragment(), View.OnClickListener, AdapterView.OnItemSele
         }
     }
     // ==== end server list sources ====
+
+    // ==== Excluded apps (split tunneling) - Settings entry point ====
+    private val excludeAppsManager: vn.unlimit.vpngate.utils.ExcludeAppsManager by lazy {
+        vn.unlimit.vpngate.utils.ExcludeAppsManager(mContext)
+    }
+
+    private fun setupExcludedAppsUI() {
+        excludeAppsManager.updateExcludeAppsButtonText { text ->
+            binding.txtExcludedAppsCount.text = text
+        }
+        binding.btnManageExcludedApps.setOnClickListener {
+            excludeAppsManager.openExcludeAppsManager(parentFragmentManager)
+            excludeAppsManager.setCallback(object :
+                vn.unlimit.vpngate.utils.ExcludeAppsManager.ExcludeAppsCallback {
+                override fun updateButtonText(count: Int) {
+                    binding.txtExcludedAppsCount.text =
+                        getString(R.string.exclude_apps_text, count)
+                }
+
+                override fun restartVpnIfRunning() {
+                    // Nothing running from the Settings screen itself; the next connect will
+                    // pick up the updated exclude list.
+                }
+            })
+        }
+    }
+    // ==== end excluded apps ====
+
+    // ==== Auto-Connect timeout ====
+    private fun setupAutoConnectTimeoutUI() {
+        val timeoutLabels = resources.getStringArray(R.array.auto_connect_timeout_options)
+        val spinnerInitTimeout = SpinnerInit(context, binding.spinAutoConnectTimeout)
+        val currentIndex = dataUtil.getIntSetting(
+            DataUtil.SETTING_AUTO_CONNECT_TIMEOUT_INDEX, DataUtil.DEFAULT_AUTO_CONNECT_TIMEOUT_INDEX
+        ).coerceIn(0, timeoutLabels.lastIndex)
+        spinnerInitTimeout.setStringArray(timeoutLabels, timeoutLabels[currentIndex])
+        spinnerInitTimeout.onItemSelectedIndexListener = object : OnItemSelectedIndexListener {
+            override fun onItemSelected(name: String?, index: Int) {
+                dataUtil.setIntSetting(DataUtil.SETTING_AUTO_CONNECT_TIMEOUT_INDEX, index)
+            }
+        }
+    }
+    // ==== end auto-connect timeout ====
+
 
     override fun onFocusChange(view: View, isFocus: Boolean) {
         if (!isFocus) {
