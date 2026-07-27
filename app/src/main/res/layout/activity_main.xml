@@ -49,6 +49,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="@color/dashSlate900"
         android:maxWidth="250dp"
         app:headerLayout="@layout/header_drawer"
         app:insetForeground="@android:color/transparent"
