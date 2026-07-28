@@ -65,3 +65,24 @@ proven compatible in practice. OpenSSL 4.0 (released April 2026) removes
 more legacy APIs (the whole `ENGINE` API, for instance) and hasn't been
 tested against this codebase - jumping straight there carries more risk of a
 native build failure than moving to the 3.0 LTS line does.
+
+## Known issue: `opensslconf.h` missing after `make clean`
+
+While actually running this, `build-openssl-android.sh`'s `make clean` step
+deletes `include/openssl/opensslconf.h`, and neither `./Configure` nor the
+script's `generate_headers` step recreates it under OpenSSL 3.0 (only
+`configuration.h` gets (re)generated). The build then fails partway through
+`make build_libs` because that header is missing.
+
+**Fix**: recreate the file manually if it's missing, right after
+`./Configure` (inside `build_openssl`) and again as a fallback inside
+`generate_headers` if `make build_generated` didn't produce it:
+
+```bash
+if [ ! -f include/openssl/opensslconf.h ]; then
+    echo '#include <openssl/configuration.h>' > include/openssl/opensslconf.h
+fi
+```
+
+That's the entire real content of this file in OpenSSL 3.x anyway (it's just
+a redirect to `configuration.h`), so recreating it this way is safe.
