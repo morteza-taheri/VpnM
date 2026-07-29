@@ -7,14 +7,15 @@
     tools:openDrawer="end">
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/dashSlate950">
 
         <RelativeLayout
             android:id="@+id/nav_detail"
             android:layout_width="match_parent"
             android:layout_height="@dimen/custom_header_height"
             android:layout_gravity="center_vertical"
-            android:background="@color/colorPrimaryDark"
+            android:background="@color/dashSlate900"
             android:orientation="horizontal"
             android:padding="@dimen/custom_header_padding">
 
@@ -41,9 +42,10 @@
 
                 <ImageView
                     android:id="@+id/img_flag"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center" />
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:scaleType="centerCrop" />
 
                 <TextView
                     android:id="@+id/txt_country"
@@ -55,7 +57,7 @@
                     android:textAlignment="center"
                     android:textColor="@color/colorWhite"
                     android:textSize="15sp"
-                    android:theme="@style/label" />
+                    android:textStyle="bold" />
             </LinearLayout>
 
         </RelativeLayout>
@@ -71,402 +73,422 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:theme="@style/AppTheme.DayNight">
+                android:padding="14dp">
 
+                <!-- Hostname / IP title card -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_stat_card"
                     android:orientation="vertical"
-                    android:paddingLeft="5dp"
-                    android:paddingRight="5dp">
+                    android:padding="14dp">
 
+                    <TextView
+                        android:id="@+id/txt_hostname"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:singleLine="true"
+                        android:text="vpn835694540.opengw.net"
+                        android:textColor="@color/colorWhite"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txt_ip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="192.168.1.1"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="12sp" />
+
+                    <!-- Protocol badges -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="IP"
-                            android:theme="@style/label" />
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_chip_softether"
+                            android:paddingLeft="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingRight="8dp"
+                            android:paddingBottom="3dp"
+                            android:text="SoftEther"
+                            android:textColor="@color/dashEmerald400"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText" />
 
-                        <TextView
+                        <LinearLayout
+                            android:id="@+id/ln_tcp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text=" : " />
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_chip_openvpn"
+                            android:orientation="horizontal"
+                            android:paddingLeft="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingRight="8dp"
+                            android:paddingBottom="3dp">
 
-                        <TextView
-                            android:id="@+id/txt_ip"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="TCP:"
+                                android:textColor="@color/dashCyan500"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                tools:ignore="HardcodedText" />
+
+                            <TextView
+                                android:id="@+id/txt_tcp_port"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="1194"
+                                android:textColor="@color/dashCyan500"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/ln_udp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="192.168.1.1" />
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_chip_openvpn"
+                            android:orientation="horizontal"
+                            android:paddingLeft="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingRight="8dp"
+                            android:paddingBottom="3dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="UDP:"
+                                android:textColor="@color/dashCyan500"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                tools:ignore="HardcodedText" />
+
+                            <TextView
+                                android:id="@+id/txt_udp_port"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="1193"
+                                android:textColor="@color/dashCyan500"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/ln_l2tp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_chip_l2tp"
+                            android:paddingLeft="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingRight="8dp"
+                            android:paddingBottom="3dp">
+
+                            <TextView
+                                android:id="@+id/txt_l2tp_support"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/l2tp_supported"
+                                android:textColor="@color/dashViolet400"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/ln_sstp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_chip_sstp"
+                            android:paddingLeft="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingRight="8dp"
+                            android:paddingBottom="3dp">
+
+                            <TextView
+                                android:id="@+id/txt_sstp_support"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/l2tp_supported"
+                                android:textColor="#FF9800"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
                     </LinearLayout>
+                </LinearLayout>
+
+                <!-- Stats grid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_stat_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="@string/hostname"
-                            android:theme="@style/label" />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_score"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="56125125"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/score"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text=" : " />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_ping"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="6 ms"
+                                android:textColor="@color/dashEmerald400"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/ping"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/txt_hostname"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:ellipsize="marquee"
-                            android:marqueeRepeatLimit="marquee_forever"
-                            android:singleLine="true"
-                            android:text="vpn835694540.opengw.net" />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_speed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="15 Mb/s"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/speed"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@color/lineColor" />
+
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="@string/score"
-                            android:theme="@style/label" />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_uptime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="6 days"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/uptime"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text=" : " />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_session"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="500"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/session"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/txt_score"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:singleLine="true"
-                            android:text="56125125" />
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/txt_total_user"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="1000"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_user"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/uptime"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_uptime"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="6 days" />
-                    </LinearLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@color/lineColor" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="@string/speed"
-                            android:theme="@style/label" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/owner"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                            <TextView
+                                android:id="@+id/txt_owner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:singleLine="true"
+                                android:text="Hoang Rio PC"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="12sp" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_speed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="15" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" Mb/s" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/total_traffic"
+                                android:textColor="@color/dashSlate400"
+                                android:textSize="9sp" />
+                            <TextView
+                                android:id="@+id/txt_total_traffic"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="1000 Gb"
+                                android:textColor="@color/colorWhite"
+                                android:textSize="12sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/txt_log_type"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ping"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_ping"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="6" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" ms" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/session"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_session"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="500" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/owner"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_owner"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hoang Rio PC" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/total_user"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_total_user"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1000" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/total_traffic"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_total_traffic"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1000 Gb" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/log_type"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_log_type"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Log type" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ln_tcp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/tcp_port"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_tcp_port"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1194" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ln_udp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/udp_port"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_udp_port"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1193" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ln_l2tp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/l2tp_support"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_l2tp_support"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/l2tp_supported" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:id="@+id/ln_sstp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/sstp_support"
-                            android:theme="@style/label" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=" : " />
-
-                        <TextView
-                            android:id="@+id/txt_sstp_support"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/l2tp_supported" />
-                    </LinearLayout>
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Log type"
+                        android:textColor="@color/dashSlate400"
+                        android:textSize="10sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/ln_l2tp_btn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center">
 
                     <Button
                         android:id="@+id/btn_l2tp_connect"
                         android:layout_width="wrap_content"
-                        android:layout_height="30dp"
+                        android:layout_height="38dp"
                         android:layout_marginRight="10dp"
                         android:background="@drawable/selector_apply_button"
                         android:text="@string/connect_via_l2tp"
                         android:textAllCaps="false"
-                        android:theme="@style/AppTheme.Button"
+                        android:textColor="@color/colorWhite"
                         android:visibility="visible" />
 
                     <Button
                         android:id="@+id/btn_install_openvpn"
                         android:layout_width="wrap_content"
-                        android:layout_height="35dp"
+                        android:layout_height="38dp"
                         android:layout_marginRight="10dp"
                         android:background="@drawable/selector_apply_button"
                         android:text="@string/install_openvpn"
                         android:textAllCaps="false"
-                        android:theme="@style/AppTheme.Button"
+                        android:textColor="@color/colorWhite"
                         android:visibility="gone" />
 
                     <Button
                         android:id="@+id/btn_save_config_file"
                         android:layout_width="wrap_content"
-                        android:layout_height="35dp"
+                        android:layout_height="38dp"
                         android:layout_marginRight="10dp"
                         android:background="@drawable/selector_primary_button"
                         android:paddingLeft="10dp"
@@ -481,20 +503,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center">
 
                     <Button
                         android:id="@+id/btn_connect"
-                        android:layout_width="wrap_content"
-                        android:layout_height="35dp"
-                        android:layout_marginRight="10dp"
-                        android:background="@drawable/selector_primary_button"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_shield_connected"
                         android:text="@string/connect_to_this_server"
                         android:textAllCaps="false"
-                        android:textColor="@color/colorWhite" />
+                        android:textColor="@color/colorWhite"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <TextView
@@ -508,7 +528,7 @@
                     android:focusable="true"
                     android:padding="8dp"
                     android:text="@string/exclude_apps_text"
-                    android:textColor="@color/colorPrimaryAdaptive"
+                    android:textColor="@color/dashEmerald400"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -518,7 +538,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginBottom="5dp"
-                    android:textColor="@color/colorLink"
+                    android:textColor="@color/dashCyan500"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:visibility="gone" />
@@ -531,13 +551,14 @@
 
                     <TextView
                         android:id="@+id/txt_status"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/dashSlate300"
                         android:text="" />
 
                     <TextView
                         android:id="@+id/txt_check_ip"
-                        style="@style/AppTheme.Link"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
@@ -545,6 +566,7 @@
                         android:gravity="center"
                         android:padding="7dp"
                         android:text="@string/check_ip"
+                        android:textColor="@color/dashCyan500"
                         android:textStyle="bold"
                         android:visibility="gone" />
                 </LinearLayout>
