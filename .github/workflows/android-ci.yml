@@ -13,7 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+  # The release keystore is stored in the repository as an AES-256 encrypted
+  # file; the passphrase and the JKS password are GitHub Actions secrets.
+  KEYSTORE_PASSPHRASE: ${{ secrets.KEYSTORE_PASSPHRASE }}
   SIGN_KEY_PASSWORD: ${{ secrets.SIGN_KEY_PASSWORD }}
 
 jobs:
@@ -48,13 +50,12 @@ jobs:
           fi
 
       - name: Ensure debug keystore for unsigned forks
-        # Forks do not inherit the blackbox-encrypted release keystore or
-        # the GPG key, so the build falls back to the debug keystore — which
-        # the CI container does not have. Create one in every plausible
-        # user.home (the Gradle daemon resolves /root while the runner HOME
-        # is /github/home) so the fork can still produce installable
-        # (locally-signed) artifacts.
-        if: ${{ ! env.GPG_PRIVATE_KEY }}
+        # Forks do not inherit the encrypted release keystore passphrase, so
+        # the build falls back to the debug keystore — which the CI container
+        # does not have. Create one in every plausible user.home (the Gradle
+        # daemon resolves /root while the runner HOME is /github/home) so the
+        # fork can still produce installable (locally-signed) artifacts.
+        if: ${{ ! env.KEYSTORE_PASSPHRASE }}
         run: |
           gen() {
             mkdir -p "$(dirname "$1")"
@@ -69,13 +70,20 @@ jobs:
           gen "$HOME/.android/debug.keystore"
           gen "/root/.android/debug.keystore"
 
-      - name: Import GPG key and run blackbox_postdeploy
+      - name: Decrypt release keystore
+        # The passphrase is fed on stdin, never on the command line, so it
+        # cannot appear in process listings or shell traces. The decrypted
+        # JKS is verified against the committed SHA-256 before any build.
+        if: ${{ env.KEYSTORE_PASSPHRASE != '' }}
         run: |
           set -e
-          if [ -n "$GPG_PRIVATE_KEY" ]; then
-            echo "$GPG_PRIVATE_KEY" | gpg2 --batch --yes --import -
-            GPG=gpg2 blackbox_postdeploy || true
-          fi
+          mkdir -p keyStore
+          printf '%s' "$KEYSTORE_PASSPHRASE" \
+            | gpg2 --batch --yes --no-tty --pinentry-mode loopback \
+                --passphrase-fd 0 \
+                --output keyStore/release.jks \
+                --decrypt keyStore/release.jks.enc
+          (cd keyStore && sha256sum -c release.jks.sha256)
 
       - name: Java version
         run: java --version
@@ -247,17 +255,17 @@ jobs:
           if-no-files-found: warn
 
       - name: Assemble Pro Release APK
-        # Gate behind GPG_PRIVATE_KEY: fork PRs do not have the blackbox-
-        # encrypted release keystore, and the fail-closed guard in
+        # Gate behind KEYSTORE_PASSPHRASE: fork PRs do not have the encrypted
+        # release keystore passphrase, and the fail-closed guard in
         # app/build.gradle will throw GradleException if assembleProRelease
         # is attempted without it. Skip for forks; they still run unit tests.
-        if: ${{ env.GPG_PRIVATE_KEY != '' }}
+        if: ${{ env.KEYSTORE_PASSPHRASE != '' }}
         run: ./gradlew assembleProRelease
 
       - name: Bundle Pro Release AAB
-        # Tag-gated (release tags only) AND GPG-gated (main repo with
-        # secrets). Fork PRs cannot produce a signed release bundle.
-        if: ${{ startsWith(github.ref, 'refs/tags/') && env.GPG_PRIVATE_KEY != '' }}
+        # Tag-gated (release tags only) AND secret-gated (main repo with the
+        # keystore passphrase). Fork PRs cannot produce a signed release bundle.
+        if: ${{ startsWith(github.ref, 'refs/tags/') && env.KEYSTORE_PASSPHRASE != '' }}
         run: ./gradlew :app:bundleProRelease
 
       - name: Upload Pro APK

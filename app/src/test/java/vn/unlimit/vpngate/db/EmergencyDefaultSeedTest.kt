@@ -39,7 +39,7 @@ import vn.unlimit.vpngate.utils.DataUtil
 class EmergencyDefaultSeedTest {
 
     private val url =
-        "https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/emergency-sources/servers.csv"
+        "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/emergency-sources/servers.csv"
 
     private fun dataUtil() = DataUtil(SeedFakeSharedPreferences())
 

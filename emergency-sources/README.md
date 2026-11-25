@@ -13,7 +13,7 @@ succeed and the feature was never actually proven on a device.
 
 In the SoftEthergai app: **Settings → Emergency Server Sources → Add source**
 
-- **URL:** `https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/emergency-sources/servers.csv`
+- **URL:** `https://raw.githubusercontent.com/morteza-taheri/VpnM/main/emergency-sources/servers.csv`
 - **Label:** any label
 
 Enable it, then run a refresh. The app fetches and parses this CSV per

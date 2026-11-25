@@ -69,30 +69,30 @@ def test_the_default_url_is_valid():
 def test_a_plain_http_url_is_refused():
     with pytest.raises(PublisherError, match="https"):
         validate_published_url(
-            "http://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/x.csv"
+            "http://raw.githubusercontent.com/morteza-taheri/VpnM/main/x.csv"
         )
 
 
 def test_a_foreign_host_is_refused():
     with pytest.raises(PublisherError, match="host"):
-        validate_published_url("https://evil.example.com/morteza-taheri/SoftEthergai/x.csv")
+        validate_published_url("https://evil.example.com/morteza-taheri/VpnM/x.csv")
 
 
 def test_a_same_owner_lookalike_repository_is_refused():
     # The same trap the in-app update checker guards against (v1.0.77).
     with pytest.raises(PublisherError, match="path"):
         validate_published_url(
-            "https://raw.githubusercontent.com/morteza-taheri/SoftEthergaiXYZ/main/x.csv"
+            "https://raw.githubusercontent.com/morteza-taheri/VpnMXYZ/main/x.csv"
         )
 
 
 def test_another_owners_repository_is_refused():
     with pytest.raises(PublisherError, match="path"):
-        validate_published_url("https://raw.githubusercontent.com/someone/SoftEthergai/main/x.csv")
+        validate_published_url("https://raw.githubusercontent.com/someone/VpnM/main/x.csv")
 
 
 def test_the_bare_repository_path_is_accepted():
-    url = "https://github.com/morteza-taheri/SoftEthergai"
+    url = "https://github.com/morteza-taheri/VpnM"
     assert validate_published_url(url) == url
 
 

@@ -36,11 +36,11 @@ data class AppUpdateManifest(
     companion object {
         /** The raw URL the app fetches. Same self-publish pattern as the emergency CSV. */
         const val MANIFEST_URL: String =
-            "https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/app-update/version.json"
+            "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/app-update/version.json"
 
         /** The page the dialog opens; GitHub redirects /latest to the newest release. */
         const val FALLBACK_RELEASE_PAGE_URL: String =
-            "https://github.com/morteza-taheri/SoftEthergai/releases/latest"
+            "https://github.com/morteza-taheri/VpnM/releases/latest"
 
         /**
          * BLOCK v1.0.76 audit fix: the only hosts a manifest's release page may
@@ -56,7 +56,7 @@ data class AppUpdateManifest(
          * Matched as a whole segment (exact, or followed by `/`) so a
          * same-owner lookalike repository cannot be substituted.
          */
-        const val RELEASE_REPO_PATH: String = "/morteza-taheri/SoftEthergai"
+        const val RELEASE_REPO_PATH: String = "/morteza-taheri/VpnM"
     }
 }
 
@@ -100,8 +100,8 @@ object AppUpdateCheck {
         // foreign domain.
         //
         // BLOCK v1.0.77: the path check requires a PATH BOUNDARY. A bare
-        // `startsWith("/morteza-taheri/SoftEthergai")` also accepts
-        // `/morteza-taheri/SoftEthergaiXYZ` — a different repository owned by
+        // `startsWith("/morteza-taheri/VpnM")` also accepts
+        // `/morteza-taheri/VpnMXYZ` — a different repository owned by
         // the same account — so the segment must be followed by `/` or end.
         val releasePageUrl = Regex("\"releasePageUrl\"\\s*:\\s*\"([^\"]+)\"")
             .find(body)?.groupValues?.get(1)?.takeIf { raw ->

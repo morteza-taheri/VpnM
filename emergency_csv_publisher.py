@@ -6,7 +6,7 @@
 # app/src/main/res/values/emergency_defaults.xml and commits/pushes them to git.
 # The XML is compiled into the APK at build time; the app never runs this script.
 """
-SoftEthergai emergency-source publisher
+VpnM emergency-source publisher
 =======================================
 
 Builds, validates and publishes `emergency-sources/servers.csv` (the app's
@@ -74,7 +74,7 @@ SCHEMA_VERSION = "1.0"
 API_URL = "https://www.vpngate.net/api/iphone/"
 HTML_URL = "https://www.vpngate.net/en/"
 DEFAULT_RAW_URL = (
-    "https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/"
+    "https://raw.githubusercontent.com/morteza-taheri/VpnM/"
     "main/emergency-sources/servers.csv"
 )
 
@@ -1154,10 +1154,10 @@ def validate_published_url(url: str) -> str:
         raise PublisherError(
             f"--published-raw-url host must be one of {PUBLISHED_URL_ALLOWED_HOSTS}: {host!r}")
     path = parsed.path or ""
-    if not (path == "/morteza-taheri/SoftEthergai"
-            or path.startswith("/morteza-taheri/SoftEthergai/")):
+    if not (path == "/morteza-taheri/VpnM"
+            or path.startswith("/morteza-taheri/VpnM/")):
         raise PublisherError(
-            f"--published-raw-url path must live under /morteza-taheri/SoftEthergai: {path!r}")
+            f"--published-raw-url path must live under /morteza-taheri/VpnM: {path!r}")
     return url
 
 
@@ -1251,8 +1251,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     repo = find_repo(args.repo_dir)
     if repo is None and not args.dry_run:
-        log.error("No git repository found (current dir: %s). Run from inside your SoftEthergai "
-                  "clone or pass --repo-dir C:\\path\\to\\SoftEthergai. Nothing was fetched or written.",
+        log.error("No git repository found (current dir: %s). Run from inside your VpnM "
+                  "clone or pass --repo-dir C:\\path\\to\\VpnM. Nothing was fetched or written.",
                   Path.cwd())
         return 2
     if repo is not None:

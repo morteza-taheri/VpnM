@@ -20,7 +20,7 @@ class AppUpdateManifestTest {
           "schema_version": "1.0",
           "versionCode": 146,
           "versionName": "2.4.13",
-          "releasePageUrl": "https://github.com/morteza-taheri/SoftEthergai/releases/latest",
+          "releasePageUrl": "https://github.com/morteza-taheri/VpnM/releases/latest",
           "notes": "Auto update checker"
         }
     """.trimIndent()
@@ -33,7 +33,7 @@ class AppUpdateManifestTest {
         assertEquals(146, m?.versionCode)
         assertEquals("2.4.13", m?.versionName)
         assertEquals(
-            "https://github.com/morteza-taheri/SoftEthergai/releases/latest",
+            "https://github.com/morteza-taheri/VpnM/releases/latest",
             m?.releasePageUrl,
         )
         assertEquals("Auto update checker", m?.notes)
@@ -42,11 +42,11 @@ class AppUpdateManifestTest {
     @Test
     fun `parsing tolerates whitespace and field order`() {
         val m = AppUpdateCheck.parseManifest(
-            """{"notes":"n",   "versionCode" : 7 ,  "versionName":"x", "releasePageUrl":"https://github.com/morteza-taheri/SoftEthergai/releases"}""",
+            """{"notes":"n",   "versionCode" : 7 ,  "versionName":"x", "releasePageUrl":"https://github.com/morteza-taheri/VpnM/releases"}""",
         )
         assertEquals(7, m?.versionCode)
         assertEquals("x", m?.versionName)
-        assertEquals("https://github.com/morteza-taheri/SoftEthergai/releases", m?.releasePageUrl)
+        assertEquals("https://github.com/morteza-taheri/VpnM/releases", m?.releasePageUrl)
     }
 
     @Test
@@ -65,24 +65,24 @@ class AppUpdateManifestTest {
 
     @Test
     fun `a same-owner lookalike repository is refused (path boundary)`() {
-        // BLOCK v1.0.77: `/morteza-taheri/SoftEthergaiXYZ` is a DIFFERENT
+        // BLOCK v1.0.77: `/morteza-taheri/VpnMXYZ` is a DIFFERENT
         // repository owned by the same account. A bare prefix check accepted it.
         assertNull(
             AppUpdateCheck.parseManifest(
-                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://github.com/morteza-taheri/SoftEthergaiXYZ/releases"}""",
+                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://github.com/morteza-taheri/VpnMXYZ/releases"}""",
             ),
         )
         // The real repository, with and without a trailing path, is accepted.
         assertEquals(
-            "https://github.com/morteza-taheri/SoftEthergai",
+            "https://github.com/morteza-taheri/VpnM",
             AppUpdateCheck.parseManifest(
-                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://github.com/morteza-taheri/SoftEthergai"}""",
+                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://github.com/morteza-taheri/VpnM"}""",
             )?.releasePageUrl,
         )
         assertEquals(
-            "https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/app-update/version.json",
+            "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/app-update/version.json",
             AppUpdateCheck.parseManifest(
-                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://raw.githubusercontent.com/morteza-taheri/SoftEthergai/main/app-update/version.json"}""",
+                """{"versionCode":5,"versionName":"x","releasePageUrl":"https://raw.githubusercontent.com/morteza-taheri/VpnM/main/app-update/version.json"}""",
             )?.releasePageUrl,
         )
     }
