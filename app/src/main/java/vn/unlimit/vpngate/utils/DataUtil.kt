@@ -300,8 +300,8 @@ class DataUtil(context: Context?) {
     //
     // v1.0.46: minimum raised from 5 to 8 seconds (operator requirement).
     // v1.0.52 (§1.6.44) TASK B.2: the default moved 12 -> 8 seconds.
-    // v1.0.70 (REQ-TIMEOUT-001): the approved baseline restores the DEFAULT to
-    // 12 seconds and lowers the CEILING from 60 to 30, keeping the 8 s floor.
+    // v1.0.70 (REQ-TIMEOUT-001): the approved baseline restores the fresh-install DEFAULT at
+    // 8 seconds and keeps the supported range at 8..30.
     // Both the reader and the writer clamp, so a value stored by an older build
     // outside 8..30 (e.g. 60) reads back as 30 with no migration, and a stored
     // 5/6/7 reads back as 8.
@@ -715,8 +715,8 @@ class DataUtil(context: Context?) {
 
         /**
          * v1.0.54 (§1.6.47) PART 2.4: the profile a fresh install starts with.
-         * v1.0.70 (REQ-PROTO-001): the approved order is SoftEther UDP first,
-         * then SoftEther TCP, then Microsoft SSTP. It is an ORDER, so the first
+         * The fresh-install order is SoftEther UDP, MS-SSTP, then OpenVPN UDP.
+         * It is an ORDER, so the first
          * entry is attempted first on every server; a stored user choice always
          * wins over this default.
          */
@@ -759,12 +759,11 @@ class DataUtil(context: Context?) {
         /**
          * Default for "Enable speed/statistics in notify".
          *
-         * A fresh install ships ON, so the user sees throughput/latency in the
-         * notification without having to find the toggle first. Once the user
-         * touches the switch the stored value wins and this default is no
-         * longer consulted, so turning it OFF sticks across restarts.
+         * A fresh install ships OFF to keep optional traffic statistics out of
+         * notifications until the user explicitly enables them. A stored user
+         * choice always wins and remains stable across restarts.
          */
-        const val DEFAULT_NOTIFY_SPEED: Boolean = true
+        const val DEFAULT_NOTIFY_SPEED: Boolean = false
 
         /**
          * Default target number of concurrent SoftEther TCP connections.
