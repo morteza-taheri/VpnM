@@ -88,7 +88,9 @@
     <string name="cancel">Cancel</string>
     <string name="feature_not_available">You can\'t do this action at this moment</string>
     <!--- Settings -->
-    <string name="enable_notification_speed">Enable speed/statistics in notify</string>
+    <string name="enable_notification_speed">Enable speed/statistics in notification</string>
+    <string name="setting_auto_mode_progress_notification">Auto Mode progress notification</string>
+    <string name="setting_auto_mode_progress_notification_hint">Show server scanning and connection attempts. Disabled by default; the VPN foreground notification remains visible while connected.</string>
     <string name="setting_startup_screen">Startup screen</string>
     <string-array name="startup_screen">
         <item>List screen</item>
