@@ -1,176 +1,225 @@
 # VpnM — Multi-Protocol VPN Client for Android
 
-VpnM is an Android VPN client maintained by **Morteza Taheri**. It combines a native SoftEther VPN implementation with integrated OpenVPN and Microsoft SSTP clients, and provides a server browser built around the public [VPN Gate](https://www.vpngate.net/en/) network.
+VpnM is an open-source Android VPN client maintained by **Morteza Taheri**. It integrates a native SoftEther VPN implementation with OpenVPN and Microsoft SSTP clients, and provides a server browser for the public [VPN Gate](https://www.vpngate.net/en/) network as well as manually managed servers.
 
-The application is designed to discover, manage and connect to public VPN Gate servers as well as user-supplied servers. It includes manual and automatic connection workflows, a local server database, CSV import, per-app routing controls and configurable connection behaviour.
+The app is designed around three practical workflows:
 
-> **Current source version:** 2.4.21 (version code 155)  
-> **Android application ID:** `vn.unlimit.vpngatepro`  
-> **Maintainer:** Morteza Taheri  
-> **License:** GNU General Public License v3.0 (GPL-3.0)
+- **Browse and maintain a useful server list:** collect server data from VPN Gate, merge fresh observations with retained records, and protect user-managed entries.
+- **Connect manually:** choose an available protocol and connect to a public or private server.
+- **Use Auto Mode:** try eligible servers using the enabled protocol order, local OpenVPN profile readiness, per-server retry limits, and unstable-server cooldowns.
+
+> **Current source identity**
+>
+> | Item | Value |
+> |---|---|
+> | Application | VpnM |
+> | Android application ID | `vn.unlimit.vpngatepro` |
+> | Source version | `2.4.21` |
+> | Version code | `155` |
+> | Minimum Android version | Android 7.0 (API 24) |
+> | Compile / target SDK | API 37 / API 37 |
+> | Maintainer | Morteza Taheri |
+> | License | GNU General Public License v3.0 |
+
+The version above describes the checked-in source configuration. A locally built debug APK may carry a `-dev` version suffix.
 
 ## Contents
 
-- [Highlights](#highlights)
-- [Supported protocols](#supported-protocols)
-- [Server discovery and storage](#server-discovery-and-storage)
-- [Auto Mode](#auto-mode)
-- [Manual servers and CSV import](#manual-servers-and-csv-import)
-- [Notifications and Android requirements](#notifications-and-android-requirements)
-- [Requirements](#requirements)
+- [Features at a glance](#features-at-a-glance)
+- [VPN protocol support](#vpn-protocol-support)
+- [Server discovery, routing and retention](#server-discovery-routing-and-retention)
+- [Auto Mode behaviour](#auto-mode-behaviour)
+- [Manual servers and CSV import/export](#manual-servers-and-csv-importexport)
+- [Notifications and Android foreground-service rules](#notifications-and-android-foreground-service-rules)
+- [Installation and first use](#installation-and-first-use)
 - [Build from source](#build-from-source)
-- [Project layout](#project-layout)
-- [Documentation](#documentation)
+- [Tests and verification](#tests-and-verification)
+- [Project structure and further documentation](#project-structure-and-further-documentation)
 - [Open-source components and licenses](#open-source-components-and-licenses)
-- [Contributing and issue reports](#contributing-and-issue-reports)
+- [Privacy and security notes](#privacy-and-security-notes)
+- [Reporting issues and contributing](#reporting-issues-and-contributing)
 
-## Highlights
+## Features at a glance
 
-- **Multiple VPN protocols:** native SoftEther, OpenVPN and MS-SSTP clients are integrated into the application.
-- **VPN Gate server browser:** retrieves server information from the official VPN Gate web page and API, with mirror support and validation before updating the local list.
-- **Local server database:** server records are retained between refreshes. The retention ceiling is configurable in Settings (default 1,000 entries; supported range 10–2,000).
-- **Auto Mode:** selects eligible servers and tries enabled protocols according to the user's ordered protocol profile.
-- **Manual server management:** add and manage user-defined server records without having them silently removed by a normal server-list refresh.
-- **CSV import:** import either the application's extended CSV format or the standard VPN Gate API CSV format by pasting text or selecting a document.
-- **Per-app VPN routing:** choose which installed launchable applications use the VPN.
-- **Connection controls:** configure protocol priority, connection-attempt timeout, reconnect behaviour and optional notifications.
-- **Material 3 interface:** Jetpack Compose UI with Android theme support and localized resources.
+- Native SoftEther VPN over TCP and UDP.
+- Integrated OpenVPN client with TCP and UDP support.
+- Integrated Microsoft SSTP client.
+- Android platform L2TP/IPsec support on compatible Android releases.
+- VPN Gate server discovery using the official HTML directory, discovered mirrors and a conditional API fallback.
+- A local server database with cumulative retention and a configurable capacity.
+- Server quality ranking using observed performance, supported connection options and past successful connections.
+- Manual server entry and CSV import/export.
+- Auto Mode with user-configurable protocol order, attempt timeout and per-server retry budget.
+- Temporary quarantine for servers that repeatedly establish a tunnel and then drop quickly.
+- Per-app VPN routing (split tunneling).
+- Material 3 Jetpack Compose interface, Android theme support and localized resources.
+- Optional notification controls for traffic statistics, disconnect/error alerts and Auto Mode progress.
 
-## Supported protocols
+## VPN protocol support
 
-| Protocol | Implementation | Manual connection | Auto Mode |
+| Protocol | Transport | Manual connection | Auto Mode |
 |---|---|:---:|:---:|
-| SoftEther VPN over TCP | Native SoftEther module | Yes | Yes |
-| SoftEther VPN over UDP | Native SoftEther module | Yes | Yes |
-| OpenVPN over TCP | Integrated OpenVPN library | Yes | Yes, when a usable local profile is already available |
-| OpenVPN over UDP | Integrated OpenVPN library | Yes | Yes, when a usable local profile is already available |
-| Microsoft SSTP | Integrated Kotlin SSTP client | Yes | Yes |
-| L2TP/IPsec | Android platform VPN implementation | Device/version dependent | No |
+| SoftEther VPN | TCP | Yes | Yes |
+| SoftEther VPN | UDP | Yes | Yes |
+| OpenVPN | TCP | Yes | Yes, only with a usable local profile |
+| OpenVPN | UDP | Yes | Yes, only with a usable local profile |
+| Microsoft SSTP | HTTPS/TLS over TCP | Yes | Yes |
+| L2TP/IPsec | Android platform VPN | Device/version dependent | No |
 
 ### SoftEther VPN
 
-SoftEther is implemented in the project rather than delegated to a separate VPN application. The native module contains the protocol engine and its Android integration. TCP and UDP transports are supported, subject to the capabilities and configuration of the remote server.
+SoftEther is implemented in the project and does not require a separate VPN application. The integrated native module provides the protocol engine and Android service integration. TCP and UDP availability depends on the remote server's advertised capabilities and the endpoint being reachable.
 
 ### OpenVPN
 
-OpenVPN is provided by the integrated OpenVPN client library. A manual connection can use the application's profile retrieval/repair path when the server publishes the required download information.
+OpenVPN is provided by the integrated OpenVPN client library.
 
-**Auto Mode deliberately uses a stricter rule:** it only considers an OpenVPN server when its profile is already present locally. A server's SID/HID or download URL is not treated as a downloaded profile. Auto Mode does not pause its candidate scan to fetch missing profiles. This avoids spending connection attempts on servers whose OpenVPN configuration is not ready.
+For a **manual connection**, the app can use the server's published download information to retrieve or repair an OpenVPN profile and cache it for later use.
+
+**Auto Mode does not download profiles while scanning or connecting.** An OpenVPN candidate is eligible only when a non-empty profile is already stored locally with that server. A server ID, host ID or profile download URL is not itself a profile. If the profile is missing, Auto Mode skips that server/protocol combination and continues with other eligible choices.
+
+This distinction is intentional: an Auto Mode attempt should represent a connection the app can actually start, not a profile-download operation that may fail or consume the connection-attempt budget.
 
 ### Microsoft SSTP
 
-SSTP connections use the integrated client and an HTTPS/TLS transport. Availability depends on the server's SSTP support and usable endpoint information.
+SSTP uses the integrated client and a TLS-protected TCP connection. A server must expose usable SSTP support and endpoint information. The server's SSTP port and its source are tracked separately from other protocol ports.
 
-### L2TP/IPsec compatibility
+### L2TP/IPsec
 
-L2TP/IPsec is handled through Android's platform VPN support, not the native SoftEther or OpenVPN modules. Android 13 and later no longer provide the legacy built-in L2TP/IPsec client used by this application. Treat L2TP/IPsec as unavailable on those versions and use SoftEther, OpenVPN or SSTP instead.
+L2TP/IPsec is handled through Android's platform VPN support rather than the native SoftEther or OpenVPN modules. Android 13 (API 33) and later do not provide the legacy built-in L2TP/IPsec client used by this application. On those releases, use SoftEther, OpenVPN or SSTP instead. L2TP/IPsec is not an Auto Mode protocol.
 
-## Server discovery and storage
+## Server discovery, routing and retention
 
-The built-in server collector uses the official VPN Gate endpoints:
+### Sources and collection
 
-- Server directory: [https://www.vpngate.net/en/](https://www.vpngate.net/en/)
-- Server directory/mirror listing: [https://www.vpngate.net/en/sites.aspx](https://www.vpngate.net/en/sites.aspx)
-- VPN Gate API: [https://www.vpngate.net/api/iphone/](https://www.vpngate.net/api/iphone/)
+The app collects server information itself; it does not depend on a GitHub-hosted server-list JSON file.
 
-The collector can use the HTML directory and API data, discover and cache mirrors, and validate fetched data before accepting it. A failed, malformed or substantially degraded response should not be treated as a valid replacement for the local server database.
+The collector uses the official VPN Gate server directory as its primary source, discovers and consults mirrors, and can use the official API CSV as a fallback when the HTML page yields no usable records. The API is not treated as an equivalent replacement for the richer HTML page: its CSV has fewer protocol-specific fields, while the HTML page includes information such as SoftEther ports, SSTP endpoint data and per-server OpenVPN download descriptors.
+
+Official VPN Gate references:
+
+- [VPN Gate server directory](https://www.vpngate.net/en/)
+- [VPN Gate sites and mirror listing](https://www.vpngate.net/en/sites.aspx)
+- [VPN Gate API CSV](https://www.vpngate.net/api/iphone/)
+
+A response is validated before it can replace or merge into the local data. Empty, malformed or materially degraded responses must not be accepted as a healthy refresh. A last-known-good snapshot and stored data are available as recovery sources.
 
 ### Network path selection
 
-Server-list requests are bound to an explicitly selected Android network rather than relying on an ambiguous process-wide default:
+The collector chooses a network path based on the VPN state visible to Android:
 
-1. A healthy VPN tunnel owned by VpnM is used when it is available.
-2. Otherwise, a validated VPN connection owned by another app is used when Android exposes it.
-3. When no usable VPN is active, the collector uses an explicit physical Wi-Fi/cellular network.
-4. The local emergency dataset/source path remains the final fallback.
+1. **VpnM's own usable VPN tunnel** — when VpnM has a usable, bound VPN network, the collector binds its request to that network.
+2. **Another app's active VPN** — when VpnM has no usable tunnel but Android exposes a validated foreign VPN network, the collector uses that VPN network.
+3. **Physical network** — when neither VPN route is available, the collector uses an explicit physical Wi-Fi or cellular network.
+4. **Emergency source rung** — configured emergency CSV sources are considered separately as a final data-source fallback.
 
-When a VPN is active, a failed request on that VPN is not silently rerouted around it over the underlying physical network. This is intentional: the user may have enabled that VPN specifically to reach blocked services.
+When the own or foreign VPN route is selected, the official VPN Gate request is not silently retried over the underlying physical network. A failure on the chosen VPN path is reported instead of bypassing the VPN the user enabled.
 
-### Local retention
+Emergency sources are **not a local bundled server list**. They are user-configured CSV feed URLs processed by a separate, bounded fetch-and-parse path. A default source entry may be seeded on a fresh installation, but it is inserted **disabled**; the user must explicitly enable it. Emergency feeds do not replace the official collector.
 
-The local database is not simply replaced by every short server batch. The application merges and evaluates incoming data and applies a configurable server-list ceiling.
+### Local database and retention
 
-- Default retention ceiling: **1,000 servers**.
-- Configurable range: **10–2,000 servers**.
-- User-managed manual servers are protected from ordinary collector replacement/pruning according to the repository's merge rules.
+A short API response or a refresh that omits previously known servers should not automatically erase the local server list. Fresh accepted observations are merged with retained records.
 
-The exact ranking and merge policy is maintained in [SERVER_SOURCE_ARCHITECTURE.md](SERVER_SOURCE_ARCHITECTURE.md), rather than duplicated here.
+The server-list capacity can be configured in Settings:
 
-### Emergency CSV sources
+- Default capacity: **1,000 servers**.
+- Supported range: **10–2,000 servers**.
+- The manual/import quota reserves up to half of the configured capacity for user-supplied entries.
+- Manually entered/imported servers and starred servers are protected from ordinary pruning.
+- Remaining network-collected entries are ranked by health/quality, number of supported connection options, historical successful connections and last-seen time, with a deterministic hostname tie-break.
 
-Settings includes an optional emergency-source list for CSV feeds. The default source entry, when seeded on a fresh installation, is **disabled** until the user enables it. Emergency feeds are a fallback, not a replacement for the official live collector.
+The cap is a retention policy, not a promise that every server will remain forever. Protected user entries take precedence over pruning; the implementation avoids deleting user-managed or starred records just to satisfy a nominal quota.
 
-Emergency CSV files use the application's versioned schema and are validated before their records can enter the server-list update pipeline. See [SERVER_SOURCE_ARCHITECTURE.md](SERVER_SOURCE_ARCHITECTURE.md) for the canonical schema and source rules.
+## Auto Mode behaviour
 
-## Auto Mode
-
-Auto Mode uses the protocol-priority profile configured by the user. The fresh-install order is:
+Auto Mode uses the enabled protocol list and order stored in Settings. The fresh-install order is:
 
 1. SoftEther UDP
 2. Microsoft SSTP
 3. OpenVPN UDP
 
-SoftEther TCP and OpenVPN TCP are not included in the fresh-install profile. Users can change the enabled protocols and their order in Settings; a stored user selection takes precedence over the fresh-install defaults.
+SoftEther TCP and OpenVPN TCP are not enabled in the fresh-install profile. Users can enable, disable and reorder protocols. An explicitly saved user selection is preserved and takes precedence over fresh-install defaults.
 
-Other Auto Mode behaviour:
+Other rules:
 
-- Only protocols that are enabled, supported by the server and automatable by the application are considered.
-- L2TP/IPsec remains a manual-only protocol.
-- OpenVPN requires a locally available profile before a server is eligible for an OpenVPN Auto Mode attempt.
-- The default per-attempt timeout is **8 seconds**; the supported setting range is **8–30 seconds**.
-- Reconnect attempts are budgeted per server, so repeated drops on one unstable server do not consume the retry allowance for every other candidate. A server that repeatedly establishes a tunnel and then drops within 60 seconds is temporarily quarantined after two rapid drops (initial cooldown 5 minutes, with bounded escalation); a stable session of at least two minutes clears its strikes.
+- Only enabled, supported and automatable protocol/server combinations are considered.
+- L2TP/IPsec is manual-only.
+- OpenVPN requires a usable local profile; Auto Mode does not download one.
+- The default connection-attempt timeout is **8 seconds**; the supported range is **8–30 seconds**.
+- Retry allowance is tracked per server rather than consumed globally by unrelated servers. The per-server retry setting is configurable.
+- A tunnel that drops in less than **60 seconds** counts as a rapid drop. After **two consecutive rapid drops**, that server is temporarily quarantined, initially for **5 minutes**. The cooldown can increase in bounded steps, up to **30 minutes**.
+- A tunnel that remains stable for at least **2 minutes** clears the server's rapid-drop strikes.
+- If all candidates are cooling down, Auto Mode can wait for the cooldown window rather than rapidly dialing the same unstable endpoint again.
 
-Auto Mode is a best-effort server-selection and connection workflow. A server's advertised protocol flag does not guarantee that the remote endpoint is currently reachable or that authentication will succeed.
+These safeguards reduce repeated attempts against unstable servers, but they cannot guarantee that a public VPN Gate endpoint will remain reachable or accept a connection. Remote availability, authentication, server load and the user's network still affect the outcome.
 
-## Manual servers and CSV import
+## Manual servers and CSV import/export
 
-Manual server records can be managed from Settings. They are kept separate from automatically collected records and are intended for private servers or endpoints that are not present in the public VPN Gate feed.
+Manual servers are intended for private endpoints or servers not present in the public VPN Gate feed. They are stored separately from automatically collected records and are preserved across ordinary server-list refreshes.
 
-CSV import is available in the Manual Servers section. A server can also be exported individually from its long-press actions as a re-importable extended CSV row; the export preserves the separate SoftEther/OpenVPN TCP and UDP port fields. The importer recognises:
+CSV tools are available from **Settings → Manual Servers**:
 
-- The application's extended, versioned CSV format.
+- Paste CSV text into the importer.
+- Select a CSV/text document through Android's system document picker (Storage Access Framework).
+- Export an individual server as a re-importable extended CSV row.
+
+The importer recognises:
+
+- VpnM's extended, versioned CSV format.
 - The standard VPN Gate API CSV format.
 
-Import methods include pasting CSV text and selecting a document through Android's system document picker (Storage Access Framework). The importer enforces these limits:
+Import limits:
 
 - Maximum input size: **1 MiB**.
-- Maximum data rows: **2,000** (header excluded).
+- Maximum data rows: **2,000**, excluding the header.
+- An input over a hard limit is rejected as a whole rather than silently truncated.
+- Invalid rows are reported; raw CSV content is not written to application logs.
 
-The import is rejected as a whole if it exceeds a hard limit; it is not silently truncated. Invalid rows are reported without writing raw CSV contents to application logs.
+The extended format keeps the SoftEther TCP/UDP and OpenVPN TCP/UDP port fields distinct. This is important: a TCP port must not be imported as a UDP port or vice versa. Imported/manual entries are subject to the manual quota described above.
 
-## Notifications and Android requirements
+## Notifications and Android foreground-service rules
 
-Optional notification content can be controlled independently:
+The app separates optional notification content from Android's required VPN foreground-service notification.
 
-- Connection-speed/traffic statistics in the VPN notification.
-- Disconnect and error alerts.
+Optional settings include:
+
+- Traffic speed and statistics in the VPN notification.
+- Disconnect and VPN error alerts.
 - Auto Mode scan-progress notifications.
 
-These optional notifications are disabled by default. Android still requires an active VPN foreground-service notification while a VPN service is running; turning off optional alerts does not remove that mandatory system notification.
+These optional notification features are **off by default**. Disabling them also clears their optional notification IDs where applicable.
 
-The application requests the Android permissions needed for network access, VPN foreground services and notification display. Android may ask the user to approve the VPN connection through its system VPN consent dialog.
+Android requires a VPN foreground service to keep an ongoing system notification while the VPN service is active. This mandatory notification remains visible even when every optional notification setting is disabled. Android's VPN consent dialog and notification permission prompts are controlled by the operating system.
 
-## Requirements
+## Installation and first use
 
-For a development build:
+1. Install a VpnM build that matches the device's Android version and CPU architecture.
+2. Open the app and allow the Android VPN connection request when prompted.
+3. Refresh the server list. If the official VPN Gate endpoints are unreachable on the current network, use a working VPN connection and refresh again; the collector can use VpnM's tunnel or another app's active VPN.
+4. Choose a server and protocol for a manual connection, or configure the Auto Mode protocol order in Settings.
+5. For OpenVPN in Auto Mode, make sure the server's profile has already been downloaded and cached through a manual profile-ready path.
+6. Add private servers or import a CSV file from **Settings → Manual Servers** when needed.
 
-- JDK **17 or newer**.
-- Android SDK with **API 37** available.
-- Android NDK and CMake for the native SoftEther module.
-- The Gradle wrapper included in this repository.
-
-The application targets modern Android releases. Some protocol capabilities depend on Android platform APIs and are therefore not available on every Android version (notably legacy L2TP/IPsec).
+For a first Auto Mode test, enable only protocols that you intend to use and leave enough candidate servers available. Public VPN endpoints are volatile; one failed server is not evidence that the app or protocol is broken.
 
 ## Build from source
 
-Clone the repository and open it in Android Studio, or use the Gradle wrapper from a terminal:
+### Development environment
+
+- JDK **17**.
+- Android SDK with **API 37** installed.
+- Android NDK and CMake for the native SoftEther module.
+- The Gradle wrapper included in this repository.
+
+The project uses the `pro` product flavor. Debug variants are disabled on ordinary local Gradle invocations unless the `CI` environment variable is set.
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/morteza-taheri/VpnM.git
 cd VpnM
 ```
-
-Only the `pro` product flavor is defined. Debug variants are enabled when the `CI` environment variable is set.
 
 **Linux / macOS:**
 
@@ -191,13 +240,7 @@ The debug APK is generated under:
 app/build/outputs/apk/pro/debug/
 ```
 
-Run the JVM unit tests with:
-
-```bash
-./gradlew :app:testProDebugUnitTest
-```
-
-On Windows, use `gradlew.bat` instead of `./gradlew`.
+Debug builds use the Android debug signing key when a release signing configuration is not available. A debug APK is for development/testing and is not a production release artifact.
 
 ### Release builds and signing
 
@@ -207,11 +250,33 @@ A release bundle can be requested with:
 ./gradlew bundleProRelease
 ```
 
-Release signing is intentionally **fail-closed**. A valid release keystore at `keyStore/release.jks` and its password must be provisioned before a release task can run. The password is read from the `SIGN_KEY_PASSWORD` environment variable or `signKeyPassword` in the local, untracked `local.properties` file. Do not commit signing keys, passwords or private signing material.
+Release signing is **fail-closed**. A valid release keystore at `keyStore/release.jks` and its password must be provisioned before a release task can run. The password is read from the `SIGN_KEY_PASSWORD` environment variable or `signKeyPassword` in the local, untracked `local.properties` file.
 
-If the signing configuration is missing, the release build stops with an explicit error. Debug signing is not a substitute for a production release signature.
+Do not commit signing keys, passwords, Blackbox keyrings or other private signing material. CI signing credentials must be provisioned through the repository's approved secret-management process. If the release signing configuration is incomplete, the release task stops rather than silently producing a debug-signed release.
 
-## Project layout
+## Tests and verification
+
+Run the app's JVM unit tests with:
+
+```bash
+./gradlew :app:testProDebugUnitTest
+```
+
+On Windows, use `gradlew.bat` instead of `./gradlew`. The repository's CI workflow also prepares the Android SDK/NDK toolchain and runs the configured build and test jobs.
+
+Tests cover, among other areas:
+
+- Auto Mode candidate eligibility and protocol selection.
+- OpenVPN local-profile gating.
+- Retry budgets, rapid-drop quarantine and cooldown behaviour.
+- Server-list routing and VPN network selection.
+- CSV parsing, import limits and transport-port fidelity.
+- Server-list retention, merge and quota behaviour.
+- Notification defaults and preference handling.
+
+A green JVM test run is not a substitute for testing on a physical Android device. VPN routing, native tunnel lifecycle, OEM background restrictions and real public-server availability should be checked on representative devices and networks before a production release.
+
+## Project structure and further documentation
 
 ```text
 VpnM/
@@ -221,29 +286,27 @@ VpnM/
 ├── vpnLib/               # Integrated OpenVPN client library
 ├── server-setup/         # Server configuration and setup resources
 ├── emergency-sources/    # Emergency CSV source assets and documentation
-├── docs/                 # Project specifications, architecture and reports
+├── docs/                 # Engineering audits, reports and implementation notes
 ├── PROJECT_SPECIFICATION.md
 ├── SERVER_SOURCE_ARCHITECTURE.md
 └── README.md
 ```
 
-## Documentation
+Further reading:
 
-The repository contains deeper engineering documentation. These files have distinct roles:
-
-- [PROJECT_SPECIFICATION.md](PROJECT_SPECIFICATION.md) — requirements, implementation status, verification notes, constraints and roadmap.
-- [SERVER_SOURCE_ARCHITECTURE.md](SERVER_SOURCE_ARCHITECTURE.md) — server-source retrieval, network paths, emergency CSV schema, manual import and retention design.
+- [PROJECT_SPECIFICATION.md](PROJECT_SPECIFICATION.md) — project requirements, constraints, status records and roadmap.
+- [SERVER_SOURCE_ARCHITECTURE.md](SERVER_SOURCE_ARCHITECTURE.md) — server collection, network routing, emergency source and retention architecture.
 - [SoftEtherClient/README.md](SoftEtherClient/README.md) — native SoftEther module notes.
 - [sstpClient/README.md](sstpClient/README.md) — SSTP module notes.
 - [vpnLib/README.md](vpnLib/README.md) — OpenVPN integration notes.
 - [server-setup/README.md](server-setup/README.md) — server setup resources.
-- [emergency-sources/README.md](emergency-sources/README.md) — emergency source data and format notes.
+- [emergency-sources/README.md](emergency-sources/README.md) — emergency CSV source data and format notes.
 
-The top-level README is the user-facing project introduction. Detailed requirements, migration history and design rationale belong in the documents above.
+The top-level README is the user-facing overview. The detailed engineering documents include historical audit records; for the behaviour of the current build, prefer the current source code and tests over an older dated report.
 
 ## Open-source components and licenses
 
-VpnM is distributed under the **GNU General Public License v3.0**. Review the repository's [LICENSE](LICENSE) file for the complete terms. The project incorporates or derives from the following open-source components; their own license terms continue to apply:
+VpnM is distributed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for the complete terms. Third-party components retain their own license terms and notices.
 
 | Component | Upstream project | License |
 |---|---|---|
@@ -256,17 +319,25 @@ VpnM is distributed under the **GNU General Public License v3.0**. Review the re
 | AndroidX Room | [Android Developers](https://developer.android.com/jetpack/androidx/releases/room) | Apache-2.0 |
 | Jetpack Compose | [Android Developers](https://developer.android.com/jetpack/compose) | Apache-2.0 |
 
-This table is an overview, not a substitute for the license and notice files shipped with the repository. Preserve upstream copyright and license notices when modifying or redistributing third-party code.
+This table is an overview, not a replacement for the license and notice files shipped with the repository. Preserve upstream copyright and license notices when modifying or redistributing third-party code.
 
-## Contributing and issue reports
+## Privacy and security notes
+
+- Never commit VPN usernames/passwords, private profiles, signing keys, keystores, tokens or local environment files.
+- Do not attach unredacted VPN logs to public issues. Remove credentials, private server addresses, profile contents, tokens and other sensitive values first.
+- The CSV importer enforces input limits and avoids logging the raw imported document.
+- The Android VPN foreground-service notification is an operating-system requirement; optional notifications can be disabled independently.
+- Public VPN Gate servers are operated by third parties. Do not assume that a public server is trusted for sensitive traffic merely because it appears in the server list.
+
+## Reporting issues and contributing
 
 Before opening an issue, include:
 
 - Android version and device model.
-- Application version.
+- VpnM application version and version code.
 - VPN protocol and connection mode (manual or Auto Mode).
-- A concise description of the expected and actual behaviour.
-- Relevant logs with passwords, private keys, tokens, private server addresses and other sensitive information removed.
+- The expected behaviour and what actually happened.
+- Relevant, redacted logs and the steps needed to reproduce the issue.
 
 Do not publish VPN credentials, private profiles, signing material or personal connection details in public issue reports.
 
