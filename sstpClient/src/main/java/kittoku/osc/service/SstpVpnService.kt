@@ -231,7 +231,7 @@ class SstpVpnService : VpnService() {
         tryNotify(builder.build(), NOTIFICATION_CRITICAL_ID)
     }
 
-    private fun setRootState(state: Boolean) {
+    internal fun setRootState(state: Boolean) {
         setBooleanPrefValue(state, OscPrefKey.ROOT_STATE, prefs)
     }
 
@@ -307,9 +307,10 @@ class SstpVpnService : VpnService() {
 
                 logWriter?.write("Establish VPN connection")
 
+                // CONNECTED is published only after IPTerminal.establish()
+                // succeeds. Until then the tracker must remain CONNECTING.
+                setRootState(false)
                 initializeClient(generation)
-
-                setRootState(true)
 
                 Service.START_STICKY
             }

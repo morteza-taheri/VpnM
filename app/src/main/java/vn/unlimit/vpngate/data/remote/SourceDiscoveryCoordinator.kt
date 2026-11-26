@@ -51,10 +51,16 @@ class SourceDiscoveryCoordinator(
     private val progress: (SourceDiscoveryStage, String) -> Unit = { _, _ -> Unit },
     private val timeoutMs: Long = DEFAULT_SOURCE_TIMEOUT_MS,
     private val directoryTimeoutMs: Long = DEFAULT_DIRECTORY_TIMEOUT_MS,
+    private val totalTimeoutMs: Long = 45_000L,
 ) {
     private val prober = SourceProber(fetcher)
 
     suspend fun discover(includeCsv: Boolean): SourceDiscoveryResult {
+        // One monotonic deadline covers canonical probes, directory discovery,
+        // and every sequential mirror/path attempt. Per-request timeouts are
+        // ceilings, never additive budgets.
+        val deadlineNanos = System.nanoTime() +
+            totalTimeoutMs.coerceAtLeast(1L) * 1_000_000L
         val registry = loadRegistry().toMutableList()
         if (registry.isEmpty()) registry.addAll(bootstrapEntries())
         // Cached/bootstrap mirrors must be allowed through the real interceptor
@@ -74,12 +80,12 @@ class SourceDiscoveryCoordinator(
         coroutineScope {
             val htmlDeferred = async {
                 progress(SourceDiscoveryStage.DOWNLOADING_HTML, VpnGateUrls.MAIN_URL)
-                probeCanonical(SourceResource.HTML, VpnGateUrls.MAIN_URL, SourceKind.CANONICAL_HTML)
+                probeCanonical(SourceResource.HTML, VpnGateUrls.MAIN_URL, SourceKind.CANONICAL_HTML, deadlineNanos = deadlineNanos)
             }
             val csvDeferred = if (includeCsv) {
                 async {
                     progress(SourceDiscoveryStage.DOWNLOADING_CSV, VpnGateUrls.API_URL)
-                    probeCanonical(SourceResource.CSV, VpnGateUrls.API_URL, SourceKind.CANONICAL_API)
+                    probeCanonical(SourceResource.CSV, VpnGateUrls.API_URL, SourceKind.CANONICAL_API, deadlineNanos = deadlineNanos)
                 }
             } else null
 
@@ -91,6 +97,7 @@ class SourceDiscoveryCoordinator(
                     SourceResource.CSV,
                     VpnGateUrls.API_URL,
                     SourceKind.CANONICAL_API,
+                    deadlineNanos = deadlineNanos,
                 )
             officialHtml = htmlProbe.accepted
             selectedHtml = htmlProbe.fetched
@@ -115,7 +122,7 @@ class SourceDiscoveryCoordinator(
         var newlyDiscovered = emptyList<MirrorRegistryEntry>()
 
         if (needHtml || needCsv) {
-            val directory = discoverDirectory(registry, failed, testedKeys)
+            val directory = discoverDirectory(registry, failed, testedKeys, deadlineNanos)
             val discovered = directory.second
             val existingKeys = registry.map { MirrorRegistryStore.keyOf(it) }.toSet()
             newlyDiscovered = discovered.filterNot {
@@ -140,6 +147,7 @@ class SourceDiscoveryCoordinator(
                 failed,
                 testedKeys,
                 validatedKeys,
+                deadlineNanos,
             )
             if (selectedHtml == null) selectedHtml = mirrorResult.first
             if (selectedCsv == null) selectedCsv = mirrorResult.second
@@ -176,16 +184,21 @@ class SourceDiscoveryCoordinator(
         url: String,
         kind: SourceKind,
         budgetMs: Long = timeoutMs,
+        deadlineNanos: Long? = null,
     ): SourceProbeResult {
         val identity = SourceUrl.parse(url, kind)
             ?: return rejectedIdentity(resource, url)
-        return probe(identity, resource, budgetMs) ?: timeoutResult(identity, resource, budgetMs)
+        val effectiveBudget = deadlineNanos?.let { remainingBudgetMs(it, budgetMs) } ?: budgetMs
+        if (effectiveBudget <= 0L) return timeoutResult(identity, resource, 0L)
+        return probe(identity, resource, effectiveBudget)
+            ?: timeoutResult(identity, resource, effectiveBudget)
     }
 
     private suspend fun discoverDirectory(
         registry: List<MirrorRegistryEntry>,
         failed: MutableList<String>,
         testedKeys: MutableSet<String>,
+        deadlineNanos: Long,
     ): Pair<FetchedSource?, List<MirrorRegistryEntry>> {
         progress(SourceDiscoveryStage.DISCOVERING_MIRRORS, VpnGateUrls.MIRRORS_URL)
         // The canonical directory has its OWN budget, independent of HTML/CSV.
@@ -194,8 +207,9 @@ class SourceDiscoveryCoordinator(
             VpnGateUrls.MIRRORS_URL,
             SourceKind.CANONICAL_HTML,
             directoryTimeoutMs,
+            deadlineNanos,
         )
-        if (!probe.accepted) {
+        if (!probe.accepted && remainingBudgetMs(deadlineNanos, 1L) > 0L) {
             failed.add(probe.label)
             // A failed directory request must NOT erase the cached registry.
             for (entry in registry.take(3)) {
@@ -204,8 +218,10 @@ class SourceDiscoveryCoordinator(
                 var entryAccepted = false
                 for (path in plan.directoryPaths) {
                     val identity = identityFor(entry, path) ?: continue
-                    probe = probe(identity, SourceResource.DIRECTORY, directoryTimeoutMs)
-                        ?: timeoutResult(identity, SourceResource.DIRECTORY, directoryTimeoutMs)
+                    val budget = remainingBudgetMs(deadlineNanos, directoryTimeoutMs)
+                    if (budget <= 0L) break
+                    probe = probe(identity, SourceResource.DIRECTORY, budget)
+                        ?: timeoutResult(identity, SourceResource.DIRECTORY, budget)
                     if (probe.accepted) {
                         entryAccepted = true
                         break
@@ -226,6 +242,7 @@ class SourceDiscoveryCoordinator(
         failed: MutableList<String>,
         testedKeys: MutableSet<String>,
         validatedKeys: MutableSet<String>,
+        deadlineNanos: Long,
     ): Pair<FetchedSource?, FetchedSource?> {
         val updated = registry.toMutableList()
         val now = System.currentTimeMillis()
@@ -238,6 +255,7 @@ class SourceDiscoveryCoordinator(
         progress(SourceDiscoveryStage.TESTING_MIRRORS, "0/${candidates.size}")
 
         for ((index, entry) in candidates.withIndex()) {
+            if (remainingBudgetMs(deadlineNanos, 1L) <= 0L) break
             val key = MirrorRegistryStore.keyOf(entry)
             testedKeys.add(key)
             progress(
@@ -255,11 +273,13 @@ class SourceDiscoveryCoordinator(
                 var lastResult: SourceProbeResult? = null
 
                 for (path in paths) {
+                    val budget = remainingBudgetMs(deadlineNanos, timeoutMs)
+                    if (budget <= 0L) break
                     val identity = identityFor(entry, path)?.withMirrorId(
                         VpnGateSourceCandidates.MIRROR_TAG_PREFIX + (index + 1),
                     ) ?: continue
-                    val result = probe(identity, resource, timeoutMs)
-                        ?: timeoutResult(identity, resource, timeoutMs)
+                    val result = probe(identity, resource, budget)
+                        ?: timeoutResult(identity, resource, budget)
                     lastResult = result
                     if (result.accepted) {
                         if (resource == SourceResource.HTML) html = result.fetched else csv = result.fetched
@@ -270,6 +290,10 @@ class SourceDiscoveryCoordinator(
                     failed.add(result.label)
                 }
 
+                // Reaching the run-wide deadline is not evidence that this
+                // mirror is unhealthy. Do not increment its failure streak or
+                // continue to another mirror when the global budget is spent.
+                if (remainingBudgetMs(deadlineNanos, 1L) <= 0L) break
                 // ONE health record per resource per refresh cycle, regardless
                 // of how many candidate paths were tried.
                 val finalResult = lastResult ?: noCandidateResult(entry, resource)
@@ -319,6 +343,13 @@ class SourceDiscoveryCoordinator(
         }
         return SourceUrl.forMirror(entry.baseUrl, kind, entry.discoveryOrigin)
             ?.withPath(path)
+    }
+
+    private fun remainingBudgetMs(deadlineNanos: Long, requestedMs: Long): Long {
+        val remainingNanos = deadlineNanos - System.nanoTime()
+        if (remainingNanos <= 0L) return 0L
+        val remainingMs = (remainingNanos + 999_999L) / 1_000_000L
+        return minOf(requestedMs, remainingMs)
     }
 
     private suspend fun probe(

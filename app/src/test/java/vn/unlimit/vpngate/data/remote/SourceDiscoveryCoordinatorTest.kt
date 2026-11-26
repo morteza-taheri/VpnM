@@ -69,6 +69,7 @@ class SourceDiscoveryCoordinatorTest {
         saveRegistry = { saved.add(it) },
         timeoutMs = 2_000L,
         directoryTimeoutMs = 2_000L,
+        totalTimeoutMs = 5_000L,
     )
 
     @Test
@@ -343,4 +344,39 @@ class SourceDiscoveryCoordinatorTest {
         assertNull(r.html)
         assertEquals(0, r.summary.mirrorsDiscovered)
     }
+    @Test
+    fun `run-wide deadline stops sequential mirror attempts without poisoning mirror health`() = runBlocking {
+        val first = "http://140.199.128.31:1801/en/"
+        val second = "http://140.199.128.32:1802/en/"
+        val firstCsv = "http://140.199.128.31:1801/api/iphone/"
+        val f = FakeFetcher(
+            pages = mapOf(
+                VpnGateUrls.MAIN_URL to ok(badHtml),
+                VpnGateUrls.API_URL to ok(badCsv),
+                VpnGateUrls.MIRRORS_URL to ok(directory(first, second)),
+                first to ok(table),
+                firstCsv to ok(api),
+                second to ok(table),
+            ),
+            delays = mapOf(firstCsv to 600L),
+        )
+        val c = SourceDiscoveryCoordinator(
+            fetcher = f,
+            timeoutMs = 2_000L,
+            directoryTimeoutMs = 2_000L,
+            totalTimeoutMs = 350L,
+        )
+
+        val result = c.discover(includeCsv = true)
+
+        assertNotNull(result.html)
+        assertNull(result.csv)
+        assertFalse(
+            "later mirrors must not be attempted after the total deadline",
+            f.urls.any { it.startsWith("http://140.199.128.32:1802") },
+        )
+        val firstEntry = result.registry.first { it.baseUrl == "http://140.199.128.31:1801" }
+        assertEquals("deadline exhaustion is not a mirror health failure", 0, firstEntry.csvConsecutiveFailures)
+    }
+
 }

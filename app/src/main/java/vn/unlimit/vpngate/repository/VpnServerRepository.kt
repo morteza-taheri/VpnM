@@ -679,6 +679,7 @@ class VpnServerRepository(
                 },
                 timeoutMs = sourceTimeoutMs,
                 directoryTimeoutMs = directoryTimeoutMs,
+                totalTimeoutMs = effectiveMainTimeoutMs,
             ).discover(includeCsv = includeCsv)
         }
 

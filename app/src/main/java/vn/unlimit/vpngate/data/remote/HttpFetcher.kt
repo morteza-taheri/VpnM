@@ -72,7 +72,9 @@ interface HttpFetcher {
  * Falls back to known genuine server IP pool when DNS fails or returns
  * local/poisoned redirect IPs.
  */
-class ResilientDns : Dns {
+class ResilientDns(
+    private val resolve: (String) -> List<InetAddress> = { Dns.SYSTEM.lookup(it) },
+) : Dns {
     companion object {
         private val VPNGATE_FALLBACK_IPS = listOf(
             "130.158.75.39",
@@ -89,7 +91,7 @@ class ResilientDns : Dns {
     override fun lookup(hostname: String): List<InetAddress> {
         val lower = hostname.lowercase()
         return try {
-            val systemAddresses = Dns.SYSTEM.lookup(hostname)
+            val systemAddresses = resolve(hostname)
             // Filter out poisoned / private redirect IP addresses (e.g. 10.x.x.x)
             val valid = systemAddresses.filterNot { it.isSiteLocalAddress || it.isLoopbackAddress || it.isAnyLocalAddress }
             if (valid.isNotEmpty()) {
@@ -153,8 +155,11 @@ fun defaultCollectorClient(): OkHttpClient = collectorClientBuilder().build()
  * `android.net.Network` cannot be constructed there, but a [SocketFactory]
  * can.
  */
-fun boundToSocketFactory(socketFactory: SocketFactory): OkHttpClient =
-    collectorClientBuilder().socketFactory(socketFactory).build()
+fun boundToSocketFactory(
+    socketFactory: SocketFactory,
+    dns: Dns = ResilientDns(),
+): OkHttpClient =
+    collectorClientBuilder().socketFactory(socketFactory).dns(dns).build()
 
 /**
  * R4b: same as [boundToSocketFactory], taking the [Network] the caller holds.
@@ -178,7 +183,13 @@ fun boundToSocketFactory(socketFactory: SocketFactory): OkHttpClient =
  */
 fun boundToNetwork(network: Network): OkHttpClient =
     try {
-        val client = boundToSocketFactory(network.socketFactory)
+        // DNS and TCP must use the same Android Network. Binding only the
+        // SocketFactory leaves OkHttp's default resolver on the process
+        // default network, which may differ from this VPN during handover.
+        val networkDns = ResilientDns { hostname ->
+            network.getAllByName(hostname).toList()
+        }
+        val client = boundToSocketFactory(network.socketFactory, networkDns)
         CollectorLog.d("[bind] ok network=$network")
         client
     } catch (e: Throwable) {
@@ -199,7 +210,10 @@ fun boundToNetwork(network: Network): OkHttpClient =
  */
 fun boundToPhysicalNetwork(network: Network): OkHttpClient =
     try {
-        val client = boundToSocketFactory(network.socketFactory)
+        val networkDns = ResilientDns { hostname ->
+            network.getAllByName(hostname).toList()
+        }
+        val client = boundToSocketFactory(network.socketFactory, networkDns)
         CollectorLog.d("[bind-physical] ok network=$network")
         client
     } catch (e: Throwable) {
@@ -487,24 +501,38 @@ class OkHttpFetcher(
                 return@withContext null
             }
             val port = if (uri.port > 0) uri.port else 80
-            val socket = client.socketFactory.createSocket()
+            var socket: Socket? = null
             val job = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
-            // Run while the Job is entering cancellation, not after it has
-            // completed. A blocking Socket.connect/read prevents completion;
-            // the default completion handler therefore ran too late to unblock it.
+            // Resolve on the same Network as the socket. InetSocketAddress(host,
+            // port) would invoke the process-wide resolver before the bound
+            // socket connects, splitting DNS and TCP across different routes.
             val cancellation = job?.invokeOnCompletion(
                 onCancelling = true,
                 invokeImmediately = true,
             ) { cause ->
                 if (cause is kotlinx.coroutines.CancellationException) {
-                    runCatching { socket.close() }
+                    runCatching { socket?.close() }
                 }
             }
             try {
-                socket.connect(InetSocketAddress(uri.host, port), 10_000)
-                socket.soTimeout = 15_000
-                socket.tcpNoDelay = true
-                val output = socket.getOutputStream()
+                val addresses = client.dns.lookup(uri.host)
+                var lastConnectError: IOException? = null
+                for (address in addresses) {
+                    val candidate = client.socketFactory.createSocket()
+                    try {
+                        candidate.connect(InetSocketAddress(address, port), 10_000)
+                        socket = candidate
+                        break
+                    } catch (e: IOException) {
+                        lastConnectError = e
+                        runCatching { candidate.close() }
+                    }
+                }
+                val activeSocket = socket ?: throw (lastConnectError
+                    ?: IOException("DNS returned no connectable address for ${uri.host}"))
+                activeSocket.soTimeout = 15_000
+                activeSocket.tcpNoDelay = true
+                val output = activeSocket.getOutputStream()
                 val pathAndQuery = (uri.rawPath?.takeIf { it.isNotEmpty() } ?: "/") +
                     (uri.rawQuery?.let { "?$it" } ?: "")
                 val hostHeader = if (port == 80) uri.host else "${uri.host}:$port"
@@ -519,7 +547,7 @@ class OkHttpFetcher(
                 output.write(request.toByteArray(StandardCharsets.US_ASCII))
                 output.flush()
 
-                val input = BufferedInputStream(socket.getInputStream())
+                val input = BufferedInputStream(activeSocket.getInputStream())
                 val statusLine = readHttpLine(input) ?: return@withContext null
                 val status = statusLine.split(' ').getOrNull(1)?.toIntOrNull()
                     ?: return@withContext null
@@ -605,7 +633,7 @@ class OkHttpFetcher(
                 return@withContext null
             } finally {
                 cancellation?.dispose()
-                runCatching { socket.close() }
+                runCatching { socket?.close() }
             }
         }
         @Suppress("UNREACHABLE_CODE")
