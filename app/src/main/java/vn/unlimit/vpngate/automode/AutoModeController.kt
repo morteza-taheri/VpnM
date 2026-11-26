@@ -645,7 +645,7 @@ enum class AttemptOutcome {
          * the range 8..30. This constant, `DataUtil.getAutoModeTimeoutSeconds()`
          * and the Settings picker must stay one number.
          */
-        const val DEFAULT_ATTEMPT_TIMEOUT_MS = 12_000L
+        const val DEFAULT_ATTEMPT_TIMEOUT_MS = 8_000L
 
         /**
          * v1.0.32 (AUTOCONNECT-FIX-2, BUG-B): how many `NATIVE_BUSY` refusals on the
