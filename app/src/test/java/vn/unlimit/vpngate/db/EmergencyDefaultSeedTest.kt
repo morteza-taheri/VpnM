@@ -58,7 +58,7 @@ class EmergencyDefaultSeedTest {
         val row = dao.rows.single()
         assertEquals("the row must carry the resource URL", url, row.url)
         assertEquals("the label marks the row as the app's default", "Default", row.label)
-        assertTrue("the seeded source must be enabled", row.enabled)
+        assertFalse("the seeded emergency source must be disabled by default", row.enabled)
         assertEquals(1_700_000_000_000L, row.createdAt)
         assertEquals(1_700_000_000_000L, row.updatedAt)
         assertEquals("id must stay unset so Room autogenerates it", 0, row.id)
