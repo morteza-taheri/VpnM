@@ -633,7 +633,7 @@ enum class AttemptOutcome {
          * Connect walks protocols and servers faster.
          *
          * Before v1.0.31 this read `25_000L`, a third figure that agreed with
-         * neither the Settings default (12 s) nor the documented default (5 s).
+         * neither the Settings default (8 s) nor the documented default (5 s).
          * Three numbers described one setting, and no test pinned any of them,
          * so the drift was invisible to CI.
          *
@@ -641,7 +641,7 @@ enum class AttemptOutcome {
          * injects the user's setting explicitly. It exists for direct
          * construction (tests, library callers).
          *
-         * v1.0.70 (REQ-TIMEOUT-001): the approved default is 12 s again, with
+         * The approved fresh-install default is 8 s, with
          * the range 8..30. This constant, `DataUtil.getAutoModeTimeoutSeconds()`
          * and the Settings picker must stay one number.
          */
