@@ -67,6 +67,8 @@
     <string name="feature_not_available">این عملیات در حال حاضر امکان‌پذیر نیست</string>
     <!-- Settings -->
     <string name="enable_notification_speed">نمایش سرعت و آمار در اعلان</string>
+    <string name="setting_disconnect_notifications">اعلان قطع اتصال و خطاها</string>
+    <string name="setting_disconnect_notifications_hint">پس از قطع ناخواسته اتصال یا بروز خطای VPN اعلان نمایش داده شود. این گزینه پیش‌فرض خاموش است؛ اعلان ضروری سرویس VPN هنگام اتصال همچنان نمایش داده می‌شود.</string>
     <string name="setting_auto_mode_progress_notification">اعلان پیشرفت اتصال خودکار</string>
     <string name="setting_auto_mode_progress_notification_hint">نمایش جست‌وجوی سرورها و تلاش‌های اتصال. این گزینه در حالت پیش‌فرض خاموش است؛ اعلان ضروری سرویس VPN هنگام اتصال همچنان نمایش داده می‌شود.</string>
     <string name="setting_startup_screen">صفحهٔ آغازین</string>
