@@ -161,7 +161,7 @@
     <string name="about_server_sources_title">دریافت فهرست سرورها و منابع جایگزین</string>
     <string name="about_server_sources_summary">دریافت‌کنندهٔ سرورها از صفحه و API سایت VPN Gate با اعتبارسنجی و پشتیبانی از آینه‌ها استفاده می‌کند. منابع اضطراری CSV اختیاری هستند، به‌صورت پیش‌فرض غیرفعال‌اند و فقط زمانی به کار می‌روند که منابع زنده نتیجهٔ قابل‌قبولی ارائه نکنند.</string>
     <string name="about_csv_title">مدیریت سرور دستی و فایل CSV</string>
-    <string name="about_csv_summary">سرور خصوصی اضافه کنید یا قالب CSV برنامه و CSV استاندارد API سایت VPN Gate را با چسباندن متن یا انتخاب فایل وارد کنید. حجم و تعداد ردیف‌های ورودی محدود است.</string>
+    <string name="about_csv_summary">سرور خصوصی اضافه کنید، قالب CSV برنامه یا CSV استاندارد API سایت VPN Gate را با چسباندن متن یا انتخاب فایل وارد کنید و هر سرور را از منوی لمس طولانی به‌صورت CSV خروجی بگیرید. پورت‌های TCP و UDP جداگانه حفظ می‌شوند. حجم و تعداد ردیف‌های ورودی محدود است.</string>
     <string name="about_android_compatibility_title">سازگاری با نسخه‌های اندروید</string>
     <string name="about_android_compatibility_summary">L2TP/IPsec به پیاده‌سازی قدیمی VPN اندروید وابسته است و در اندروید ۱۳ و نسخه‌های جدیدتر در دسترس نیست. استفاده از SoftEther، OpenVPN یا SSTP پیشنهاد می‌شود.</string>
     <string name="about_development">توسعه</string>
