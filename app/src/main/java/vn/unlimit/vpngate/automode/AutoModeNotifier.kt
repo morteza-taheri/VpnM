@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.R
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 
 /**
  * Reflects the Auto Mode state in an ongoing notification while a run is
@@ -37,10 +38,7 @@ object AutoModeNotifier {
     private const val NOTIFICATION_ID = 0xA070
 
     fun notifyConnecting(context: Context, hostname: String?, attempt: Int, total: Int) {
-        val enabled = App.instance?.dataUtil?.getBooleanSetting(
-            DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
-            DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
-        ) ?: false
+        val enabled = App.instance?.dataUtil?.let(NotificationPolicy::autoModeProgressEnabled) ?: false
         if (!enabled) {
             clear(context)
             return
