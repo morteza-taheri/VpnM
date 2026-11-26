@@ -106,6 +106,14 @@ class SstpVpnService : VpnService() {
         var mDisplaySpeed: Boolean = true
         var mShowDisconnectNotifications: Boolean = false
 
+        fun cancelOptionalNotifications(context: Context) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(NOTIFICATION_CRITICAL_ID)
+            manager.cancel(NOTIFICATION_ERROR_ID)
+            manager.cancel(NOTIFICATION_RECONNECT_ID)
+            manager.cancel(NOTIFICATION_DISCONNECT_ID)
+        }
+
         private val trafficListeners = mutableListOf<TrafficListener>()
         private val mainHandler = Handler(Looper.getMainLooper())
 
