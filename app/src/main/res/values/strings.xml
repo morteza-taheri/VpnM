@@ -158,7 +158,9 @@
     <string name="unknown_state">Unknown</string>
     <string name="state_user_vpn_permission" translatable="false">Waiting for user permission to use VPN API</string>
     <string name="check_ip">Check your current public IP</string>
-    <string name="about_html">%1$s is a free, open-source, multi-protocol VPN client for Android with a native SoftEther VPN implementation. It also supports OpenVPN, MS-SSTP and L2TP/IPsec, connecting to free community servers from the VPN Gate project as well as private servers.</string>
+    <string name="about_html">%1$s is a free, open-source multi-protocol VPN client for Android. It combines a native SoftEther implementation with support for other widely used VPN protocols and public VPN Gate relays, as well as private VPN servers.</string>
+    <string name="about_protocols_title">Supported protocols</string>
+    <string name="about_protocols_summary">SoftEther SSL-VPN  •  OpenVPN  •  Microsoft SSTP  •  L2TP/IPsec</string>
     <string name="about_development">Development</string>
     <string name="about_author_label">Developed and maintained by</string>
     <string name="about_author_name" translatable="false">Morteza Taheri</string>
