@@ -98,6 +98,7 @@ import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.repository.ManualCsvImport
 import vn.unlimit.vpngate.repository.ServerListUpdateScheduler
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.DnsPresets
 import vn.unlimit.vpngate.utils.ExcludeAppsManager
 import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
