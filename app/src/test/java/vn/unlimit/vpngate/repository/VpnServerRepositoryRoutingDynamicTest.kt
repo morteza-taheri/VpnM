@@ -188,7 +188,7 @@ class VpnServerRepositoryRoutingDynamicTest {
         )
         // The order line must precede the fetchers so it is the first line a run emits.
         val ladderLine = repository.indexOf("""fetchLog("[ladder] order=""")
-        val firstFetchLine = repository.indexOf("val mirrorsDeferred = async")
+        val firstFetchLine = repository.indexOf("val discovery = fetchOnChosenPath(")
         assertTrue("ladder log must be emitted", ladderLine >= 0)
         assertTrue("first source must be launched after it", firstFetchLine > ladderLine)
     }

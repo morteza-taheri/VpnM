@@ -13,6 +13,8 @@ import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.BuildConfig
 import vn.unlimit.vpngate.automode.AutoModeProtocol
 import vn.unlimit.vpngate.data.persistence.VpnLastConnectionStore
+import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
+import vn.unlimit.vpngate.data.remote.MirrorRegistryStore
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import java.io.File
@@ -502,6 +504,20 @@ class DataUtil(context: Context?) {
         setStringSetting("KEY_CACHED_MIRRORS", json)
     }
 
+    /** Optional CSV alongside HTML. OFF keeps the original HTML-primary policy. */
+    fun getDownloadVpnGateCsv(): Boolean =
+        getBooleanSetting(SETTING_DOWNLOAD_VPN_GATE_CSV, DEFAULT_DOWNLOAD_VPN_GATE_CSV)
+
+    fun setDownloadVpnGateCsv(enabled: Boolean) =
+        setBooleanSetting(SETTING_DOWNLOAD_VPN_GATE_CSV, enabled)
+
+    /** Rich last-known-good mirror registry. Kept in prefs: no Room migration. */
+    fun getMirrorRegistry(): List<MirrorRegistryEntry> =
+        MirrorRegistryStore.load(getStringSetting(KEY_MIRROR_REGISTRY, null))
+
+    fun setMirrorRegistry(entries: List<MirrorRegistryEntry>) =
+        setStringSetting(KEY_MIRROR_REGISTRY, MirrorRegistryStore.toJson(entries))
+
     // Developer Mode: on = keep all diagnostic logging; off = suppress every
     // collector/auto-mode log line for speed (logcat writes, logcat tap and the
     // Auto Mode log window). A fresh install starts OFF; the user's choice is
@@ -812,6 +828,13 @@ class DataUtil(context: Context?) {
 
         const val SETTING_SERVER_LIST_UPDATE_TIMEOUT_SECONDS: String =
             "SETTING_SERVER_LIST_UPDATE_TIMEOUT_SECONDS"
+
+        /** Opt-in CSV fetch alongside HTML. Default OFF preserves current policy. */
+        const val SETTING_DOWNLOAD_VPN_GATE_CSV: String = "SETTING_DOWNLOAD_VPN_GATE_CSV"
+        const val DEFAULT_DOWNLOAD_VPN_GATE_CSV: Boolean = false
+
+        /** Rich mirror registry (supersedes the plain URL list). */
+        internal const val KEY_MIRROR_REGISTRY: String = "KEY_MIRROR_REGISTRY"
 
         /** BLOCK v1.0.75 FIX: size of the last accepted fresh dataset (0 = unknown). */
         const val SETTING_LAST_ACCEPTED_DATASET_SIZE: String =

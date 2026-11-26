@@ -19,8 +19,11 @@ import vn.unlimit.vpngate.data.remote.CollectorPath
 import vn.unlimit.vpngate.data.remote.CollectorRoutingInput
 import vn.unlimit.vpngate.data.remote.FetchedSource
 import vn.unlimit.vpngate.data.remote.HttpFetcher
+import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
 import vn.unlimit.vpngate.data.remote.OkHttpFetcher
 import vn.unlimit.vpngate.data.remote.OpenVpnProfileDownloader
+import vn.unlimit.vpngate.data.remote.SourceDiscoveryCoordinator
+import vn.unlimit.vpngate.data.remote.SourceDiscoveryStage
 import vn.unlimit.vpngate.data.remote.SourceIdentity
 import vn.unlimit.vpngate.data.remote.VpnGateApiSource
 import vn.unlimit.vpngate.data.remote.VpnGateHtmlSource
@@ -125,7 +128,23 @@ class VpnServerRepository(
      * keeps the injected [mainTimeoutMs], so every existing test is unchanged.
      */
     private val mainTimeoutProvider: (() -> Long)? = null,
+    /** Optional CSV fetch. Production reads the persisted user preference. */
+    private val csvEnabledProvider: (() -> Boolean)? = null,
+    /** Persistent last-known-good mirror registry seams (tests can inject memory stores). */
+    private val mirrorRegistryProvider: (() -> List<MirrorRegistryEntry>)? = null,
+    private val mirrorRegistrySaver: ((List<MirrorRegistryEntry>) -> Unit)? = null,
+    /** User-visible discovery stages, posted by the ViewModel. */
+    private val discoveryProgress: ((SourceDiscoveryStage, String) -> Unit)? = null,
 ) {
+    private fun defaultMirrorRegistry(): List<MirrorRegistryEntry> =
+        runCatching<List<MirrorRegistryEntry>> {
+            vn.unlimit.vpngate.App.instance?.dataUtil?.getMirrorRegistry().orEmpty()
+        }.getOrDefault(emptyList())
+
+    private fun defaultSaveMirrorRegistry(entries: List<MirrorRegistryEntry>) {
+        runCatching { vn.unlimit.vpngate.App.instance?.dataUtil?.setMirrorRegistry(entries) }
+    }
+
     /** The deadline this refresh will actually use. */
     private val effectiveMainTimeoutMs: Long
         get() = mainTimeoutProvider?.invoke()?.takeIf { it > 0L } ?: mainTimeoutMs
@@ -221,6 +240,7 @@ class VpnServerRepository(
         internal const val SOURCE_TAG_HTML = "html"
         internal const val SOURCE_TAG_API = "api"
         internal const val SOURCE_TAG_MIRROR = "mirror"
+        internal const val SOURCE_TAG_DISCOVERY = "source-discovery"
 
         /**
          * Production routing inputs.
@@ -628,131 +648,63 @@ class VpnServerRepository(
             else -> null
         }
 
+        // Source discovery is one routed operation. It never switches to a
+        // different network rung internally; fetchOnChosenPath keeps the
+        // TUNNEL -> FOREIGN_VPN -> PHYSICAL policy intact.
+        val includeCsv = csvEnabledProvider?.invoke() ?: runCatching {
+            vn.unlimit.vpngate.App.instance?.dataUtil?.getDownloadVpnGateCsv() ?: false
+        }.getOrDefault(false)
+
+        val discovery = fetchOnChosenPath(
+            // Keep the legacy per-source diagnostic stream: the coordinator
+            // probes html, api and mirrors on this one rung, so the wrapper
+            // reports the HTML leg and the other two are reported below.
+            SOURCE_TAG_HTML,
+            primary,
+            boundFetcher,
+            { it != null && (it.html != null || it.csv != null) },
+            physicalFetcher,
+        ) { f ->
+            SourceDiscoveryCoordinator(
+                fetcher = f,
+                loadRegistry = { mirrorRegistryProvider?.invoke() ?: defaultMirrorRegistry() },
+                saveRegistry = { entries ->
+                    mirrorRegistrySaver?.invoke(entries) ?: defaultSaveMirrorRegistry(entries)
+                },
+                progress = { stage, detail ->
+                    discoveryProgress?.invoke(stage, detail)
+                    CollectorLog.d("[discovery] ${stage.name}: $detail")
+                },
+                timeoutMs = sourceTimeoutMs,
+                directoryTimeoutMs = directoryTimeoutMs,
+            ).discover(includeCsv = includeCsv)
+        }
+
+        // The coordinator covers all three sources on the single chosen rung.
+        // Emit the two remaining legacy diagnostic lines so routing tests and
+        // device logs keep the per-source contract they have always had.
+        val rungLabel = when (primary) {
+            CollectorPath.PHYSICAL -> "physical"
+            CollectorPath.TUNNEL -> "tunnel"
+            CollectorPath.FOREIGN_VPN -> "foreign-vpn"
+            CollectorPath.EMERGENCY -> "emergency"
+        }
+        for (legacyTag in listOf(SOURCE_TAG_API, SOURCE_TAG_MIRROR)) {
+            pathLog("[collector] path=$rungLabel source=$legacyTag")
+            fetchLog("[fetch] path=$rungLabel source=$legacyTag")
+        }
+
         val records = coroutineScope {
-            val cachedMirrors = runCatching {
-                vn.unlimit.vpngate.App.instance?.dataUtil?.getCachedMirrors().orEmpty()
-            }.getOrDefault(emptyList())
-
-            val mirrorsDeferred = async {
-                fetchOnChosenPath(SOURCE_TAG_MIRROR, primary, boundFetcher, { it.isNotEmpty() }, physicalFetcher) { f ->
-                    VpnGateMirrorSource(f, directoryTimeoutMs, sourceTimeoutMs)
-                        .discoverMirrors(cachedMirrors)
-                }
-            }
-
-            // ── TIERED SOURCES ────────────────────────────────────────────
-            //
-            // The HTML page is the PRIMARY source, not a peer of the CSV feed.
-            // Measured on 2026-11-24 against the live endpoints:
-            //
-            //   HTML  https://www.vpngate.net/en/   35 KB gzip / 218 KB raw
-            //   CSV   https://www.vpngate.net/api/iphone/  1.33 MB, of which
-            //         99.1% (1,320,944 of 1,333,577 bytes) is Base64 .ovpn data
-            //
-            // and the CSV has NO protocol columns at all — 15 columns, none of
-            // them SoftEther, SSTP or L2TP. Everything the CSV carries
-            // (score, ping, speed, sessions, uptime, users, traffic, operator)
-            // is also printed on the page, which additionally publishes the
-            // SSL-VPN TCP/UDP ports, L2TP support, the MS-SSTP hostname and the
-            // per-server sid/hid needed to fetch that server's .ovpn later.
-            //
-            // So the CSV is fetched ONLY when the page produced no records.
-            // Downloading 1.33 MB on every refresh for a payload that is
-            // already available in 35 KB — and whose one unique field is now
-            // obtainable per server on demand — is exactly the "update is slow
-            // and sometimes fails" behaviour that was reported.
-            //
-            // v1.0.87 — the mirror directory no longer gates the page. It used
-            // to be awaited BEFORE the HTML fetch, so every refresh paid
-            // `directory + page` serially (up to 8 s + 12 s) even though the
-            // canonical page alone is enough on a healthy network. Discovery
-            // now runs concurrently and its result is only *needed* when the
-            // canonical page fails; on the happy path it is still awaited so
-            // the mirror cache stays warm, but it cannot add its latency to
-            // the page's.
-            fun parseHtml(fetched: FetchedSource?): List<VpnServerRecord> =
-                fetched?.let {
-                    runCatching {
-                        VpnGateHtmlParser.parseHtml(it.body, it.identity.sourceTag)
-                    }.onFailure { e -> CollectorLog.d("HTML parse failed: ${e.message}") }
-                        .getOrDefault(emptyList())
-                }.orEmpty()
-
-            // v1.0.87 — the mirrors that need NO network to know about.
-            //
-            // The bootstrap list is compiled in and already registered with the
-            // cleartext policy, and the cache was read from preferences above.
-            // Racing them alongside the canonical page is what makes a censored
-            // canonical host cost one round trip instead of two full timeouts:
-            // the mirror answers while the canonical request is still hanging.
-            // The directory is still fetched concurrently, but only to *learn
-            // new* mirrors — it is no longer a precondition for anything.
-            val knownMirrors = VpnGateSourceCandidates.bootstrapMirrors() +
-                VpnGateSourceCandidates.cachedMirrors(cachedMirrors)
-            val knownMirrorBases = knownMirrors.map { it.baseUrl }.toSet()
-
-            var htmlFetched = fetchOnChosenPath(
-                SOURCE_TAG_HTML, primary, boundFetcher, { true }, physicalFetcher,
-            ) { f -> VpnGateHtmlSource(f, sourceTimeoutMs).fetch(knownMirrors) }
-
-            var htmlParsed: List<VpnServerRecord> = parseHtml(htmlFetched)
-
-            // The directory result is awaited in both branches so the cache
-            // stays warm, but it runs concurrently with the page fetch and its
-            // own timeout is separate, so it cannot add its latency to a page
-            // that already answered.
-            val mirrors: List<SourceIdentity> = mirrorsDeferred.await().orEmpty()
-
-            if (htmlParsed.isEmpty()) {
-                // Retry ONLY with mirrors this run learned from the directory.
-                // The bootstrap/cached set was already raced above, so repeating
-                // it would double the time budget for the same candidates.
-                val newlyDiscovered = mirrors.filterNot { it.baseUrl in knownMirrorBases }
-                if (newlyDiscovered.isNotEmpty()) {
-                    CollectorLog.d(
-                        "Canonical HTML and known mirrors produced nothing; " +
-                            "retrying ${newlyDiscovered.size} newly discovered mirror(s)",
-                    )
-                    htmlFetched = fetchOnChosenPath(
-                        SOURCE_TAG_HTML, primary, boundFetcher, { true }, physicalFetcher,
-                    ) { f -> VpnGateHtmlSource(f, sourceTimeoutMs).fetch(newlyDiscovered) }
-                    htmlParsed = parseHtml(htmlFetched)
-                }
-            }
-
-            if (mirrors.isNotEmpty()) {
+            val htmlFetched = discovery?.html
+            val apiFetched = discovery?.csv
+            val htmlParsed = htmlFetched?.let { fetched ->
                 runCatching {
-                    vn.unlimit.vpngate.App.instance?.dataUtil
-                        ?.setCachedMirrors(mirrors.map { it.baseUrl })
-                }
-            }
-
-            val apiFetched = if (htmlParsed.isEmpty()) {
-                CollectorLog.d("HTML produced no records; fetching the CSV feed as fallback")
-                fetchOnChosenPath(
-                    SOURCE_TAG_API, primary, boundFetcher, { true }, physicalFetcher,
-                ) { f -> VpnGateApiSource(f, sourceTimeoutMs).fetch() }
-            } else {
-                CollectorLog.d(
-                    "HTML produced ${htmlParsed.size} records; CSV feed skipped " +
-                        "(every metadata column is present; .ovpn profiles are " +
-                        "downloaded per server via openvpn_download.aspx)",
-                )
-                null
-            }
-
-            CollectorLog.d(
-                "Sources: html=${htmlFetched?.identity?.sourceTag} " +
-                    "api=${apiFetched?.identity?.sourceTag} mirrors=${mirrors.size}",
-            )
-
-            collectedCapability = SourceCapability(
-                providesProtocolColumns = htmlFetched != null,
-                providesOpenVpnProfiles = apiFetched != null,
-            )
+                    VpnGateHtmlParser.parseHtml(fetched.body, fetched.identity.sourceTag)
+                }.onFailure { e -> CollectorLog.d("HTML parse failed: ${e.message}") }
+                    .getOrDefault(emptyList())
+            }.orEmpty()
 
             val collected = mutableListOf<VpnServerRecord>()
-
             apiFetched?.let { fetched ->
                 runCatching {
                     collected.addAll(
@@ -760,13 +712,19 @@ class VpnServerRepository(
                     )
                 }.onFailure { e -> CollectorLog.d("API parse failed: ${e.message}") }
             }
-
             collected.addAll(htmlParsed)
 
-            // §33: keep bounded raw captures for the debug panel.
             lastRawHtml = htmlFetched?.body?.take(RAW_CAPTURE_LIMIT)
             lastRawApi = apiFetched?.body?.take(RAW_CAPTURE_LIMIT)
-
+            collectedCapability = SourceCapability(
+                providesProtocolColumns = htmlFetched != null,
+                providesOpenVpnProfiles = apiFetched != null,
+            )
+            CollectorLog.d(
+                "Sources: html=${htmlFetched?.identity?.sourceTag} " +
+                    "api=${apiFetched?.identity?.sourceTag} " +
+                    "mirrorsValidated=${discovery?.summary?.mirrorsValidated ?: 0}",
+            )
             collected
         }
 

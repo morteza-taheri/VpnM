@@ -352,6 +352,8 @@
     <!-- Scheduled server list refresh interval (1–24 hours, default 12). -->
     <string name="setting_server_update_timeout_label">مدت انتظار بروزرسانی لیست سرورها</string>
     <string name="setting_server_update_timeout_subtitle">حداکثر زمان مجاز برای یک بار بروزرسانی. در شبکههای کند یا فیلترشده آنرا افزایش دهید.</string>
+    <string name="setting_download_vpn_gate_csv">دریافت CSV سایت VPN Gate</string>
+    <string name="setting_download_vpn_gate_csv_hint">همزمان فایل CSV رسمی نیز دریافت و ادغام شود. در حالت خاموش، بروزرسانی سریع مبتنی بر HTML حفظ میشود.</string>
     <string name="setting_server_update_timeout_value">%1$d ثانیه</string>
     <string name="setting_server_update_interval_label">فاصله بروزرسانی لیست سرورها</string>
     <string name="setting_server_update_interval_subtitle">لیست سرورها چند وقت یک‌بار به‌صورت خودکار بروزرسانی شود. شما همیشه می‌توانید دستی بروزرسانی کنید.</string>

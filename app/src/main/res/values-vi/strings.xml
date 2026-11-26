@@ -310,6 +310,8 @@
     <!-- Scheduled server list refresh interval (1–24 hours, default 12). -->
     <string name="setting_server_update_timeout_label">Server List Update Timeout</string>
     <string name="setting_server_update_timeout_subtitle">How long one refresh may take. Increase it on slow or filtered networks.</string>
+    <string name="setting_download_vpn_gate_csv">Tải CSV VPN Gate</string>
+    <string name="setting_download_vpn_gate_csv_hint">Tải thêm nguồn CSV chính thức và hợp nhất dữ liệu. Tắt để giữ cách cập nhật nhanh dùng HTML.</string>
     <string name="setting_server_update_timeout_value">%1$d seconds</string>
     <string name="setting_server_update_interval_label">Server List Update Interval</string>
     <string name="setting_server_update_interval_subtitle">How often the server list refreshes on its own. You can always update it manually.</string>

@@ -258,6 +258,7 @@ fun HomeScreen(
     // mechanism the other Compose screens already use (AutoModeScreen,
     // CopyDebugSheets); no new snackbar host is introduced.
     val refreshNotice by connectionListViewModel.refreshNotice.observeAsState()
+    val discoveryStage by connectionListViewModel.sourceDiscoveryStage.observeAsState("")
     LaunchedEffect(refreshNotice) {
         val message = refreshNotice ?: return@LaunchedEffect
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
@@ -335,10 +336,11 @@ fun HomeScreen(
                                         val updatedFormatted = if (lastUpdatedTime > 0L) {
                                             DateTimeFormatterUtil.formatLastUpdated(lastUpdatedTime)
                                         } else ""
-                                        val subtitleText = if (updatedFormatted.isNotEmpty()) {
-                                            stringResource(R.string.server_list_last_updated, updatedFormatted)
-                                        } else {
-                                            stringResource(R.string.server_list_never_updated)
+                                        val subtitleText = when {
+                                            isLoading && discoveryStage.isNotBlank() -> discoveryStage
+                                            updatedFormatted.isNotEmpty() ->
+                                                stringResource(R.string.server_list_last_updated, updatedFormatted)
+                                            else -> stringResource(R.string.server_list_never_updated)
                                         }
                                         Text(
                                             text = subtitleText,

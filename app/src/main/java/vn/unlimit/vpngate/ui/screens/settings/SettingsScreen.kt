@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.FileUpload
@@ -168,6 +169,7 @@ fun SettingsScreen(
             DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
         ))
     }
+    var downloadVpnGateCsv by remember { mutableStateOf(dataUtil.getDownloadVpnGateCsv()) }
     var useCustomDns by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.USE_CUSTOM_DNS, false)) }
     // Defaults shown for the fields when nothing is stored yet. These are only
     // *applied* to the tunnel when Custom DNS is ON, so a fresh install keeps
@@ -756,6 +758,17 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.setting_server_update_timeout_subtitle),
                         icon = Icons.Outlined.Schedule,
                         onClick = { showServerUpdateTimeoutPicker = true },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_download_vpn_gate_csv),
+                        subtitle = stringResource(R.string.setting_download_vpn_gate_csv_hint),
+                        icon = Icons.Outlined.CloudDownload,
+                        checked = downloadVpnGateCsv,
+                        onChecked = {
+                            downloadVpnGateCsv = it
+                            dataUtil.setDownloadVpnGateCsv(it)
+                        },
                     )
                 }
             }
