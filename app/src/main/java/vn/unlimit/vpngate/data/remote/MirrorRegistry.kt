@@ -16,6 +16,10 @@ enum class MirrorResource {
  * seen, what it served, or whether it had failed 20 times in a row. This entry
  * keeps that evidence without changing the Room schema — the registry lives in
  * SharedPreferences and is therefore migration-free.
+ *
+ * Health is tracked per resource. Multiple failed path candidates inside ONE
+ * refresh are a single failed refresh cycle for that resource, not five
+ * separate failures.
  */
 data class MirrorRegistryEntry(
     /** The URL exactly as published by the official directory (or cached). */
@@ -25,24 +29,40 @@ data class MirrorRegistryEntry(
     /** Normalized path from the published URL, e.g. `/en/`. */
     val publishedPath: String = "/",
     val discoveredAt: Long = 0L,
+    /** Historical overall success — never cleared by a temporary outage. */
     val lastSuccessAt: Long = 0L,
     val lastFailureAt: Long = 0L,
-    /** Resources that passed structural validation at least once. */
+    /** Resources that passed structural validation at least once (historical). */
     val supportedResources: Set<String> = emptySet(),
     val lastStatus: Int = 0,
     val lastResponseTimeMs: Long = 0L,
+    /** Legacy display counter; derived from the per-resource counters. */
     val failureCount: Int = 0,
     val lastResult: String = "",
     val discoveryOrigin: String? = null,
+    val htmlConsecutiveFailures: Int = 0,
+    val csvConsecutiveFailures: Int = 0,
+    val lastHtmlFailureAt: Long = 0L,
+    val lastCsvFailureAt: Long = 0L,
+    val lastHtmlSuccessAt: Long = 0L,
+    val lastCsvSuccessAt: Long = 0L,
 ) {
     fun isKnownFor(resource: MirrorResource): Boolean =
         resource.name in supportedResources
+
+    fun consecutiveFailures(resource: MirrorResource): Int = when (resource) {
+        MirrorResource.HTML -> htmlConsecutiveFailures
+        MirrorResource.CSV -> csvConsecutiveFailures
+    }
 }
 
 /** Pure persistence and merge rules for the mirror registry. */
 object MirrorRegistryStore {
     internal const val MAX_ENTRIES = 15
-    internal const val REPEATED_FAILURE_LIMIT = 5
+    /** Consecutive FAILED REFRESH CYCLES, not failed URL attempts. */
+    internal const val REPEATED_FAILURE_LIMIT = 3
+    /** A deactivated resource is retried after this cooldown. */
+    internal const val RETRY_COOLDOWN_MS = 30 * 60_000L
 
     private val gson = Gson()
     private val listType = object : TypeToken<List<MirrorRegistryEntry>>() {}.type
@@ -73,26 +93,36 @@ object MirrorRegistryStore {
         discovered: List<MirrorRegistryEntry>,
         now: Long,
     ): List<MirrorRegistryEntry> {
-        val byKey = LinkedHashMap<String, MirrorRegistryEntry>()
-        for (entry in existing) {
-            val key = keyOf(entry)
-            if (key.isNotBlank()) byKey[key] = entry
-        }
+        // Newly discovered authorities are tried before the older bootstrap
+        // set: the directory is the current source of truth, and provenance
+        // tags mirror_1..N must describe fresh discoveries first.
+        val orderedKeys = LinkedHashSet<String>()
         for (entry in discovered) {
             val key = keyOf(entry)
-            if (key.isBlank()) continue
-            val previous = byKey[key]
-            byKey[key] = if (previous == null) {
-                entry.copy(discoveredAt = entry.discoveredAt.takeIf { it > 0L } ?: now)
-            } else {
-                previous.copy(
+            if (key.isNotBlank()) orderedKeys.add(key)
+        }
+        for (entry in existing) {
+            val key = keyOf(entry)
+            if (key.isNotBlank()) orderedKeys.add(key)
+        }
+        val byKey = LinkedHashMap<String, MirrorRegistryEntry>()
+        for (key in orderedKeys) {
+            val fresh = discovered.firstOrNull { keyOf(it) == key }
+            val old = existing.firstOrNull { keyOf(it) == key }
+            byKey[key] = when {
+                old != null && fresh != null -> old.copy(
                     // A mirror still published by the directory is freshly seen;
                     // its historical successes/failures stay intact.
                     discoveredAt = now,
-                    publishedUrl = entry.publishedUrl,
-                    baseUrl = entry.baseUrl,
-                    publishedPath = entry.publishedPath,
+                    publishedUrl = fresh.publishedUrl,
+                    baseUrl = fresh.baseUrl,
+                    publishedPath = fresh.publishedPath,
+                    discoveryOrigin = fresh.discoveryOrigin ?: old.discoveryOrigin,
                 )
+                fresh != null -> fresh.copy(
+                    discoveredAt = fresh.discoveredAt.takeIf { it > 0L } ?: now,
+                )
+                else -> old!!
             }
         }
         // Known-good first, then most recently seen. Nothing is discarded here;
@@ -103,6 +133,12 @@ object MirrorRegistryStore {
         ).take(MAX_ENTRIES)
     }
 
+    /**
+     * Record ONE resource result for ONE refresh cycle.
+     *
+     * Call this after all candidate paths for the resource have been tried:
+     * path-level attempts must not inflate the consecutive failure counter.
+     */
     fun recordResult(
         entry: MirrorRegistryEntry,
         resource: MirrorResource,
@@ -113,31 +149,67 @@ object MirrorRegistryStore {
         detail: String,
     ): MirrorRegistryEntry {
         val resources = if (accepted) entry.supportedResources + resource.name else entry.supportedResources
-        return if (accepted) {
-            entry.copy(
-                supportedResources = resources,
-                lastSuccessAt = now,
-                lastStatus = status,
-                lastResponseTimeMs = responseTimeMs,
-                failureCount = 0,
-                lastFailureAt = 0L,
-                lastResult = detail.take(200),
-            )
-        } else {
-            entry.copy(
-                supportedResources = resources,
-                lastFailureAt = now,
-                lastStatus = status,
-                lastResponseTimeMs = responseTimeMs,
-                failureCount = entry.failureCount + 1,
-                lastResult = detail.take(200),
-            )
+        val htmlFailures: Int
+        val csvFailures: Int
+        val htmlFailureAt: Long
+        val csvFailureAt: Long
+        val htmlSuccessAt: Long
+        val csvSuccessAt: Long
+        when (resource) {
+            MirrorResource.HTML -> {
+                htmlFailures = if (accepted) 0 else entry.htmlConsecutiveFailures + 1
+                csvFailures = entry.csvConsecutiveFailures
+                htmlFailureAt = if (accepted) 0L else now
+                csvFailureAt = entry.lastCsvFailureAt
+                htmlSuccessAt = if (accepted) now else entry.lastHtmlSuccessAt
+                csvSuccessAt = entry.lastCsvSuccessAt
+            }
+            MirrorResource.CSV -> {
+                htmlFailures = entry.htmlConsecutiveFailures
+                csvFailures = if (accepted) 0 else entry.csvConsecutiveFailures + 1
+                htmlFailureAt = entry.lastHtmlFailureAt
+                csvFailureAt = if (accepted) 0L else now
+                htmlSuccessAt = entry.lastHtmlSuccessAt
+                csvSuccessAt = if (accepted) now else entry.lastCsvSuccessAt
+            }
         }
+        return entry.copy(
+            supportedResources = resources,
+            lastSuccessAt = if (accepted) now else entry.lastSuccessAt,
+            lastFailureAt = if (accepted) entry.lastFailureAt else now,
+            lastStatus = status,
+            lastResponseTimeMs = responseTimeMs,
+            failureCount = maxOf(htmlFailures, csvFailures),
+            lastResult = detail.take(200),
+            htmlConsecutiveFailures = htmlFailures,
+            csvConsecutiveFailures = csvFailures,
+            lastHtmlFailureAt = htmlFailureAt,
+            lastCsvFailureAt = csvFailureAt,
+            lastHtmlSuccessAt = htmlSuccessAt,
+            lastCsvSuccessAt = csvSuccessAt,
+        )
     }
 
-    /** Deactivate after repeated failures, but keep the entry for later retry. */
-    fun shouldDeactivate(entry: MirrorRegistryEntry): Boolean =
-        entry.failureCount >= REPEATED_FAILURE_LIMIT && entry.lastSuccessAt == 0L
+    /** True when a resource has reached the repeated-failure threshold. */
+    fun isDeactivatedFor(entry: MirrorRegistryEntry, resource: MirrorResource): Boolean =
+        entry.consecutiveFailures(resource) >= REPEATED_FAILURE_LIMIT
+
+    /**
+     * A deactivated resource is skipped for a bounded cooldown and then retried.
+     * Nothing is ever deleted from the registry for being temporarily down.
+     */
+    fun shouldSkipForResource(
+        entry: MirrorRegistryEntry,
+        resource: MirrorResource,
+        now: Long,
+    ): Boolean {
+        if (!isDeactivatedFor(entry, resource)) return false
+        val failedAt = when (resource) {
+            MirrorResource.HTML -> entry.lastHtmlFailureAt
+            MirrorResource.CSV -> entry.lastCsvFailureAt
+        }
+        return now - failedAt < RETRY_COOLDOWN_MS
+    }
 }
 
 /**

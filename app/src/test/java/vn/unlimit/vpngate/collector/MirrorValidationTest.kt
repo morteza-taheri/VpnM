@@ -591,11 +591,13 @@ class MirrorValidationTest {
     @Test
     fun canonicalWinsAConflictWithAMirrorButTheMirrorIsStillRecorded() {
         val canonical = VpnRecords.newServer()
+        VpnRecords.setField(canonical, "identity.hostname", MirrorTestFixtures.SYNTHETIC_HOST, "html")
         VpnRecords.setField(canonical, "identity.ip", MirrorTestFixtures.SYNTHETIC_IP, "html")
         VpnRecords.setField(canonical, "performance.sessions", 10, "html")
         VpnRecords.sourceAdd(canonical, "html")
 
         val mirror = VpnRecords.newServer()
+        VpnRecords.setField(mirror, "identity.hostname", MirrorTestFixtures.SYNTHETIC_HOST, "mirror_1")
         VpnRecords.setField(mirror, "identity.ip", MirrorTestFixtures.SYNTHETIC_IP, "mirror_1")
         VpnRecords.setField(mirror, "performance.sessions", 99, "mirror_1")
         VpnRecords.sourceAdd(mirror, "mirror_1")

@@ -19,7 +19,9 @@ import vn.unlimit.vpngate.data.remote.CollectorPath
 import vn.unlimit.vpngate.data.remote.CollectorRoutingInput
 import vn.unlimit.vpngate.data.remote.FetchedSource
 import vn.unlimit.vpngate.data.remote.HttpFetcher
+import vn.unlimit.vpngate.data.remote.MirrorOrigin
 import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
+import vn.unlimit.vpngate.data.remote.MirrorRegistryStore
 import vn.unlimit.vpngate.data.remote.OkHttpFetcher
 import vn.unlimit.vpngate.data.remote.OpenVpnProfileDownloader
 import vn.unlimit.vpngate.data.remote.SourceDiscoveryCoordinator
@@ -1056,14 +1058,17 @@ class VpnServerRepository(
             succeeded = { !it.isNullOrBlank() },
             physicalFetcher = physicalFetcher,
         ) { selectedFetcher ->
-            val cachedMirrorUrls = runCatching {
-                vn.unlimit.vpngate.App.instance?.dataUtil?.getCachedMirrors().orEmpty()
+            // Unified registry: existing KEY_CACHED_MIRRORS installs are
+            // migrated by DataUtil.getMirrorRegistry(), so both paths see the
+            // same authorities.
+            val mirrorBases = runCatching {
+                vn.unlimit.vpngate.App.instance?.dataUtil?.getUnifiedMirrorBases().orEmpty()
             }.getOrDefault(emptyList())
             val downloader = OpenVpnProfileDownloader(selectedFetcher)
             val cachedResult = downloader.download(
                 connection = connection,
                 useUdp = useUdp,
-                mirrorBaseUrls = cachedMirrorUrls,
+                mirrorBaseUrls = mirrorBases,
             )
             if (!cachedResult.isNullOrBlank()) {
                 cachedResult
@@ -1073,18 +1078,33 @@ class VpnServerRepository(
                 // fail, then retry this one profile over the newly discovered
                 // authorities.
                 val discovered = runCatching {
-                    VpnGateMirrorSource(selectedFetcher).discoverMirrors(cachedMirrorUrls)
+                    VpnGateMirrorSource(selectedFetcher).discoverMirrors(mirrorBases)
                 }.getOrDefault(emptyList())
+                // Register before the first cleartext profile request.
+                VpnGateSourceCandidates.registerForCleartext(discovered)
                 val freshMirrorUrls = discovered.map { it.baseUrl }
                 if (freshMirrorUrls.isNotEmpty()) {
+                    val now = System.currentTimeMillis()
+                    val entries = discovered.map { identity ->
+                        MirrorRegistryEntry(
+                            publishedUrl = identity.url,
+                            baseUrl = identity.baseUrl,
+                            publishedPath = identity.path,
+                            discoveryOrigin = MirrorOrigin.CANONICAL_DIRECTORY,
+                            discoveredAt = now,
+                        )
+                    }
                     runCatching {
-                        vn.unlimit.vpngate.App.instance?.dataUtil?.setCachedMirrors(freshMirrorUrls)
+                        val dataUtil = vn.unlimit.vpngate.App.instance?.dataUtil ?: return@runCatching
+                        dataUtil.setMirrorRegistry(
+                            MirrorRegistryStore.merge(dataUtil.getMirrorRegistry(), entries, now),
+                        )
                     }
                 }
                 downloader.download(
                     connection = connection,
                     useUdp = useUdp,
-                    mirrorBaseUrls = freshMirrorUrls.ifEmpty { cachedMirrorUrls },
+                    mirrorBaseUrls = freshMirrorUrls.ifEmpty { mirrorBases },
                 )
             }
         }

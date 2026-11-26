@@ -13,8 +13,11 @@ import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.BuildConfig
 import vn.unlimit.vpngate.automode.AutoModeProtocol
 import vn.unlimit.vpngate.data.persistence.VpnLastConnectionStore
+import vn.unlimit.vpngate.data.remote.MirrorOrigin
 import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
 import vn.unlimit.vpngate.data.remote.MirrorRegistryStore
+import vn.unlimit.vpngate.data.remote.SourceKind
+import vn.unlimit.vpngate.data.remote.SourceUrl
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import java.io.File
@@ -59,6 +62,9 @@ class DataUtil(context: Context?) {
      */
     internal constructor(sharedPreferences: SharedPreferences) : this(null) {
         sharedPreferencesSetting = sharedPreferences
+        // The primary constructor fails before `gson = Gson()` when context is
+        // null; preference-only tests still need JSON for the mirror registry.
+        if (gson == null) gson = Gson()
     }
 
     /**
@@ -511,12 +517,42 @@ class DataUtil(context: Context?) {
     fun setDownloadVpnGateCsv(enabled: Boolean) =
         setBooleanSetting(SETTING_DOWNLOAD_VPN_GATE_CSV, enabled)
 
-    /** Rich last-known-good mirror registry. Kept in prefs: no Room migration. */
-    fun getMirrorRegistry(): List<MirrorRegistryEntry> =
-        MirrorRegistryStore.load(getStringSetting(KEY_MIRROR_REGISTRY, null))
+    /**
+     * Rich last-known-good mirror registry. Kept in prefs: no Room migration.
+     *
+     * Existing installations have `KEY_CACHED_MIRRORS` from the old collector.
+     * Those URLs are validated through [SourceUrl.forMirror] before they are
+     * imported, so a corrupted cache entry can never become a trusted mirror.
+     * The legacy key is left untouched as a fallback for older builds.
+     */
+    fun getMirrorRegistry(): List<MirrorRegistryEntry> {
+        val stored = MirrorRegistryStore.load(getStringSetting(KEY_MIRROR_REGISTRY, null))
+        val legacy = getCachedMirrors().mapNotNull { url ->
+            SourceUrl.forMirror(url, SourceKind.CACHED_MIRROR, MirrorOrigin.MIRROR_CACHE)
+                ?.let { identity ->
+                    MirrorRegistryEntry(
+                        publishedUrl = identity.url,
+                        baseUrl = identity.baseUrl,
+                        publishedPath = identity.path,
+                        discoveryOrigin = MirrorOrigin.MIRROR_CACHE,
+                    )
+                }
+        }
+        if (legacy.isEmpty()) return stored
+        val merged = MirrorRegistryStore.merge(stored, legacy, System.currentTimeMillis())
+        if (merged != stored) setMirrorRegistry(merged)
+        return merged
+    }
 
     fun setMirrorRegistry(entries: List<MirrorRegistryEntry>) =
         setStringSetting(KEY_MIRROR_REGISTRY, MirrorRegistryStore.toJson(entries))
+
+    /**
+     * Unified mirror bases for the OpenVPN profile downloader. Both the new
+     * collector and the legacy cache resolve through [getMirrorRegistry].
+     */
+    fun getUnifiedMirrorBases(): List<String> =
+        getMirrorRegistry().map { it.baseUrl }.distinct()
 
     // Developer Mode: on = keep all diagnostic logging; off = suppress every
     // collector/auto-mode log line for speed (logcat writes, logcat tap and the

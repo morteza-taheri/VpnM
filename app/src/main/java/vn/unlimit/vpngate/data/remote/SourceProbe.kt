@@ -39,7 +39,9 @@ class SourceProber(private val fetcher: HttpFetcher) {
             response = fetcher.get(identity.url, identity.redirectPolicy())
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
+            // Ordinary network/parse failures are source rejections. Fatal JVM
+            // errors (OOM, StackOverflow, ...) must still propagate.
             detail = e.message?.take(200) ?: e::class.java.simpleName
         }
         val elapsed = ((System.nanoTime() - started) / 1_000_000L).coerceAtLeast(0L)

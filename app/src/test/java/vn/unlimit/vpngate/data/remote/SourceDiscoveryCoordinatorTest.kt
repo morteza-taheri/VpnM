@@ -1,6 +1,7 @@
 package vn.unlimit.vpngate.data.remote
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,12 +23,14 @@ class SourceDiscoveryCoordinatorTest {
 
     private class FakeFetcher(
         private val pages: Map<String, Pair<Int, String>>,
+        private val delays: Map<String, Long> = emptyMap(),
     ) : HttpFetcher {
         val urls = mutableListOf<String>()
         var cancelOn: String? = null
 
         override suspend fun get(url: String, redirectPolicy: RedirectPolicy?): HttpResponse? {
             urls.add(url)
+            delays[url]?.let { delay(it) }
             if (url == cancelOn) throw CancellationException("cancelled by test")
             val body = pages[url] ?: return null
             val type = if ("/api/iphone/" in url) "text/csv" else "text/html; charset=utf-8"
@@ -292,5 +295,52 @@ class SourceDiscoveryCoordinatorTest {
         coordinator(f).discover(false)
         assertTrue(f.urls.isNotEmpty())
         assertTrue(f.urls.all { it.startsWith("http") })
+    }
+
+    @Test
+    fun `summary counts only mirrors tested and validated in this run`() = runBlocking {
+        val first = "http://140.199.128.20:1787/en/"
+        val second = "http://140.199.128.21:1788/en/"
+        val third = "http://140.199.128.22:1789/en/"
+        val f = FakeFetcher(
+            mapOf(
+                VpnGateUrls.MAIN_URL to ok(badHtml),
+                VpnGateUrls.API_URL to ok(api),
+                VpnGateUrls.MIRRORS_URL to ok(directory(first, second, third)),
+                first to ok(badHtml),
+                second to ok(table),
+                third to ok(table),
+            ),
+        )
+        val r = coordinator(f).discover(true)
+        assertEquals(3, r.summary.mirrorsDiscovered)
+        assertEquals(2, r.summary.mirrorsTested)
+        assertEquals(1, r.summary.mirrorsValidated)
+    }
+
+    @Test
+    fun `historical capability is not counted as current validation`() = runBlocking {
+        val mirror = "http://140.199.128.23:1790/en/"
+        val cached = entry(mirror).copy(supportedResources = setOf("HTML"), lastSuccessAt = 123L)
+        val f = FakeFetcher(mapOf(mirror to ok(badHtml)))
+        val r = coordinator(f, listOf(cached)).discover(false)
+        assertEquals(0, r.summary.mirrorsValidated)
+        assertTrue(r.registry.first().isKnownFor(MirrorResource.HTML))
+    }
+
+    @Test
+    fun `canonical directory uses its own timeout budget`() = runBlocking {
+        val f = FakeFetcher(
+            pages = mapOf(VpnGateUrls.MIRRORS_URL to ok(directory("http://140.199.128.24:1791/en/"))),
+            delays = mapOf(VpnGateUrls.MIRRORS_URL to 800L),
+        )
+        val c = SourceDiscoveryCoordinator(
+            fetcher = f,
+            timeoutMs = 3_000L,
+            directoryTimeoutMs = 100L,
+        )
+        val r = c.discover(false)
+        assertNull(r.html)
+        assertEquals(0, r.summary.mirrorsDiscovered)
     }
 }

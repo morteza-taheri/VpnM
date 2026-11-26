@@ -57,7 +57,13 @@ class SourceDiscoveryCoordinator(
     suspend fun discover(includeCsv: Boolean): SourceDiscoveryResult {
         val registry = loadRegistry().toMutableList()
         if (registry.isEmpty()) registry.addAll(bootstrapEntries())
+        // Cached/bootstrap mirrors must be allowed through the real interceptor
+        // before the first cleartext request, including directory probes.
+        registerMirrors(registry)
+
         val failed = mutableListOf<String>()
+        val testedKeys = mutableSetOf<String>()
+        val validatedKeys = mutableSetOf<String>()
         var officialHtml = false
         var officialCsv = false
 
@@ -78,8 +84,8 @@ class SourceDiscoveryCoordinator(
             } else null
 
             val htmlProbe = htmlDeferred.await()
-            // When the setting is OFF we still owe the historical CSV fallback:
-            // probe it once only if HTML produced no usable records.
+            // The setting controls "CSV alongside HTML". It must not disable the
+            // long-standing CSV fallback when HTML produced no usable records.
             val csvProbe = csvDeferred?.await()
                 ?: if (htmlProbe.accepted) null else probeCanonical(
                     SourceResource.CSV,
@@ -105,24 +111,36 @@ class SourceDiscoveryCoordinator(
         }
 
         val needHtml = selectedHtml == null
-        // The setting controls "CSV alongside HTML". It must not disable the
-        // long-standing CSV fallback when HTML produced no usable records.
         val needCsv = selectedCsv == null && (includeCsv || selectedHtml == null)
-        var discovered = emptyList<MirrorRegistryEntry>()
+        var newlyDiscovered = emptyList<MirrorRegistryEntry>()
 
         if (needHtml || needCsv) {
-            val directory = discoverDirectory(registry, failed)
-            discovered = directory.second
-            registry.addAll(
-                discovered.filterNot { incoming ->
-                    registry.any { MirrorRegistryStore.keyOf(it) == MirrorRegistryStore.keyOf(incoming) }
-                },
+            val directory = discoverDirectory(registry, failed, testedKeys)
+            val discovered = directory.second
+            val existingKeys = registry.map { MirrorRegistryStore.keyOf(it) }.toSet()
+            newlyDiscovered = discovered.filterNot {
+                MirrorRegistryStore.keyOf(it) in existingKeys
+            }
+            // Validated directory entries are registered BEFORE any request to
+            // them, so the real cleartext interceptor cannot refuse them.
+            registerMirrors(discovered)
+            val merged = MirrorRegistryStore.merge(
+                registry,
+                discovered,
+                System.currentTimeMillis(),
             )
-            val merged = MirrorRegistryStore.merge(loadRegistry().ifEmpty { registry }, discovered, System.currentTimeMillis())
             registry.clear()
             registry.addAll(merged)
+            saveRegistry(registry.toList())
 
-            val mirrorResult = testMirrors(registry, needHtml, needCsv, failed)
+            val mirrorResult = testMirrors(
+                registry,
+                needHtml,
+                needCsv,
+                failed,
+                testedKeys,
+                validatedKeys,
+            )
             if (selectedHtml == null) selectedHtml = mirrorResult.first
             if (selectedCsv == null) selectedCsv = mirrorResult.second
         }
@@ -137,9 +155,9 @@ class SourceDiscoveryCoordinator(
         val summary = SourceDiscoverySummary(
             officialHtmlAvailable = officialHtml,
             officialCsvAvailable = officialCsv,
-            mirrorsDiscovered = discovered.size,
-            mirrorsTested = registry.size,
-            mirrorsValidated = registry.count { it.supportedResources.isNotEmpty() },
+            mirrorsDiscovered = newlyDiscovered.size,
+            mirrorsTested = testedKeys.size,
+            mirrorsValidated = validatedKeys.size,
             htmlSourceUsed = selectedHtml?.identity?.sourceTag,
             csvSourceUsed = selectedCsv?.identity?.sourceTag,
             failedSources = failed.distinct(),
@@ -157,38 +175,43 @@ class SourceDiscoveryCoordinator(
         resource: SourceResource,
         url: String,
         kind: SourceKind,
+        budgetMs: Long = timeoutMs,
     ): SourceProbeResult {
         val identity = SourceUrl.parse(url, kind)
             ?: return rejectedIdentity(resource, url)
-        return probe(identity, resource, timeoutMs) ?: timeoutResult(identity, resource)
+        return probe(identity, resource, budgetMs) ?: timeoutResult(identity, resource, budgetMs)
     }
 
     private suspend fun discoverDirectory(
         registry: List<MirrorRegistryEntry>,
         failed: MutableList<String>,
+        testedKeys: MutableSet<String>,
     ): Pair<FetchedSource?, List<MirrorRegistryEntry>> {
         progress(SourceDiscoveryStage.DISCOVERING_MIRRORS, VpnGateUrls.MIRRORS_URL)
+        // The canonical directory has its OWN budget, independent of HTML/CSV.
         var probe = probeCanonical(
             SourceResource.DIRECTORY,
             VpnGateUrls.MIRRORS_URL,
             SourceKind.CANONICAL_HTML,
+            directoryTimeoutMs,
         )
         if (!probe.accepted) {
             failed.add(probe.label)
             // A failed directory request must NOT erase the cached registry.
-            for ((index, entry) in registry.take(3).withIndex()) {
+            for (entry in registry.take(3)) {
+                testedKeys.add(MirrorRegistryStore.keyOf(entry))
                 val plan = MirrorResourcePaths.planFor(entry.publishedUrl) ?: continue
+                var entryAccepted = false
                 for (path in plan.directoryPaths) {
-                    val identity = SourceUrl.forMirror(
-                        entry.baseUrl,
-                        SourceKind.CACHED_MIRROR,
-                        MirrorOrigin.MIRROR_CACHE,
-                    )?.withPath(path)?.withMirrorId("mirror_${index + 1}") ?: continue
+                    val identity = identityFor(entry, path) ?: continue
                     probe = probe(identity, SourceResource.DIRECTORY, directoryTimeoutMs)
-                        ?: timeoutResult(identity, SourceResource.DIRECTORY)
-                    if (probe.accepted) break
+                        ?: timeoutResult(identity, SourceResource.DIRECTORY, directoryTimeoutMs)
+                    if (probe.accepted) {
+                        entryAccepted = true
+                        break
+                    }
                 }
-                if (probe.accepted) break
+                if (entryAccepted) break
                 failed.add(probe.label)
             }
         }
@@ -201,58 +224,71 @@ class SourceDiscoveryCoordinator(
         needHtml: Boolean,
         needCsv: Boolean,
         failed: MutableList<String>,
+        testedKeys: MutableSet<String>,
+        validatedKeys: MutableSet<String>,
     ): Pair<FetchedSource?, FetchedSource?> {
         val updated = registry.toMutableList()
-        val candidates = registry.filterNot { MirrorRegistryStore.shouldDeactivate(it) }
-            .take(VpnGateUrls.MAX_MIRRORS)
+        val now = System.currentTimeMillis()
+        val candidates = registry.filter { entry ->
+            (!needHtml || !MirrorRegistryStore.shouldSkipForResource(entry, MirrorResource.HTML, now)) &&
+                (!needCsv || !MirrorRegistryStore.shouldSkipForResource(entry, MirrorResource.CSV, now))
+        }.take(VpnGateUrls.MAX_MIRRORS)
         var html: FetchedSource? = null
         var csv: FetchedSource? = null
         progress(SourceDiscoveryStage.TESTING_MIRRORS, "0/${candidates.size}")
 
         for ((index, entry) in candidates.withIndex()) {
-            progress(SourceDiscoveryStage.TESTING_MIRRORS, "${index + 1}/${candidates.size} ${entry.baseUrl}")
+            val key = MirrorRegistryStore.keyOf(entry)
+            testedKeys.add(key)
+            progress(
+                SourceDiscoveryStage.TESTING_MIRRORS,
+                "${index + 1}/${candidates.size} ${entry.baseUrl}",
+            )
             val plan = MirrorResourcePaths.planFor(entry.publishedUrl) ?: continue
-            val kind = if (entry.discoveryOrigin == MirrorOrigin.MIRROR_CACHE) {
-                SourceKind.CACHED_MIRROR
-            } else {
-                SourceKind.DISCOVERED_MIRROR
-            }
-            val resources = listOf(SourceResource.HTML, SourceResource.CSV)
-            for (resource in resources) {
+
+            for (resource in listOf(SourceResource.HTML, SourceResource.CSV)) {
                 if (resource == SourceResource.HTML && (!needHtml || html != null)) continue
                 if (resource == SourceResource.CSV && (!needCsv || csv != null)) continue
+                val mirrorResource = MirrorResource.valueOf(resource.name)
                 val paths = if (resource == SourceResource.HTML) plan.htmlPaths else plan.csvPaths
                 var accepted = false
+                var lastResult: SourceProbeResult? = null
+
                 for (path in paths) {
-                    val identity = SourceUrl.forMirror(entry.baseUrl, kind, entry.discoveryOrigin)
-                        ?.withPath(path)
-                        ?.withMirrorId(VpnGateSourceCandidates.MIRROR_TAG_PREFIX + (index + 1))
-                        ?: continue
+                    val identity = identityFor(entry, path)?.withMirrorId(
+                        VpnGateSourceCandidates.MIRROR_TAG_PREFIX + (index + 1),
+                    ) ?: continue
                     val result = probe(identity, resource, timeoutMs)
-                        ?: timeoutResult(identity, resource)
-                    val at = updated.indexOfFirst {
-                        MirrorRegistryStore.keyOf(it) == MirrorRegistryStore.keyOf(entry)
-                    }
-                    if (at >= 0) {
-                        updated[at] = MirrorRegistryStore.recordResult(
-                            updated[at],
-                            MirrorResource.valueOf(resource.name),
-                            result.accepted,
-                            result.status,
-                            result.responseTimeMs,
-                            System.currentTimeMillis(),
-                            result.detail,
-                        )
-                        // Commit each successful validation immediately: a later
-                        // cancellation or process death must not lose it.
-                        if (result.accepted) saveRegistry(updated.toList())
-                    }
+                        ?: timeoutResult(identity, resource, timeoutMs)
+                    lastResult = result
                     if (result.accepted) {
                         if (resource == SourceResource.HTML) html = result.fetched else csv = result.fetched
+                        validatedKeys.add(key)
                         accepted = true
                         break
                     }
                     failed.add(result.label)
+                }
+
+                // ONE health record per resource per refresh cycle, regardless
+                // of how many candidate paths were tried.
+                val finalResult = lastResult ?: noCandidateResult(entry, resource)
+                val at = updated.indexOfFirst {
+                    MirrorRegistryStore.keyOf(it) == key
+                }
+                if (at >= 0) {
+                    updated[at] = MirrorRegistryStore.recordResult(
+                        updated[at],
+                        mirrorResource,
+                        accepted,
+                        finalResult.status,
+                        finalResult.responseTimeMs,
+                        System.currentTimeMillis(),
+                        finalResult.detail,
+                    )
+                    // Persist each resource verdict so cancellation or process
+                    // death cannot lose a previously successful validation.
+                    saveRegistry(updated.toList())
                 }
                 if (!accepted) failed.add("${resource.name}:${entry.baseUrl} (no valid path)")
             }
@@ -261,6 +297,28 @@ class SourceDiscoveryCoordinator(
         registry.clear()
         registry.addAll(updated)
         return html to csv
+    }
+
+    /**
+     * Register only identities that already passed [SourceUrl.forMirror].
+     * Nothing else can become a permitted cleartext authority.
+     */
+    private fun registerMirrors(entries: Collection<MirrorRegistryEntry>) {
+        val identities = entries.mapNotNull { identityFor(it) }
+        VpnGateSourceCandidates.registerForCleartext(identities)
+    }
+
+    private fun identityFor(
+        entry: MirrorRegistryEntry,
+        path: String = entry.publishedPath,
+    ): SourceIdentity? {
+        val kind = when (entry.discoveryOrigin) {
+            MirrorOrigin.MIRROR_CACHE -> SourceKind.CACHED_MIRROR
+            MirrorOrigin.BOOTSTRAP_LIST -> SourceKind.BOOTSTRAP_MIRROR
+            else -> SourceKind.DISCOVERED_MIRROR
+        }
+        return SourceUrl.forMirror(entry.baseUrl, kind, entry.discoveryOrigin)
+            ?.withPath(path)
     }
 
     private suspend fun probe(
@@ -273,18 +331,44 @@ class SourceDiscoveryCoordinator(
         throw e
     }
 
-    private fun timeoutResult(identity: SourceIdentity, resource: SourceResource) = SourceProbeResult(
+    private fun timeoutResult(
+        identity: SourceIdentity,
+        resource: SourceResource,
+        budgetMs: Long,
+    ) = SourceProbeResult(
         identity = identity,
         resource = resource,
         accepted = false,
         validation = SourceValidation.reject(SourceRejectReason.NETWORK_FAILURE, "timeout"),
         status = 0,
-        responseTimeMs = timeoutMs,
+        responseTimeMs = budgetMs,
         contentType = null,
         finalUrl = null,
         redirectRejected = false,
         fetched = null,
         detail = "timeout",
+    )
+
+    private fun noCandidateResult(
+        entry: MirrorRegistryEntry,
+        resource: SourceResource,
+    ) = SourceProbeResult(
+        identity = SourceIdentity(
+            SourceKind.DISCOVERED_MIRROR,
+            "http",
+            entry.baseUrl.substringAfter("://").substringBefore(':'),
+            path = entry.publishedPath,
+        ),
+        resource = resource,
+        accepted = false,
+        validation = SourceValidation.reject(SourceRejectReason.NETWORK_FAILURE, "no candidate path"),
+        status = 0,
+        responseTimeMs = 0L,
+        contentType = null,
+        finalUrl = null,
+        redirectRejected = false,
+        fetched = null,
+        detail = "no candidate path",
     )
 
     private fun rejectedIdentity(resource: SourceResource, url: String) = SourceProbeResult(
