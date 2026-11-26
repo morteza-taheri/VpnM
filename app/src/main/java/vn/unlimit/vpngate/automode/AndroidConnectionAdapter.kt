@@ -154,15 +154,9 @@ class AndroidConnectionAdapter(
             serverIp = conn.ip,
         )
 
-        // Stage G-7: a server may be perfectly dialable over OpenVPN without
-        // its profile having been carried in the collected list. The page's
-        // `sid`/`hid` are enough to fetch that one profile now, so an attempt
-        // is not failed over data the app can still obtain. This runs on the
-        // caller's dispatcher (never the main thread) and is bounded; on any
-        // failure the attempt proceeds exactly as before and reports
-        // MISSING_CONFIG.
-        // OpenVPN profile lookup in Auto Mode is cache-only. Missing profiles
-        // are rejected before the attempt; manual connection keeps its downloader.
+        // Auto Mode is deliberately cache-only for OpenVPN. Candidate
+        // eligibility requires a locally available profile, and this connect
+        // path never invokes the manual/on-demand profile downloader.
 
         // v1.0.87: MS-SSTP needs an address, not only a name.
         //
