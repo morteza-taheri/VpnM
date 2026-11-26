@@ -144,7 +144,7 @@ class AndroidConnectionAdapter(
 
     override suspend fun connect(candidate: AutoModeCandidate, protocol: AutoModeProtocol) {
         currentProtocol = protocol
-        NotificationPolicy.applyNotificationPreferences(dataUtil)
+        NotificationPolicy.applyNotificationPreferences(dataUtil, context)
         val conn = candidate.payload as? VPNGateConnection ?: return
         // Publish the attempt into the app-wide tunnel state *before* touching a
         // service. Pressing Connect means CONNECTING, not CONNECTED: only the
@@ -999,7 +999,7 @@ class AndroidConnectionAdapter(
             .apply()
         SstpVpnService.notificationTargetActivity =
             vn.unlimit.vpngate.activities.MainActivity::class.java
-        NotificationPolicy.applyNotificationPreferences(dataUtil)
+        NotificationPolicy.applyNotificationPreferences(dataUtil, context)
         val intent = Intent(context, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
         startForegroundCompatible(intent, SstpVpnService::class.java)
         dataUtil.setStringSetting(DataUtil.LAST_CONNECT_METHOD, "sstp")
