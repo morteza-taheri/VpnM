@@ -141,7 +141,7 @@ class App : Application() {
         dataUtil = DataUtil(this)
         // Restore notification preferences before any VPN service can be
         // recreated by Android after process death.
-        NotificationPolicy.applyTrafficStatistics(dataUtil!!)
+        NotificationPolicy.applyNotificationPreferences(dataUtil!!)
         isImportToOpenVPN = AppConfig.getBoolean("vpn_import_open_vpn")
 
         // v1.0.46 (§1.6.39) CHANGE A: seed the default emergency source from
