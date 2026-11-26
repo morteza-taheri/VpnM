@@ -306,7 +306,7 @@ class DataUtil(context: Context?) {
     // outside 8..30 (e.g. 60) reads back as 30 with no migration, and a stored
     // 5/6/7 reads back as 8.
     fun getAutoModeTimeoutSeconds(): Int =
-        getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12).coerceIn(8, 30)
+        getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8).coerceIn(8, 30)
 
     fun setAutoModeTimeoutSeconds(seconds: Int) {
         setIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, seconds.coerceIn(8, 30))
@@ -722,8 +722,8 @@ class DataUtil(context: Context?) {
          */
         val DEFAULT_AUTO_PROTOCOL_PRIORITY: List<AutoModeProtocol> = listOf(
             AutoModeProtocol.SOFTETHER_UDP,
-            AutoModeProtocol.SOFTETHER_TCP,
             AutoModeProtocol.MS_SSTP,
+            AutoModeProtocol.OPENVPN_UDP,
         )
 
         /**
