@@ -86,6 +86,10 @@ class ServerQuarantine(
                 entries.remove(key)
                 return 0L
             }
+            // A tunnel that survived the rapid-drop window is not a flap.
+            // Keep any earlier strikes until the longer stable-uptime window
+            // forgives them, but do not add another strike for this loss.
+            if (uptimeMs >= rapidDropMs) return 0L
             entry.strikes++
             if (entry.strikes < strikesToQuarantine) return 0L
             val extra = (entry.strikes - strikesToQuarantine).coerceAtMost(MAX_DOUBLINGS)
