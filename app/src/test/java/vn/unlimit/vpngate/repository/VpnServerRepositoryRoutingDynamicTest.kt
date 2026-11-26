@@ -385,7 +385,7 @@ class VpnServerRepositoryRoutingDynamicTest {
         )
         assertFalse(
             "no stale 12 s default may survive",
-            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
+            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
         )
         assertTrue(
             "REQ-TIMEOUT-001: the range must be clamped to 8..30",
