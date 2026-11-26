@@ -161,13 +161,8 @@ class AndroidConnectionAdapter(
         // caller's dispatcher (never the main thread) and is bounded; on any
         // failure the attempt proceeds exactly as before and reports
         // MISSING_CONFIG.
-        when (protocol) {
-            AutoModeProtocol.OPENVPN_TCP ->
-                ensureOpenVpnProfile(conn, useUdp = false)
-            AutoModeProtocol.OPENVPN_UDP ->
-                ensureOpenVpnProfile(conn, useUdp = true)
-            else -> Unit
-        }
+        // OpenVPN profile lookup in Auto Mode is cache-only. Missing profiles
+        // are rejected before the attempt; manual connection keeps its downloader.
 
         // v1.0.87: MS-SSTP needs an address, not only a name.
         //
@@ -934,12 +929,8 @@ class AndroidConnectionAdapter(
             Log.w(TAG, "VPN permission not granted; cannot connect in background")
             throw AutoModeController.VpnPermissionMissingException()
         }
-        // v1.0.87: the profile for the REQUESTED transport. The raw
-        // `openVpnConfigData` used to be handed to the core for TCP, which is
-        // wrong as soon as the stored profile is the UDP one downloaded on
-        // demand (`ensureOpenVpnProfile(preferUdp = true)`), and it also skipped
-        // the "connect by domain" transform. The getter reads the profile's own
-        // proto/remote lines and applies both.
+        // Auto Mode is cache-only for OpenVPN: profile acquisition belongs to
+        // the explicit/manual connection flow. Never download a profile here.
         val data = conn.getOpenVpnConfigDataString(useUdp)
         if (data.isNullOrEmpty()) {
             // v1.0.53 (§1.6.45) TASK B.6: this used to `return` silently, which made the
