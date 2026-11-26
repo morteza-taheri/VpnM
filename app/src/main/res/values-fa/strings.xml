@@ -149,7 +149,9 @@
     <!-- VPN strings -->
     <string name="unknown_state">نامشخص</string>
     <string name="check_ip">بررسی IP عمومی فعلی شما</string>
-    <string name="about_html">%1$s یک کلاینت VPN چندپروتکلی رایگان و متن‌باز برای اندروید با پیاده‌سازی بومی SoftEther VPN است. همچنین از OpenVPN، MS-SSTP و L2TP/IPsec پشتیبانی می‌کند و به سرورهای رایگان عمومی پروژهٔ VPN Gate و سرورهای خصوصی متصل می‌شود.</string>
+    <string name="about_html">%1$s یک کلاینت چندپروتکلی رایگان و متن‌باز VPN برای اندروید است. این برنامه پیاده‌سازی بومی SoftEther را با پشتیبانی از پروتکل‌های رایج دیگر ترکیب می‌کند و به سرورهای عمومی VPN Gate و سرورهای خصوصی متصل می‌شود.</string>
+    <string name="about_protocols_title">پروتکل‌های پشتیبانی‌شده</string>
+    <string name="about_protocols_summary">SoftEther SSL-VPN  •  OpenVPN  •  Microsoft SSTP  •  L2TP/IPsec</string>
     <string name="about_development">توسعه</string>
     <string name="about_author_label">توسعه و نگهداری توسط</string>
     <string name="about_source_title">کد منبع</string>
