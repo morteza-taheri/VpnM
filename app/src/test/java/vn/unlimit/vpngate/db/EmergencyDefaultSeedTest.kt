@@ -46,7 +46,7 @@ class EmergencyDefaultSeedTest {
     // ── T-NEW-67: a fresh install gets exactly one row ────────────────────
 
     @Test
-    fun `T-NEW-67 fresh install seeds exactly one default row from the resource URL`() = runBlocking {
+    fun `T-NEW-67 fresh install seeds one disabled default row from the resource URL`() = runBlocking {
         val dao = FakeEmergencySourceDao()
         val dataUtil = dataUtil()
 
