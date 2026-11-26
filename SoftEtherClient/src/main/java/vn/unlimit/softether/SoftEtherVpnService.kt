@@ -94,6 +94,7 @@ class SoftEtherVpnService : VpnService() {
         private const val NOTIFICATION_CHANNEL_ID = "SoftEtherVPN"
         private const val NOTIFICATION_CHANNEL_ERROR_ID = "SoftEtherVPN_Error"
         private const val NOTIFICATION_ID = 1001
+        @JvmField var mShowDisconnectNotifications: Boolean = false
         private const val TRAFFIC_PREFS_SUFFIX = "_preferences"
         private const val DOWNLOADED_DATA_KEY = "downloaded_data"
         private const val UPLOADED_DATA_KEY = "uploaded_data"
@@ -358,9 +359,14 @@ class SoftEtherVpnService : VpnService() {
     }
 
     private fun triggerDisconnectNotification() {
-        // Cancel the persistent status notification first
+        // The active foreground-service notification is mandatory, but this
+        // post-disconnect alert is optional and defaults to OFF.
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
+        if (!mShowDisconnectNotifications) {
+            notificationManager.cancel(NOTIFICATION_CHANNEL_ERROR_ID.hashCode())
+            return
+        }
 
         val channelId = NOTIFICATION_CHANNEL_ERROR_ID
 
@@ -1317,6 +1323,7 @@ if (sessionPolicy.isRunning) {
      * Show disconnected notification (dismissable, no action buttons)
      */
     private fun showDisconnectedNotification() {
+        if (!mShowDisconnectNotifications) return
         // Intent to open DetailActivity when notification is tapped
         val contentIntent = Intent().apply {
             if (notificationTargetActivity != null) {
