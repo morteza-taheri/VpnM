@@ -183,7 +183,7 @@
     <string name="about_source_link" translatable="false">https://github.com/morteza-taheri/VpnM</string>
     <string name="about_copyright" translatable="false">© 2026 Morteza Taheri</string>
     <string name="license_html">%1$s is under GPLv3 LICENSE. It means if you use this project or a part of this project in your project it must be open source. This project uses other open source projects as libraries, detail below.</string>
-    <string name="vpn_gate_link" translatable="false">http://www.vpngate.net/en/about_overview.aspx</string>
+    <string name="vpn_gate_link" translatable="false">https://www.vpngate.net/en/</string>
     <string name="version">Version:</string>
     <string name="license_label" translatable="false">OpenVPN for Android (GPLv2)</string>
     <string name="license_link" translatable="false">https://github.com/schwabe/ics-openvpn/blob/master/doc/LICENSE.txt</string>
