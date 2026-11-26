@@ -28,7 +28,7 @@ The application is designed to discover, manage and connect to public VPN Gate s
 
 - **Multiple VPN protocols:** native SoftEther, OpenVPN and MS-SSTP clients are integrated into the application.
 - **VPN Gate server browser:** retrieves server information from the official VPN Gate web page and API, with mirror support and validation before updating the local list.
-- **Local server database:** server records are retained between refreshes. The retention ceiling is configurable in Settings (default 300 entries; supported range 10–2,000).
+- **Local server database:** server records are retained between refreshes. The retention ceiling is configurable in Settings (default 1,000 entries; supported range 10–2,000).
 - **Auto Mode:** selects eligible servers and tries enabled protocols according to the user's ordered protocol profile.
 - **Manual server management:** add and manage user-defined server records without having them silently removed by a normal server-list refresh.
 - **CSV import:** import either the application's extended CSV format or the standard VPN Gate API CSV format by pasting text or selecting a document.
@@ -79,7 +79,7 @@ The collector can use the HTML directory and API data, discover and cache mirror
 
 The local database is not simply replaced by every short server batch. The application merges and evaluates incoming data and applies a configurable server-list ceiling.
 
-- Default retention ceiling: **300 servers**.
+- Default retention ceiling: **1,000 servers**.
 - Configurable range: **10–2,000 servers**.
 - User-managed manual servers are protected from ordinary collector replacement/pruning according to the repository's merge rules.
 
