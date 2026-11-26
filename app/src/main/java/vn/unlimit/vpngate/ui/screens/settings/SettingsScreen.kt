@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Launch
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
@@ -156,6 +157,12 @@ fun SettingsScreen(
     // ---- Setting states
     var notifySpeed by remember {
         mutableStateOf(dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED))
+    }
+    var notifyAutoModeProgress by remember {
+        mutableStateOf(dataUtil.getBooleanSetting(
+            DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
+            DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
+        ))
     }
     var useCustomDns by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.USE_CUSTOM_DNS, false)) }
     // Defaults shown for the fields when nothing is stored yet. These are only
@@ -413,6 +420,17 @@ fun SettingsScreen(
                             notifySpeed = it
                             Toast.makeText(context, applyNextConnectionNote, Toast.LENGTH_SHORT).show()
                             dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, it)
+                        },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_auto_mode_progress_notification),
+                        subtitle = stringResource(R.string.setting_auto_mode_progress_notification_hint),
+                        icon = Icons.Outlined.Notifications,
+                        checked = notifyAutoModeProgress,
+                        onChecked = {
+                            notifyAutoModeProgress = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS, it)
                         },
                     )
                     SettingDivider()
