@@ -9,8 +9,10 @@ on:
   workflow_dispatch: {}
 
 concurrency:
+  # Do not kill an active Android build when another commit is pushed to
+  # the same branch. Keep the in-flight run and queue the newest pending run.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   # The release keystore is stored in the repository as an AES-256 encrypted
