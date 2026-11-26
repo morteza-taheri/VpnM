@@ -380,11 +380,11 @@ class VpnServerRepositoryRoutingDynamicTest {
         }
         val dataUtil = sourceOf("src/main/java/vn/unlimit/vpngate/utils/DataUtil.kt")
         assertTrue(
-            "REQ-TIMEOUT-001: the auto-mode timeout default must be 12 s",
-            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
+            "the auto-mode timeout default must be 8 s",
+            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
         )
         assertFalse(
-            "no stale 8 s default may survive",
+            "no stale 12 s default may survive",
             dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
         )
         assertTrue(
