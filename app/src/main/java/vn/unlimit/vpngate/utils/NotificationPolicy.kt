@@ -20,6 +20,11 @@ object NotificationPolicy {
         OpenVPNService.mDisplaySpeed = enabled
         SoftEtherVpnService.mDisplaySpeed = enabled
         SstpVpnService.mDisplaySpeed = enabled
+
+        val disconnectAlerts = dataUtil.getDisconnectNotificationsEnabled()
+        SoftEtherVpnService.mShowDisconnectNotifications = disconnectAlerts
+        OpenVPNService.mShowDisconnectNotifications = disconnectAlerts
+        SstpVpnService.mShowDisconnectNotifications = disconnectAlerts
     }
 
     fun autoModeProgressEnabled(dataUtil: DataUtil): Boolean =
