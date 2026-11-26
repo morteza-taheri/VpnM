@@ -695,6 +695,7 @@ class DataUtil(context: Context?) {
     const val MIN_SERVER_LIST_CAP: Int = 10
     const val MAX_SERVER_LIST_CAP: Int = 2000
         const val SETTING_NOTIFY_SPEED: String = "SETTING_NOTIFY_SPEED"
+        const val SETTING_NOTIFY_AUTO_MODE_PROGRESS: String = "SETTING_NOTIFY_AUTO_MODE_PROGRESS"
         const val SETTING_AUTO_PROTOCOL_PRIORITY: String = "SETTING_AUTO_PROTOCOL_PRIORITY"
         const val SETTING_AUTO_MODE_TIMEOUT_SECONDS: String = "SETTING_AUTO_MODE_TIMEOUT_SECONDS"
 
@@ -764,6 +765,7 @@ class DataUtil(context: Context?) {
          * choice always wins and remains stable across restarts.
          */
         const val DEFAULT_NOTIFY_SPEED: Boolean = false
+        const val DEFAULT_NOTIFY_AUTO_MODE_PROGRESS: Boolean = false
 
         /**
          * Default target number of concurrent SoftEther TCP connections.
