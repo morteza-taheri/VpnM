@@ -166,7 +166,7 @@
     <string name="about_features_title">Designed for flexible VPN connections</string>
     <string name="about_features_summary">Browse public VPN Gate relays, connect to private servers, keep a local server list, manage manual entries, and route selected apps through the VPN.</string>
     <string name="about_auto_mode_title">Auto Mode</string>
-    <string name="about_auto_mode_summary">Auto Mode follows your enabled protocol order. OpenVPN is considered only when its profile is already stored on the device; missing profiles are not downloaded during automatic scanning.</string>
+    <string name="about_auto_mode_summary">Auto Mode follows your enabled protocol order and temporarily cools down servers that repeatedly drop shortly after connecting. OpenVPN is considered only when its profile is already stored on the device; missing profiles are not downloaded during automatic scanning.</string>
     <string name="about_server_sources_title">Server discovery and fallback</string>
     <string name="about_server_sources_summary">The server collector uses VPN Gate web and API sources with validation and mirror support. Optional emergency CSV sources are disabled by default and are used only as a fallback when live sources cannot provide an acceptable result.</string>
     <string name="about_csv_title">Manual server and CSV tools</string>
