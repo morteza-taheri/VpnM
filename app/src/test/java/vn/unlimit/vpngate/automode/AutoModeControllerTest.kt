@@ -2978,7 +2978,7 @@ val sstp = AutoModeCandidate(
         )
         val dataUtil = sourceOf("src/main/java/vn/unlimit/vpngate/utils/DataUtil.kt")
         assertTrue(
-            "DataUtil must default SETTING_AUTO_MODE_TIMEOUT_SECONDS to 12",
+            "DataUtil must default SETTING_AUTO_MODE_TIMEOUT_SECONDS to 8",
             dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
         )
         assertTrue(
@@ -2987,8 +2987,8 @@ val sstp = AutoModeCandidate(
             dataUtil.contains(".coerceIn(8, 30)"),
         )
         assertFalse(
-            "no stale 8 s default may survive in DataUtil: $dataUtil",
-            dataUtil.contains("SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
+            "the stale 12 s default must not survive in DataUtil: $dataUtil",
+            dataUtil.contains("SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
         )
     }
 
