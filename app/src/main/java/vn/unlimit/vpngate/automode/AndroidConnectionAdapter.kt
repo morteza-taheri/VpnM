@@ -92,19 +92,6 @@ class AndroidConnectionAdapter(
     private var currentProtocol: AutoModeProtocol? = null
 
     /**
-     * Stage G-7: the profile download is bounded well inside one attempt's
-     * budget. A download that outlives this is treated exactly like "there is
-     * no profile", which is what the attempt would have concluded anyway.
-     *
-     * 20 s was measurably too small once the descriptor repair was added, and
-     * 28 s still assumed one round trip per phase: with a 12 s per-authority
-     * timeout the repair is a page read plus a retry (24 s), and the previous
-     * cap fired mid-flow — device log 2026-11-25, 12:19:12.871 → 12:19:32.915 is
-     * exactly 20.0 s and ended in a burst of instantly-cancelled sources.
-     */
-    private val openVpnConfigDownloadTimeoutMs = 30_000L
-
-    /**
      * AUTOCONNECT-FIX-5 (v1.0.35): the outcome of the most recent [disconnect] teardown.
      *
      * [disconnect] already computes this value to decide which line to log; it was
@@ -862,62 +849,6 @@ class AndroidConnectionAdapter(
         dataUtil.setBooleanSetting(DataUtil.LAST_CONNECT_SOFTETHER_USE_UDP, !useTcp)
         dataUtil.setStringSetting(DataUtil.LAST_CONNECT_METHOD, "softether")
         dataUtil.lastVPNConnection = conn
-    }
-
-    /**
-     * Stage G-7: obtain the `.ovpn` profile for [conn] if the collector did
-     * not carry one, using the download identifiers the page published.
-     *
-     * Contract:
-     *  - does nothing when a profile is already present (the common case);
-     *  - does nothing when the server published no `sid`/`hid` (nothing to
-     *    ask for — the attempt then reports MISSING_CONFIG as before);
-     *  - is bounded by [openVpnConfigDownloadTimeoutMs] and never throws;
-     *  - writes the result into [VPNGateConnection.openVpnConfigData], i.e.
-     *    the canonical slot, so the existing UDP/domain transforms apply to a
-     *    downloaded profile exactly as they do to a collected one.
-     */
-    private suspend fun ensureOpenVpnProfile(conn: VPNGateConnection, useUdp: Boolean) {
-        val existing = if (useUdp) conn.openVpnConfigDataUdp else conn.openVpnConfigData
-        if (!existing.isNullOrEmpty()) return
-
-        if (!conn.canDownloadOpenVpnConfig) {
-            Log.w(
-                TAG,
-                "No OpenVPN profile and no download identifiers for ${conn.hostName}; " +
-                    "the attempt will report MISSING_CONFIG",
-            )
-            return
-        }
-
-        // One implementation, shared with the manual connect path: the
-        // repository picks the measured transport (own tunnel, foreign VPN or
-        // physical), validates the descriptor, escalates to the rotating
-        // mirror directory only when the canonical host and the cached mirrors
-        // both fail, and never returns a body whose remote/port/proto do not
-        // match the server being dialled.
-        val profile = withTimeoutOrNull(openVpnConfigDownloadTimeoutMs) {
-            runCatching { VpnServerRepository().fetchOpenVpnProfile(conn, useUdp = useUdp) }
-                .getOrNull()
-        }
-        if (profile.isNullOrBlank()) {
-            Log.w(TAG, "On-demand OpenVPN profile download failed for ${conn.hostName}")
-            return
-        }
-
-        conn.openVpnConfigData = profile
-        // Persist it so the next attempt on this server is a plain connect and
-        // a refresh that omits the profile no longer costs a download. Failure
-        // here is not fatal: the profile is already in memory for this attempt.
-        runCatching {
-            val hostName = conn.hostName.orEmpty()
-            if (hostName.isNotBlank()) {
-                App.instance?.vpnGateItemDao?.updateOpenVpnConfig(hostName, profile)
-            }
-        }.onFailure {
-            Log.w(TAG, "OpenVPN profile downloaded but cache write failed", it)
-        }
-        Log.i(TAG, "Downloaded OpenVPN profile on demand for ${conn.hostName}")
     }
 
     private fun connectOpenVpn(conn: VPNGateConnection, useUdp: Boolean) {
