@@ -64,7 +64,9 @@
         <item>Màn hình danh sách</item>
         <item>Màn hình trạng thái</item>
     </string-array>
-    <string name="enable_notification_speed">Bật hiển thị tốc độ/thống kê ở thông báo</string>
+    <string name="enable_notification_speed">Hiển thị tốc độ và thống kê trong thông báo</string>
+    <string name="setting_auto_mode_progress_notification">Thông báo tiến trình Auto Mode</string>
+    <string name="setting_auto_mode_progress_notification_hint">Hiển thị quá trình quét máy chủ và thử kết nối. Mặc định tắt; thông báo dịch vụ VPN bắt buộc vẫn hiển thị khi đang kết nối.</string>
     <string name="enable_notification_speed_hint">Hiển thị tốc độ/thống kê lưu lượng ở bảng thông báo. Nếu tắt chỉ trạng thái kết nối được hiển thị và tiêu thụ pin có thể giảm một chút.</string>
     <string name="setting_cache_label">Bộ nhớ đệm</string>
     <string name="setting_cache_clear">Xóa ngay</string>
@@ -110,7 +112,10 @@
     <string name="pauseVPN">Tạm dừng VPN</string>
     <string name="resumevpn">Tiếp tục VPN</string>
     <string name="check_ip">Kiểm tra IP hiện tại</string>
-    <string name="about_html">%1$s là ứng dụng khách VPN đa giao thức, miễn phí và mã nguồn mở cho Android với triển khai SoftEther VPN gốc. Ứng dụng cũng hỗ trợ OpenVPN, MS-SSTP và L2TP/IPsec, kết nối đến các máy chủ cộng đồng miễn phí từ dự án VPN Gate cũng như các máy chủ riêng.</string>
+    <string name="emergency_source_summary">Nguồn dự phòng tùy chọn cho danh sách máy chủ. Nguồn mặc định đã được cấu hình nhưng đang tắt; hãy bật nguồn này hoặc thêm nguồn riêng để cho phép tải dữ liệu dự phòng khi các nguồn chính gặp lỗi.</string>
+    <string name="about_html">%1$s là ứng dụng VPN đa giao thức miễn phí và mã nguồn mở cho Android. Ứng dụng kết hợp triển khai SoftEther gốc với các giao thức VPN phổ biến khác, hỗ trợ máy chủ công cộng VPN Gate và máy chủ riêng.</string>
+    <string name="about_protocols_title">Các giao thức được hỗ trợ</string>
+    <string name="about_protocols_summary">SoftEther SSL-VPN  •  OpenVPN  •  Microsoft SSTP  •  L2TP/IPsec</string>
     <string name="about_development">Phát triển</string>
     <string name="about_author_label">Được phát triển và bảo trì bởi</string>
     <string name="about_source_title">Mã nguồn</string>
