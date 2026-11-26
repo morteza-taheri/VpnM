@@ -1,5 +1,7 @@
 package vn.unlimit.vpngate.utils
 
+import android.content.Context
+
 import de.blinkt.openvpn.core.OpenVPNService
 import kittoku.osc.service.SstpVpnService
 import vn.unlimit.softether.SoftEtherVpnService
@@ -12,7 +14,7 @@ import vn.unlimit.softether.SoftEtherVpnService
  * alerts, and Auto Mode's transient scan-progress notification.
  */
 object NotificationPolicy {
-    fun applyNotificationPreferences(dataUtil: DataUtil) {
+    fun applyNotificationPreferences(dataUtil: DataUtil, context: Context) {
         val enabled = dataUtil.getBooleanSetting(
             DataUtil.SETTING_NOTIFY_SPEED,
             DataUtil.DEFAULT_NOTIFY_SPEED,
@@ -26,10 +28,10 @@ object NotificationPolicy {
         OpenVPNService.mShowDisconnectNotifications = disconnectAlerts
         SstpVpnService.mShowDisconnectNotifications = disconnectAlerts
         if (!disconnectAlerts) {
-            val context = dataUtil.applicationContext()
-            SoftEtherVpnService.cancelOptionalNotifications(context)
-            OpenVPNService.cancelDisconnectNotifications(context)
-            SstpVpnService.cancelOptionalNotifications(context)
+            val appContext = context.applicationContext
+            SoftEtherVpnService.cancelOptionalNotifications(appContext)
+            OpenVPNService.cancelDisconnectNotifications(appContext)
+            SstpVpnService.cancelOptionalNotifications(appContext)
         }
     }
 
