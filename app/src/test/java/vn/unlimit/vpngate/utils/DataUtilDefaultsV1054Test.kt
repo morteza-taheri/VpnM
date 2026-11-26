@@ -2,6 +2,7 @@ package vn.unlimit.vpngate.utils
 
 import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import vn.unlimit.vpngate.automode.AutoModeProtocol
@@ -61,6 +62,20 @@ class DataUtilDefaultsV1054Test {
      * timeout is 12 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
      * emergency default source is pinned by [vn.unlimit.vpngate.db.EmergencyDefaultSeedTest].
      */
+    @Test
+    fun `optional notification content defaults to OFF for a fresh install`() {
+        val util = dataUtil()
+        assertFalse(
+            util.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED),
+        )
+        assertFalse(
+            util.getBooleanSetting(
+                DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
+                DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
+            ),
+        )
+    }
+
     @Test
     fun `auto-reconnect defaults to ON for a fresh install`() {
         assertTrue(dataUtil().getAutoReconnectInAutoMode())
