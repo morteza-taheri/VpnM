@@ -59,7 +59,7 @@ class DataUtilDefaultsV1054Test {
      * BLOCK v1.0.75 PART D1 — one test per shipped default. Auto-Reconnect is
      * ON for a fresh install; the server-list interval is 168 h
      * ([vn.unlimit.vpngate.ServerListUpdaterTest] pins that one); the attempt
-     * timeout is 12 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
+     * timeout is 8 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
      * emergency default source is pinned by [vn.unlimit.vpngate.db.EmergencyDefaultSeedTest].
      */
     @Test
