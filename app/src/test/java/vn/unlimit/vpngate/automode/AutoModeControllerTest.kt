@@ -620,8 +620,12 @@ class AutoModeControllerTest {
             ip = "10.0.0.11"
             tcpPort = 1534
             udpPort = 1278
-            // No openVpnConfigData: the page only offered a download link.
+            // The server also publishes fresh download identifiers. Auto Mode
+            // must still reject it until profile bytes are already local.
+            openVpnDownloadSid = "download-sid"
+            openVpnDownloadHid = "download-hid"
         }
+        assertTrue("download identifiers exist but are not a local profile", conn.canDownloadOpenVpnConfig)
         val candidate = with(AutoModeEngine) { conn.toCandidate() }
         assertFalse(candidate.openVpnConfigAvailable)
         assertEquals(1534, candidate.openVpnTcpPort) // the port fact is preserved
