@@ -75,6 +75,17 @@ The built-in server collector uses the official VPN Gate endpoints:
 
 The collector can use the HTML directory and API data, discover and cache mirrors, and validate fetched data before accepting it. A failed, malformed or substantially degraded response should not be treated as a valid replacement for the local server database.
 
+### Network path selection
+
+Server-list requests are bound to an explicitly selected Android network rather than relying on an ambiguous process-wide default:
+
+1. A healthy VPN tunnel owned by VpnM is used when it is available.
+2. Otherwise, a validated VPN connection owned by another app is used when Android exposes it.
+3. When no usable VPN is active, the collector uses an explicit physical Wi-Fi/cellular network.
+4. The local emergency dataset/source path remains the final fallback.
+
+When a VPN is active, a failed request on that VPN is not silently rerouted around it over the underlying physical network. This is intentional: the user may have enabled that VPN specifically to reach blocked services.
+
 ### Local retention
 
 The local database is not simply replaced by every short server batch. The application merges and evaluates incoming data and applies a configurable server-list ceiling.
