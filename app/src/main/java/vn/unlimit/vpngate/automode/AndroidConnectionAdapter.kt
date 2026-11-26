@@ -24,7 +24,6 @@ import vn.unlimit.softether.TeardownCompletion
 import vn.unlimit.softether.model.ConnectionConfig
 import vn.unlimit.softether.model.Route
 import vn.unlimit.vpngate.App
-import vn.unlimit.vpngate.repository.VpnServerRepository
 import vn.unlimit.vpngate.BuildConfig
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.network.SstpHostResolver
