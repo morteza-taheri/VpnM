@@ -179,6 +179,69 @@ fun AboutScreen() {
             item {
                 SectionSurface {
                     Text(
+                        stringResource(R.string.about_features_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_features_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        stringResource(R.string.about_auto_mode_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_auto_mode_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+            item {
+                SectionSurface {
+                    Text(
+                        stringResource(R.string.about_server_sources_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_server_sources_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        stringResource(R.string.about_csv_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_csv_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        stringResource(R.string.about_android_compatibility_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_android_compatibility_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+            item {
+                SectionSurface {
+                    Text(
                         stringResource(R.string.about_development),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
