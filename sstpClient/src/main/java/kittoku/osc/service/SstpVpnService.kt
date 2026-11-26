@@ -104,6 +104,7 @@ class SstpVpnService : VpnService() {
         var lastTrafficSnapshot: SstpTrafficSnapshot = SstpTrafficSnapshot.EMPTY
             private set
         var mDisplaySpeed: Boolean = true
+        var mShowDisconnectNotifications: Boolean = false
 
         private val trafficListeners = mutableListOf<TrafficListener>()
         private val mainHandler = Handler(Looper.getMainLooper())
@@ -152,6 +153,12 @@ class SstpVpnService : VpnService() {
     }
 
     private fun triggerDisconnectNotification() {
+        if (!mShowDisconnectNotifications) {
+            getSystemService(Context.NOTIFICATION_SERVICE)?.let { service ->
+                (service as NotificationManager).cancel(NOTIFICATION_CRITICAL_ID)
+            }
+            return
+        }
         val channelId = NOTIFICATION_CRITICAL_CHANNEL
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -556,6 +563,12 @@ class SstpVpnService : VpnService() {
     }
 
     internal fun notifyError(message: String) {
+        if (!mShowDisconnectNotifications) {
+            notificationManager.cancel(NOTIFICATION_ERROR_ID)
+            notificationManager.cancel(NOTIFICATION_CRITICAL_ID)
+            mWasConnected = false
+            return
+        }
         if (mWasConnected) {
             triggerDisconnectNotification()
             mWasConnected = false
