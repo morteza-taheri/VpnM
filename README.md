@@ -126,7 +126,7 @@ Auto Mode is a best-effort server-selection and connection workflow. A server's 
 
 Manual server records can be managed from Settings. They are kept separate from automatically collected records and are intended for private servers or endpoints that are not present in the public VPN Gate feed.
 
-CSV import is available in the Manual Servers section. The importer recognises:
+CSV import is available in the Manual Servers section. A server can also be exported individually from its long-press actions as a re-importable extended CSV row; the export preserves the separate SoftEther/OpenVPN TCP and UDP port fields. The importer recognises:
 
 - The application's extended, versioned CSV format.
 - The standard VPN Gate API CSV format.
