@@ -519,12 +519,16 @@ class OkHttpFetcher(
                 var lastConnectError: IOException? = null
                 for (address in addresses) {
                     val candidate = client.socketFactory.createSocket()
+                    // Publish the in-flight socket before connect(): the
+                    // cancellation handler must be able to close a blocking
+                    // connect attempt as well as a connected socket.
+                    socket = candidate
                     try {
                         candidate.connect(InetSocketAddress(address, port), 10_000)
-                        socket = candidate
                         break
                     } catch (e: IOException) {
                         lastConnectError = e
+                        if (socket === candidate) socket = null
                         runCatching { candidate.close() }
                     }
                 }
