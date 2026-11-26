@@ -14,7 +14,7 @@ import vn.unlimit.vpngate.automode.AutoModeProtocol
  * needed:
  *
  *  1. **PART 2.4** — an unset Auto Connect protocol profile reads as
- *     SoftEther TCP then SoftEther UDP, both enabled. Before v1.0.54 it read as
+ *     SoftEther UDP, MS-SSTP, and OpenVPN UDP. Before v1.0.54 it read as
  *     an EMPTY list, and an empty list is the contract for "the user disabled
  *     everything", so Auto Connect refused to start on a fresh install.
  *  2. **PART 2.4** — a stored choice is never overwritten by that default, and
@@ -50,7 +50,7 @@ class DataUtilDefaultsV1054Test {
         assertEquals(AutoModeProtocol.MS_SSTP, default[1])
         assertEquals(AutoModeProtocol.OPENVPN_UDP, default[2])
         assertTrue(default.none { it == AutoModeProtocol.L2TP_IPSEC })
-        assertTrue(default.none { it == AutoModeProtocol.OPENVPN_TCP })
+        assertTrue(default.none { it == AutoModeProtocol.SOFTETHER_TCP })
         assertTrue(default.none { it == AutoModeProtocol.OPENVPN_TCP })
     }
 
@@ -144,8 +144,8 @@ class DataUtilDefaultsV1054Test {
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
-                AutoModeProtocol.SOFTETHER_TCP,
                 AutoModeProtocol.MS_SSTP,
+                AutoModeProtocol.OPENVPN_UDP,
             ),
             util.getAutoModeProtocolPriority(),
         )
