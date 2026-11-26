@@ -1330,7 +1330,9 @@ if (sessionPolicy.isRunning) {
      * Show disconnected notification (dismissable, no action buttons)
      */
     private fun showDisconnectedNotification() {
-        if (!mShowDisconnectNotifications) return
+        // Unexpected losses already post the critical error alert. Do not
+        // follow it with a second generic "disconnected" notification.
+        if (!mIsUserDisconnect || !mShowDisconnectNotifications) return
         // Intent to open DetailActivity when notification is tapped
         val contentIntent = Intent().apply {
             if (notificationTargetActivity != null) {
