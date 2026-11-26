@@ -74,6 +74,9 @@ class DataUtilDefaultsV1054Test {
                 DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
             ),
         )
+        assertFalse(
+            util.getDisconnectNotificationsEnabled(),
+        )
     }
 
     @Test
