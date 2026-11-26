@@ -107,7 +107,7 @@ Other Auto Mode behaviour:
 - L2TP/IPsec remains a manual-only protocol.
 - OpenVPN requires a locally available profile before a server is eligible for an OpenVPN Auto Mode attempt.
 - The default per-attempt timeout is **8 seconds**; the supported setting range is **8–30 seconds**.
-- Reconnect attempts are budgeted per server, so repeated drops on one unstable server do not consume the retry allowance for every other candidate.
+- Reconnect attempts are budgeted per server, so repeated drops on one unstable server do not consume the retry allowance for every other candidate. A server that repeatedly establishes a tunnel and then drops within 60 seconds is temporarily quarantined after two rapid drops (initial cooldown 5 minutes, with bounded escalation); a stable session of at least two minutes clears its strikes.
 
 Auto Mode is a best-effort server-selection and connection workflow. A server's advertised protocol flag does not guarantee that the remote endpoint is currently reachable or that authentication will succeed.
 
@@ -183,7 +183,7 @@ app/build/outputs/apk/pro/debug/
 Run the JVM unit tests with:
 
 ```bash
-./gradlew testProDebugUnitTest
+./gradlew :app:testProDebugUnitTest
 ```
 
 On Windows, use `gradlew.bat` instead of `./gradlew`.
