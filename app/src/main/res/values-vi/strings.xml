@@ -125,7 +125,7 @@
     <string name="about_server_sources_title">Nguồn máy chủ và dự phòng</string>
     <string name="about_server_sources_summary">Trình thu thập sử dụng trang web và API VPN Gate, kèm xác thực dữ liệu và hỗ trợ máy chủ mirror. Nguồn CSV khẩn cấp là tùy chọn, mặc định tắt và chỉ dùng khi nguồn trực tiếp không cung cấp được dữ liệu hợp lệ.</string>
     <string name="about_csv_title">Máy chủ thủ công và công cụ CSV</string>
-    <string name="about_csv_summary">Thêm máy chủ riêng hoặc nhập định dạng CSV của ứng dụng và API VPN Gate bằng cách dán văn bản hay chọn tệp. Dung lượng và số dòng nhập được giới hạn.</string>
+    <string name="about_csv_summary">Thêm máy chủ riêng, nhập định dạng CSV của ứng dụng và API VPN Gate bằng cách dán văn bản hay chọn tệp, đồng thời xuất từng máy chủ từ menu nhấn giữ. Các cổng TCP và UDP được giữ riêng biệt. Dung lượng và số dòng nhập được giới hạn.</string>
     <string name="about_android_compatibility_title">Khả năng tương thích Android</string>
     <string name="about_android_compatibility_summary">L2TP/IPsec phụ thuộc vào triển khai VPN cũ của Android và không khả dụng trên Android 13 trở lên. Nên dùng SoftEther, OpenVPN hoặc SSTP thay thế.</string>
     <string name="about_development">Phát triển</string>
