@@ -430,7 +430,7 @@ class DataUtil(context: Context?) {
     /**
      * BLOCK v1.0.86: the user-configurable server-list ceiling. Clamped at the
      * boundary so a corrupt preference can never make the retention cap 0 or
-     * 2 000 000. Default 300, range 10..2000.
+     * 2 000 000. Default 1,000, range 10..2000.
      */
     fun getServerListCap(): Int =
         getIntSetting(SETTING_SERVER_LIST_CAP, DEFAULT_SERVER_LIST_CAP)
