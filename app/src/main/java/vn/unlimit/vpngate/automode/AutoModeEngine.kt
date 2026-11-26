@@ -413,13 +413,9 @@ object AutoModeEngine {
         // transports. The ports themselves are still carried verbatim: this is
         // a usability gate, not a data edit.
         //
-        // Stage G-7: "available" means *obtainable*, not merely *stored*. A
-        // server whose page published the `sid`/`hid` download identifiers has
-        // a profile VPN Gate will hand over on demand, so the adapter can dial
-        // it even though the collected list never carried the profile. If that
-        // download fails, the attempt ends as an ordinary MISSING_CONFIG
-        // failure — the same outcome this gate used to force up front, just
-        // decided with real evidence instead of a guess.
+        // Auto Mode is cache-only: download identifiers are deliberately
+        // ignored. Only profile bytes already stored with this server make
+        // OpenVPN eligible; a download link is not a local profile.
         openVpnConfigAvailable = !openVpnConfigData.isNullOrBlank(),
         l2tpSupported = isL2TPSupport == 1,
         sstpSupported = isSSTPSupport == 1,
