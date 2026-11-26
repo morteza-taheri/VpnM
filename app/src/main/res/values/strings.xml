@@ -396,7 +396,7 @@
     <string name="setting_server_update_interval_168h">Every week</string>
     <!-- Emergency Server Sources (Z1-IMPL-B, Roadmap §12.5.2 item B). Config-only for now: retrieval wiring is item C. -->
     <string name="emergency_source_title">Emergency Server Sources</string>
-    <string name="emergency_source_summary">Extra server-list sources kept for when the official sources cannot be reached. They are fetched only when every built-in source has answered "nothing", and only if you add one here.</string>
+    <string name="emergency_source_summary">Optional fallback server-list sources. The bundled default source is preconfigured but disabled; enable it or add your own source to allow emergency fetching after the built-in sources fail.</string>
     <string name="emergency_source_empty">No emergency sources configured</string>
     <string name="emergency_source_url_label">Source URL</string>
     <string name="emergency_source_label_label">Label (optional)</string>
