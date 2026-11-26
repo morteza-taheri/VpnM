@@ -999,8 +999,7 @@ class AndroidConnectionAdapter(
             .apply()
         SstpVpnService.notificationTargetActivity =
             vn.unlimit.vpngate.activities.MainActivity::class.java
-        SstpVpnService.mDisplaySpeed =
-            dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
+        NotificationPolicy.applyTrafficStatistics(dataUtil)
         val intent = Intent(context, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
         startForegroundCompatible(intent, SstpVpnService::class.java)
         dataUtil.setStringSetting(DataUtil.LAST_CONNECT_METHOD, "sstp")
