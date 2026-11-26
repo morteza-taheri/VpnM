@@ -31,12 +31,12 @@ class DataUtilDefaultsV1054Test {
     // ── PART 2.4: fresh install ───────────────────────────────────────────
 
     @Test
-    fun `unset protocol profile defaults to SoftEther UDP then TCP then SSTP`() {
+    fun `unset protocol profile defaults to SoftEther UDP then SSTP then OpenVPN UDP`() {
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
-                AutoModeProtocol.SOFTETHER_TCP,
                 AutoModeProtocol.MS_SSTP,
+                AutoModeProtocol.OPENVPN_UDP,
             ),
             dataUtil().getAutoModeProtocolPriority(),
         )
@@ -47,11 +47,11 @@ class DataUtilDefaultsV1054Test {
         val default = DataUtil.DEFAULT_AUTO_PROTOCOL_PRIORITY
         assertEquals(3, default.size)
         assertEquals(AutoModeProtocol.SOFTETHER_UDP, default[0])
-        assertEquals(AutoModeProtocol.SOFTETHER_TCP, default[1])
-        assertEquals(AutoModeProtocol.MS_SSTP, default[2])
+        assertEquals(AutoModeProtocol.MS_SSTP, default[1])
+        assertEquals(AutoModeProtocol.OPENVPN_UDP, default[2])
         assertTrue(default.none { it == AutoModeProtocol.L2TP_IPSEC })
         assertTrue(default.none { it == AutoModeProtocol.OPENVPN_TCP })
-        assertTrue(default.none { it == AutoModeProtocol.OPENVPN_UDP })
+        assertTrue(default.none { it == AutoModeProtocol.OPENVPN_TCP })
     }
 
     /**
