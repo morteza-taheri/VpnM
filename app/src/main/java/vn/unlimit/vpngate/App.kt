@@ -361,13 +361,13 @@ class App : Application() {
                                 EmergencySourceConfigEntity(
                                     url = candidate,
                                     label = DEFAULT_EMERGENCY_LABEL,
-                                    enabled = true,
+                                    enabled = false,
                                     createdAt = now,
                                     updatedAt = now,
                                 ),
                             )
                             dataUtil.markEmergencyDefaultSeeded()
-                            logD("Seeded default emergency source")
+                            logD("Seeded default emergency source disabled by default")
                             true
                         }
                     }
