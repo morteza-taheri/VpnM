@@ -8,8 +8,8 @@ import vn.unlimit.softether.SoftEtherVpnService
  * One policy boundary for optional notification content.
  *
  * Android's VPN foreground-service notification is mandatory while a tunnel
- * is active; this policy only controls optional traffic statistics and
- * Auto Mode's transient scan-progress notification.
+ * is active. This policy controls optional traffic statistics, disconnect/error
+ * alerts, and Auto Mode's transient scan-progress notification.
  */
 object NotificationPolicy {
     fun applyNotificationPreferences(dataUtil: DataUtil) {
