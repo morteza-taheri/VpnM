@@ -80,12 +80,13 @@ fun AboutScreen() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                ) {
+                SectionSurface {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp, horizontal = 16.dp),
+                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                    ) {
                     Image(
                         // Must be a raster, not a mipmap: R.mipmap.ic_launcher
                         // resolves to the adaptive-icon XML on API 26+, which
@@ -109,6 +110,7 @@ fun AboutScreen() {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    }
                 }
             }
             item {
@@ -155,6 +157,18 @@ fun AboutScreen() {
                         stringResource(R.string.about_html, appName),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp),
+                    )
+                    HorizontalDivider()
+                    Text(
+                        stringResource(R.string.about_protocols_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.about_protocols_summary),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     )
                     LinkRow(
                         label = stringResource(R.string.vpn_gate_link),
