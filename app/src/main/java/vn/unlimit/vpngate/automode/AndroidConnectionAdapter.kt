@@ -31,6 +31,7 @@ import vn.unlimit.vpngate.network.SstpHostResolver
 import vn.unlimit.vpngate.state.GlobalVpnTracker
 import vn.unlimit.vpngate.utils.AppConfig
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.OpenVpnAuthDefaults
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
@@ -143,6 +144,7 @@ class AndroidConnectionAdapter(
 
     override suspend fun connect(candidate: AutoModeCandidate, protocol: AutoModeProtocol) {
         currentProtocol = protocol
+        NotificationPolicy.applyTrafficStatistics(dataUtil)
         val conn = candidate.payload as? VPNGateConnection ?: return
         // Publish the attempt into the app-wide tunnel state *before* touching a
         // service. Pressing Connect means CONNECTING, not CONNECTED: only the
