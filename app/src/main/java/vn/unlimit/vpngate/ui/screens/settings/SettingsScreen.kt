@@ -356,19 +356,24 @@ fun SettingsScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         importBusy = true
         scope.launch {
-            val text = withContext(Dispatchers.IO) {
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        readCappedUtf8(input, ManualCsvImport.MAX_BYTES)?.toString(Charsets.UTF_8)
-                    }
-                }.getOrNull()
+            try {
+                val text = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            readCappedUtf8(input, ManualCsvImport.MAX_BYTES)?.toString(Charsets.UTF_8)
+                        }
+                    }.getOrNull()
+                }
+                importSummary = if (text == null) {
+                    context.getString(R.string.manual_server_too_large)
+                } else {
+                    runImport(text)
+                }
+            } finally {
+                // A provider failure or parser/storage exception must never
+                // leave the import controls permanently disabled.
+                importBusy = false
             }
-            importSummary = if (text == null) {
-                context.getString(R.string.manual_server_too_large)
-            } else {
-                runImport(text)
-            }
-            importBusy = false
         }
     }
 
