@@ -5,6 +5,7 @@ import android.content.Context
 import de.blinkt.openvpn.core.OpenVPNService
 import kittoku.osc.service.SstpVpnService
 import vn.unlimit.softether.SoftEtherVpnService
+import vn.unlimit.vpngate.automode.AutoModeNotifier
 
 /**
  * One policy boundary for optional notification content.
@@ -27,11 +28,14 @@ object NotificationPolicy {
         SoftEtherVpnService.mShowDisconnectNotifications = disconnectAlerts
         OpenVPNService.mShowDisconnectNotifications = disconnectAlerts
         SstpVpnService.mShowDisconnectNotifications = disconnectAlerts
+        val appContext = context.applicationContext
         if (!disconnectAlerts) {
-            val appContext = context.applicationContext
             SoftEtherVpnService.cancelOptionalNotifications(appContext)
             OpenVPNService.cancelDisconnectNotifications(appContext)
             SstpVpnService.cancelOptionalNotifications(appContext)
+        }
+        if (!autoModeProgressEnabled(dataUtil)) {
+            AutoModeNotifier.clear(appContext)
         }
     }
 
