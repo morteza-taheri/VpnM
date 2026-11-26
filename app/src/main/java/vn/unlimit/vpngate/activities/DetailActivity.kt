@@ -318,7 +318,7 @@ class DetailActivity : AppCompatActivity(), VpnStatus.StateListener, ByteCountLi
             val isStartUpDetail = dataUtil.getIntSetting(DataUtil.SETTING_STARTUP_SCREEN, 0) == 0
             val targetClass = if (isStartUpDetail) DetailActivity::class.java else MainActivity::class.java
             SstpVpnService.notificationTargetActivity = targetClass
-            NotificationPolicy.applyNotificationPreferences(dataUtil)
+            NotificationPolicy.applyNotificationPreferences(dataUtil, this)
         }
         val intent = Intent(applicationContext, SstpVpnService::class.java).setAction(action)
         if (action == ACTION_VPN_CONNECT && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -618,7 +618,7 @@ class DetailActivity : AppCompatActivity(), VpnStatus.StateListener, ByteCountLi
         try {
             Handler(Looper.getMainLooper()).postDelayed({
                 val intent = Intent(this, OpenVPNService::class.java)
-                NotificationPolicy.applyNotificationPreferences(dataUtil)
+                NotificationPolicy.applyNotificationPreferences(dataUtil, this)
                 intent.action = OpenVPNService.START_SERVICE
                 bindService(intent, mConnection, BIND_AUTO_CREATE)
             }, 300)
