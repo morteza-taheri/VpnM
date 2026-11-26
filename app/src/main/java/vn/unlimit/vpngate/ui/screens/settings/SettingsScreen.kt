@@ -158,6 +158,9 @@ fun SettingsScreen(
     var notifySpeed by remember {
         mutableStateOf(dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED))
     }
+    var notifyDisconnectErrors by remember {
+        mutableStateOf(dataUtil.getDisconnectNotificationsEnabled())
+    }
     var notifyAutoModeProgress by remember {
         mutableStateOf(dataUtil.getBooleanSetting(
             DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
@@ -425,6 +428,18 @@ fun SettingsScreen(
                             notifySpeed = it
                             Toast.makeText(context, applyNextConnectionNote, Toast.LENGTH_SHORT).show()
                             dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, it)
+                        },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_disconnect_notifications),
+                        subtitle = stringResource(R.string.setting_disconnect_notifications_hint),
+                        icon = Icons.Outlined.Notifications,
+                        checked = notifyDisconnectErrors,
+                        onChecked = {
+                            notifyDisconnectErrors = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_DISCONNECT_ERRORS, it)
+                            NotificationPolicy.applyTrafficStatistics(dataUtil)
                         },
                     )
                     SettingDivider()
