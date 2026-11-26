@@ -162,7 +162,17 @@
     <string name="check_ip">Check your current public IP</string>
     <string name="about_html">%1$s is a free, open-source multi-protocol VPN client for Android. It combines a native SoftEther implementation with support for other widely used VPN protocols and public VPN Gate relays, as well as private VPN servers.</string>
     <string name="about_protocols_title">Supported protocols</string>
-    <string name="about_protocols_summary">SoftEther SSL-VPN  •  OpenVPN  •  Microsoft SSTP  •  L2TP/IPsec</string>
+    <string name="about_protocols_summary">Native SoftEther TCP/UDP • OpenVPN TCP/UDP • Microsoft SSTP • Legacy L2TP/IPsec</string>
+    <string name="about_features_title">Designed for flexible VPN connections</string>
+    <string name="about_features_summary">Browse public VPN Gate relays, connect to private servers, keep a local server list, manage manual entries, and route selected apps through the VPN.</string>
+    <string name="about_auto_mode_title">Auto Mode</string>
+    <string name="about_auto_mode_summary">Auto Mode follows your enabled protocol order. OpenVPN is considered only when its profile is already stored on the device; missing profiles are not downloaded during automatic scanning.</string>
+    <string name="about_server_sources_title">Server discovery and fallback</string>
+    <string name="about_server_sources_summary">The server collector uses VPN Gate web and API sources with validation and mirror support. Optional emergency CSV sources are disabled by default and are used only as a fallback when live sources cannot provide an acceptable result.</string>
+    <string name="about_csv_title">Manual server and CSV tools</string>
+    <string name="about_csv_summary">Add private server entries or import the app CSV and VPN Gate API CSV formats by pasting text or choosing a file. Imports are size- and row-limited.</string>
+    <string name="about_android_compatibility_title">Android compatibility</string>
+    <string name="about_android_compatibility_summary">L2TP/IPsec depends on the legacy Android VPN implementation and is unavailable on Android 13 and later. SoftEther, OpenVPN and SSTP are the recommended alternatives.</string>
     <string name="about_development">Development</string>
     <string name="about_author_label">Developed and maintained by</string>
     <string name="about_author_name" translatable="false">Morteza Taheri</string>
