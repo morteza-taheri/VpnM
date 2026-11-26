@@ -552,6 +552,12 @@ class SstpVpnService : VpnService() {
     }
 
     internal fun notifyMessage(message: String, id: Int, channel: String) {
+        if (!mShowDisconnectNotifications &&
+            (id == NOTIFICATION_ERROR_ID || id == NOTIFICATION_RECONNECT_ID || id == NOTIFICATION_DISCONNECT_ID)
+        ) {
+            notificationManager.cancel(id)
+            return
+        }
         NotificationCompat.Builder(this, channel).also {
             it.setSmallIcon(R.drawable.ic_notification)
             it.setContentText(message)
