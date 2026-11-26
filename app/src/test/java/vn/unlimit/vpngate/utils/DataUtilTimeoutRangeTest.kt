@@ -20,7 +20,7 @@ class DataUtilTimeoutRangeTest {
 
     private fun dataUtil() = DataUtil(TimeoutFakeSharedPreferences())
 
-    // ── T-NEW-70: the default is 12 (v1.0.70) ─────────────────────────────
+    // ── T-NEW-70: the default is 8 seconds ─────────────────────────────────
 
     @Test
     fun `T-NEW-70 the default timeout with no stored value is 8 seconds`() {
