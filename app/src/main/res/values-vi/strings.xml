@@ -121,7 +121,7 @@
     <string name="about_features_title">Kết nối VPN linh hoạt</string>
     <string name="about_features_summary">Duyệt máy chủ VPN Gate công cộng, kết nối máy chủ riêng, lưu danh sách máy chủ cục bộ, quản lý máy chủ thủ công và chọn ứng dụng đi qua VPN.</string>
     <string name="about_auto_mode_title">Chế độ tự động</string>
-    <string name="about_auto_mode_summary">Chế độ tự động tuân theo thứ tự giao thức bạn đã bật. OpenVPN chỉ được thử khi hồ sơ đã có sẵn trên thiết bị; hồ sơ còn thiếu sẽ không được tải trong quá trình quét tự động.</string>
+    <string name="about_auto_mode_summary">Chế độ tự động tuân theo thứ tự giao thức bạn đã bật và tạm thời đưa các máy chủ thường xuyên ngắt kết nối ngay sau khi kết nối ra khỏi vòng thử. OpenVPN chỉ được thử khi hồ sơ đã có sẵn trên thiết bị; hồ sơ còn thiếu sẽ không được tải trong quá trình quét tự động.</string>
     <string name="about_server_sources_title">Nguồn máy chủ và dự phòng</string>
     <string name="about_server_sources_summary">Trình thu thập sử dụng trang web và API VPN Gate, kèm xác thực dữ liệu và hỗ trợ máy chủ mirror. Nguồn CSV khẩn cấp là tùy chọn, mặc định tắt và chỉ dùng khi nguồn trực tiếp không cung cấp được dữ liệu hợp lệ.</string>
     <string name="about_csv_title">Máy chủ thủ công và công cụ CSV</string>
