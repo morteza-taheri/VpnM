@@ -164,7 +164,7 @@
     <string name="about_author_github" translatable="false">https://github.com/morteza-taheri</string>
     <string name="about_source_title">Source code</string>
     <string name="about_source_description">This project is open source and released under the GPLv3 license. Contributions, bug reports and pull requests are welcome on GitHub.</string>
-    <string name="about_source_link" translatable="false">https://github.com/morteza-taheri/SoftEther</string>
+    <string name="about_source_link" translatable="false">https://github.com/morteza-taheri/VpnM</string>
     <string name="about_copyright" translatable="false">© 2026 Morteza Taheri</string>
     <string name="license_html">%1$s is under GPLv3 LICENSE. It means if you use this project or a part of this project in your project it must be open source. This project uses other open source projects as libraries, detail below.</string>
     <string name="vpn_gate_link" translatable="false">http://www.vpngate.net/en/about_overview.aspx</string>
