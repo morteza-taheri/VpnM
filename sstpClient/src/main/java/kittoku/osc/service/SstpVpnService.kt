@@ -584,10 +584,14 @@ class SstpVpnService : VpnService() {
             return
         }
         if (mWasConnected) {
+            // The critical disconnect alert is the single notification for a
+            // lost established tunnel; the detailed error notification is
+            // reserved for failures before a tunnel was established.
             triggerDisconnectNotification()
             mWasConnected = false
+        } else {
+            notifyMessage(message, NOTIFICATION_ERROR_ID, NOTIFICATION_ERROR_CHANNEL)
         }
-        notifyMessage(message, NOTIFICATION_ERROR_ID, NOTIFICATION_ERROR_CHANNEL)
     }
 
     internal fun tryNotify(notification: Notification, id: Int) {
