@@ -25,6 +25,12 @@ object NotificationPolicy {
         SoftEtherVpnService.mShowDisconnectNotifications = disconnectAlerts
         OpenVPNService.mShowDisconnectNotifications = disconnectAlerts
         SstpVpnService.mShowDisconnectNotifications = disconnectAlerts
+        if (!disconnectAlerts) {
+            val context = dataUtil.applicationContext()
+            SoftEtherVpnService.cancelOptionalNotifications(context)
+            OpenVPNService.cancelDisconnectNotifications(context)
+            SstpVpnService.cancelOptionalNotifications(context)
+        }
     }
 
     fun autoModeProgressEnabled(dataUtil: DataUtil): Boolean =
