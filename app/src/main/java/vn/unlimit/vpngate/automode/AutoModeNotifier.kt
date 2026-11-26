@@ -11,7 +11,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.R
-import vn.unlimit.vpngate.utils.DataUtil
 import vn.unlimit.vpngate.utils.NotificationPolicy
 
 /**
