@@ -439,7 +439,7 @@ fun SettingsScreen(
                         onChecked = {
                             notifyDisconnectErrors = it
                             dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_DISCONNECT_ERRORS, it)
-                            NotificationPolicy.applyTrafficStatistics(dataUtil)
+                            NotificationPolicy.applyNotificationPreferences(dataUtil)
                         },
                     )
                     SettingDivider()
