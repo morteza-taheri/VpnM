@@ -420,7 +420,7 @@ object AutoModeEngine {
         // download fails, the attempt ends as an ordinary MISSING_CONFIG
         // failure — the same outcome this gate used to force up front, just
         // decided with real evidence instead of a guess.
-        openVpnConfigAvailable = !openVpnConfigData.isNullOrBlank() || canDownloadOpenVpnConfig,
+        openVpnConfigAvailable = !openVpnConfigData.isNullOrBlank(),
         l2tpSupported = isL2TPSupport == 1,
         sstpSupported = isSSTPSupport == 1,
         // Stage 2F-F.2 (Q-6): carry SSTP's own port and provenance so Auto
