@@ -12,7 +12,7 @@ import vn.unlimit.softether.SoftEtherVpnService
  * Auto Mode's transient scan-progress notification.
  */
 object NotificationPolicy {
-    fun applyTrafficStatistics(dataUtil: DataUtil) {
+    fun applyNotificationPreferences(dataUtil: DataUtil) {
         val enabled = dataUtil.getBooleanSetting(
             DataUtil.SETTING_NOTIFY_SPEED,
             DataUtil.DEFAULT_NOTIFY_SPEED,
