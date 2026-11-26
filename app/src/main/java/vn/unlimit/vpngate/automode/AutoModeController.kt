@@ -67,8 +67,8 @@ class AutoModeController(
      * provider at ATTEMPT time makes a Settings change apply to the next
      * attempt.
      *
-     * Default is the documented 12 s, so a caller that does not model the
-     * setting keeps the pre-v1.0.42 behaviour exactly.
+     * Default is 8 s, aligned with the fresh-install Settings value. A caller that
+     * does not model the setting therefore keeps the same shipped default.
      */
     private val attemptTimeoutMsProvider: () -> Long = { DEFAULT_ATTEMPT_TIMEOUT_MS },
     /**
