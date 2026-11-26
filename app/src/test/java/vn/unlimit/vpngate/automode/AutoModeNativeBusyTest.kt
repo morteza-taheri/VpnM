@@ -593,9 +593,8 @@ class AutoModeNativeBusyTest {
         // value — precisely so it stays a guard against the three drifting apart again.
         //
         // v1.0.52 (§1.6.44) TASK B.2 moved the shipped default 12 s -> 8 s.
-        // v1.0.70 (REQ-TIMEOUT-001) restores 12 s and narrows the range to
-        // 8..30, so this guard pins 12_000L again.
-        assertEquals(12_000L, AutoModeController.DEFAULT_ATTEMPT_TIMEOUT_MS)
+        // Fresh installs use 8 s; explicit stored values remain user-controlled.
+        assertEquals(8_000L, AutoModeController.DEFAULT_ATTEMPT_TIMEOUT_MS)
     }
 
     // ------------------------------------- Stage 2F-F.28AL-AUTOCONNECT-BUG-FIX (BUG 2)
