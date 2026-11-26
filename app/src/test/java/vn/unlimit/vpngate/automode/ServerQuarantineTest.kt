@@ -37,6 +37,28 @@ class ServerQuarantineTest {
     }
 
     @Test
+    fun `a loss after the rapid-drop window does not add a strike`() {
+        val q = quarantine()
+        q.onTunnelLost("a", ServerQuarantine.RAPID_DROP_MS)
+        q.onTunnelLost("a", 90_000)
+        assertEquals(0, q.strikesFor("a"))
+        assertFalse(q.isQuarantined("a"))
+    }
+
+    @Test
+    fun `moderate uptime preserves but does not increase earlier rapid-drop strikes`() {
+        val q = quarantine()
+        q.onTunnelLost("a", 10_000)
+        q.onTunnelLost("a", 90_000)
+        assertEquals(1, q.strikesFor("a"))
+        assertFalse(q.isQuarantined("a"))
+
+        q.onTunnelLost("a", 10_000)
+        assertEquals(2, q.strikesFor("a"))
+        assertTrue(q.isQuarantined("a"))
+    }
+
+    @Test
     fun `a stable session forgives earlier strikes`() {
         val q = quarantine()
         q.onTunnelLost("a", 5_000)
