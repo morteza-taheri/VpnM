@@ -66,7 +66,9 @@
     <string name="cancel">انصراف</string>
     <string name="feature_not_available">این عملیات در حال حاضر امکان‌پذیر نیست</string>
     <!-- Settings -->
-    <string name="enable_notification_speed">نمایش سرعت/آمار در اعلان</string>
+    <string name="enable_notification_speed">نمایش سرعت و آمار در اعلان</string>
+    <string name="setting_auto_mode_progress_notification">اعلان پیشرفت اتصال خودکار</string>
+    <string name="setting_auto_mode_progress_notification_hint">نمایش جست‌وجوی سرورها و تلاش‌های اتصال. این گزینه در حالت پیش‌فرض خاموش است؛ اعلان ضروری سرویس VPN هنگام اتصال همچنان نمایش داده می‌شود.</string>
     <string name="setting_startup_screen">صفحهٔ آغازین</string>
     <string-array name="startup_screen">
         <item>صفحهٔ فهرست</item>
