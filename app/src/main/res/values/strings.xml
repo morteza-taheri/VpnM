@@ -170,7 +170,7 @@
     <string name="about_server_sources_title">Server discovery and fallback</string>
     <string name="about_server_sources_summary">The server collector uses VPN Gate web and API sources with validation and mirror support. Optional emergency CSV sources are disabled by default and are used only as a fallback when live sources cannot provide an acceptable result.</string>
     <string name="about_csv_title">Manual server and CSV tools</string>
-    <string name="about_csv_summary">Add private server entries or import the app CSV and VPN Gate API CSV formats by pasting text or choosing a file. Imports are size- and row-limited.</string>
+    <string name="about_csv_summary">Add private server entries, import the app CSV and VPN Gate API CSV formats by pasting text or choosing a file, and export an individual server from its long-press actions. TCP and UDP port fields are kept separate. Imports are size- and row-limited.</string>
     <string name="about_android_compatibility_title">Android compatibility</string>
     <string name="about_android_compatibility_summary">L2TP/IPsec depends on the legacy Android VPN implementation and is unavailable on Android 13 and later. SoftEther, OpenVPN and SSTP are the recommended alternatives.</string>
     <string name="about_development">Development</string>
