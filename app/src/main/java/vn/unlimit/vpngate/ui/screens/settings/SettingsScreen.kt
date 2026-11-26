@@ -452,6 +452,7 @@ fun SettingsScreen(
                         onChecked = {
                             notifyAutoModeProgress = it
                             dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS, it)
+                            NotificationPolicy.applyNotificationPreferences(dataUtil, context)
                         },
                     )
                     SettingDivider()
