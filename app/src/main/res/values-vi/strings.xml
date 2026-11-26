@@ -65,6 +65,8 @@
         <item>Màn hình trạng thái</item>
     </string-array>
     <string name="enable_notification_speed">Hiển thị tốc độ và thống kê trong thông báo</string>
+    <string name="setting_disconnect_notifications">Cảnh báo ngắt kết nối và lỗi</string>
+    <string name="setting_disconnect_notifications_hint">Hiển thị cảnh báo khi kết nối bị ngắt ngoài ý muốn hoặc xảy ra lỗi VPN. Mặc định tắt; thông báo dịch vụ VPN bắt buộc vẫn hiển thị khi đang kết nối.</string>
     <string name="setting_auto_mode_progress_notification">Thông báo tiến trình Auto Mode</string>
     <string name="setting_auto_mode_progress_notification_hint">Hiển thị quá trình quét máy chủ và thử kết nối. Mặc định tắt; thông báo dịch vụ VPN bắt buộc vẫn hiển thị khi đang kết nối.</string>
     <string name="enable_notification_speed_hint">Hiển thị tốc độ/thống kê lưu lượng ở bảng thông báo. Nếu tắt chỉ trạng thái kết nối được hiển thị và tiêu thụ pin có thể giảm một chút.</string>
