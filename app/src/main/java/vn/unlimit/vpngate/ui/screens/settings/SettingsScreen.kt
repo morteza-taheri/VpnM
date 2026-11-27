@@ -656,7 +656,8 @@ fun SettingsScreen(
                     SettingDivider()
                     SettingValueRow(
                         title = stringResource(R.string.setting_auto_timeout_label),
-                        value = "$autoTimeout s",
+                        subtitle = stringResource(R.string.setting_auto_timeout_subtitle),
+                         value = "$autoTimeout s",
                         icon = Icons.Outlined.Timer,
                         onClick = { showAutoTimeoutPicker = true },
                     )
@@ -1216,7 +1217,7 @@ fun SettingsScreen(
     if (showAutoTimeoutPicker) {
         // v1.0.46 (§1.6.39) CHANGE B: floor raised 5 -> 8 (operator
         // requirement). v1.0.70 (REQ-TIMEOUT-001): the approved range is
-        // 8..30 with a 12 s default. `autoTimeout` comes from
+        // 8..30 with an 8 s default. `autoTimeout` comes from
         // DataUtil.getAutoModeTimeoutSeconds(), which clamps on read, so a
         // value stored by an older build at 31..60 arrives here as 30 and
         // `indexOf` always finds it.

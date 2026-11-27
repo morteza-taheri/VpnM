@@ -3144,7 +3144,8 @@ enum class AttemptOutcome {
                 adapter.log("[AUTO] Skipping ${server.hostname ?: server.ip}: no supported protocol")
                 continue
             }
-            val serverTargets = probeTargets(listOf(server), priorities)
+            val serverDeadlineMs = System.currentTimeMillis() + attemptTimeoutMs()
+        val serverTargets = probeTargets(listOf(server), priorities)
             if (reachabilityFilter != null && serverTargets.isNotEmpty()) {
                 val probeStartedAt = System.currentTimeMillis()
                 val gate = try {
@@ -3215,7 +3216,6 @@ enum class AttemptOutcome {
             var lastAttemptToken: String? = null
             var lastAttemptNetwork: NetworkType = NetworkType.UNKNOWN
             var lastAttemptStartedAt: Long? = null
-            val serverDeadlineMs = System.currentTimeMillis() + attemptTimeoutMs()
             for (protocol in protocolOrder) {
                 if (!currentCoroutineContext().isActive) return
                 val remainingServerBudgetMs = serverDeadlineMs - System.currentTimeMillis()
@@ -4008,11 +4008,13 @@ enum class AttemptOutcome {
      * the underlying call returns later.
      */
     private suspend fun loadThroughputHistory(network: NetworkType): Map<String, ThroughputRankingSample> = try {
-        withTimeoutOrNull(1_500L) { throughputHistoryProvider(network) }
+        val samples = withTimeoutOrNull(1_500L) { throughputHistoryProvider(network) }
             ?: run {
                 adapter.log("[THROUGHPUT] read timed out; using advertised server speeds")
                 emptyMap()
             }
+        adapter.log("[THROUGHPUT] loaded ${samples.size} measured server/protocol rates for ${network.name}")
+        samples
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -4358,7 +4360,8 @@ enum class AttemptOutcome {
      * any decision. It remains a field on the candidate for diagnostics.
      */
     private val byQuality =
-        compareByDescending<AutoModeCandidate> { (it.measuredDownloadBps ?: it.speed) > 0L }
+        compareByDescending<AutoModeCandidate> { it.rankingDownloadBps > 0L }
+            .thenByDescending { it.rankingDownloadBps }
             .thenByDescending { it.measuredDownloadBps ?: it.speed }
             .thenByDescending { it.peakDownloadBps ?: it.speed }
             .thenByDescending { it.speed }

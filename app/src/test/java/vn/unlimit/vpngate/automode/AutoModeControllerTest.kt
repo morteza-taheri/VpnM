@@ -2141,16 +2141,8 @@ val sstp = AutoModeCandidate(
     }
 
     /**
-     * TEST 15 / the end-to-end order regression the Phase 5 audit asked for.
-     *
-     * The gate returns its survivors in a deliberately wrong order — the reverse
-     * of the ranked input — and the controller must dial them in **quality
-     * order**, not in the order the gate happened to produce. Reachability is a
-     * filter; [AutoModeController.byQuality] is the only ranking authority.
-     *
-     * Speeds descend A > B > C > D, so the ranked input is A, B, C, D. C is
-     * removed by the gate. The survivors come back as D, B, A and must still be
-     * attempted A, B, D.
+     * Reachability is checked just-in-time for one server. It may reject that
+     * server, but it cannot reorder the quality-ranked queue.
      */
     @Test
     fun theGateNeverChangesTheDialledOrder() = runBlocking {
@@ -2158,29 +2150,65 @@ val sstp = AutoModeCandidate(
         val b = candidateWith("B", speed = 30_000_000, seTcp = 443)
         val c = candidateWith("C", speed = 20_000_000, seTcp = 443)
         val d = candidateWith("D", speed = 10_000_000, seTcp = 443)
-        // Every attempt fails, so all four would be dialled if the gate let them.
+        val probedHosts = mutableListOf<String>()
         adapter.failing += setOf("A", "B", "C", "D")
 
         val c1 = controller(
             servers = listOf(a, b, c, d),
             priorities = listOf(AutoModeProtocol.SOFTETHER_TCP),
             reachabilityFilter = { handed ->
-                val byHost = handed.map { it.candidate }
-                // Reverse of the ranked order, with C (index 2) dropped.
-                ReachabilityGate(
-                    kept = listOf(byHost[3], byHost[1], byHost[0]),
-                    allUnreachable = false,
-                )
+                val candidate = handed.first().candidate
+                val host = candidate.hostname.orEmpty()
+                probedHosts += host
+                if (host == "C") {
+                    ReachabilityGate(kept = emptyList(), allUnreachable = true)
+                } else {
+                    ReachabilityGate(kept = listOf(candidate), allUnreachable = false)
+                }
             },
         )
         c1.start()
         c1.awaitTerminal()
 
+        assertEquals(listOf("A", "B", "C", "D"), probedHosts)
         assertEquals(
-            "the gate filters; the comparator decides the order",
+            "the gate rejects only C; the quality comparator decides the dial order",
             listOf("A" to AutoModeProtocol.SOFTETHER_TCP, "B" to AutoModeProtocol.SOFTETHER_TCP, "D" to AutoModeProtocol.SOFTETHER_TCP),
             adapter.connects,
         )
+    }
+
+    @Test
+    fun lazyReachabilityStopsProbingAfterTheFirstSuccessfulServer() = runBlocking {
+        val a = candidateWith("A", seTcp = 443)
+        val b = candidateWith("B", seTcp = 443)
+        val probedHosts = mutableListOf<String>()
+        val c = controller(
+            servers = listOf(a, b),
+            priorities = listOf(AutoModeProtocol.SOFTETHER_TCP),
+            reachabilityFilter = { handed ->
+                val candidate = handed.first().candidate
+                probedHosts += candidate.hostname.orEmpty()
+                ReachabilityGate(kept = listOf(candidate), allUnreachable = false)
+            },
+        )
+
+        c.start()
+        assertTrue(c.awaitTerminal() is AutoModeState.Connected)
+        assertEquals(listOf("A"), probedHosts)
+        assertEquals(listOf("A" to AutoModeProtocol.SOFTETHER_TCP), adapter.connects)
+    }
+
+    @Test
+    fun measuredDownloadRankingBlendsMedianAndPeakAndFallsBackToAdvertisedSpeed() {
+        val measured = candidateWith("measured", speed = 90_000_000).copy(
+            measuredDownloadBps = 10_000_000,
+            peakDownloadBps = 30_000_000,
+        )
+        val unmeasured = candidateWith("unmeasured", speed = 20_000_000)
+
+        assertEquals(13_000_000L, measured.rankingDownloadBps)
+        assertEquals(20_000_000L, unmeasured.rankingDownloadBps)
     }
 
     /**

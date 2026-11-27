@@ -92,7 +92,15 @@ data class AutoModeCandidate(
     val measuredDownloadBps: Long? = null,
     /** Highest observed 3-second inbound-rate window among the retained samples, bits/second. */
     val peakDownloadBps: Long? = null,
-)
+) {
+    /** 85% recent median + 15% observed peak; use provider speed until measured traffic exists. */
+    val rankingDownloadBps: Long
+        get() {
+            val median = measuredDownloadBps?.takeIf { it > 0L } ?: return speed
+            val peak = peakDownloadBps?.takeIf { it > 0L }?.coerceAtLeast(median) ?: median
+            return (median * 85L + peak * 15L) / 100L
+        }
+}
 
 data class ThroughputRankingSample(
     val medianDownloadBps: Long,

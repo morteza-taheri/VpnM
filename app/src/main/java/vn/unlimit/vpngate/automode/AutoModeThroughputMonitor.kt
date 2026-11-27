@@ -113,7 +113,7 @@ internal class AutoModeThroughputMonitor(
     private companion object {
         const val WINDOW_MS = 3_000L
         const val MAX_WINDOW_GAP_MS = 10_000L
-        const val MIN_SAMPLE_BYTES = 64L * 1024L
+        const val MIN_SAMPLE_BYTES = 16L * 1024L
         const val MIN_REASONABLE_BPS = 32_000L
         const val MAX_REASONABLE_BPS = 10_000_000_000L
     }

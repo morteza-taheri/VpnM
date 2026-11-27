@@ -281,6 +281,10 @@ object AutoModeEngine {
                                     val host = candidate.hostname?.trim()?.takeIf { it.isNotEmpty() }
                                         ?: candidate.ip?.trim().orEmpty()
                                     if (host.isNotEmpty()) {
+                                        adapter.log(
+                                            "[THROUGHPUT] $host ${protocol.id}: $downloadBps bps " +
+                                                "observed over $durationMs ms",
+                                        )
                                         val record = HistoryRecord(
                                             hostName = host,
                                             ip = candidate.ip,
