@@ -212,9 +212,9 @@ fun boundToNetwork(network: Network): OkHttpClient =
         // Certain OpenVPN/SSTP providers do not publish DNS on this Network;
         // networkBoundDns retries name resolution through Android's active
         // network resolver but the resulting TCP socket is still VPN-bound.
-        val networkDns = networkBoundDns { hostname ->
+        val networkDns = networkBoundDns(networkLookup = { hostname ->
             network.getAllByName(hostname).toList()
-        }
+        })
         val client = boundToSocketFactory(network.socketFactory, networkDns)
         CollectorLog.d("[bind] ok network=$network")
         client
