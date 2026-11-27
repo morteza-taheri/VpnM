@@ -224,14 +224,22 @@ object AutoModeEngine {
                         runCatching {
                             val since = System.currentTimeMillis() - 7L * 24L * 60L * 60L * 1000L
                             app.serverHistoryDao
-                                ?.throughputSamplesSince(networkType.name, since, 6_000)
+                                ?.throughputSamplesSince(networkType.name, since, 10_000)
                                 .orEmpty()
                                 .groupBy { row -> throughputSampleKey(row.hostName, row.protocol.orEmpty()) }
                                 .mapNotNull { (key, rows) ->
                                     val rates = rows.mapNotNull { it.qualityResult?.toLongOrNull() }
                                         .filter { it > 0L }
                                         .take(5)
-                                    if (rates.size < 2) null else key to rates.sorted()[rates.size / 2]
+                                    if (rates.size < 2) {
+                                        null
+                                    } else {
+                                        val sorted = rates.sorted()
+                                        key to ThroughputRankingSample(
+                                            medianDownloadBps = sorted[sorted.size / 2],
+                                            peakDownloadBps = sorted.last(),
+                                        )
+                                    }
                                 }
                                 .toMap()
                         }.getOrDefault(emptyMap())

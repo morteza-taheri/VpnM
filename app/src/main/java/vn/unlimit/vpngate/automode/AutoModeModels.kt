@@ -87,9 +87,16 @@ data class AutoModeCandidate(
      * honest answer ("not measured yet"), not zero.
      */
     val activeRttMs: Long? = null,
-    /** Median real download rate for the first usable protocol on the current physical network. */
-    val measuredDownloadBps: Long? = null,
     val payload: Any? = null,
+    /** Median observed inbound rate from recent real-traffic windows, bits/second. */
+    val measuredDownloadBps: Long? = null,
+    /** Highest observed 3-second inbound-rate window among the retained samples, bits/second. */
+    val peakDownloadBps: Long? = null,
+)
+
+data class ThroughputRankingSample(
+    val medianDownloadBps: Long,
+    val peakDownloadBps: Long,
 )
 
 /**

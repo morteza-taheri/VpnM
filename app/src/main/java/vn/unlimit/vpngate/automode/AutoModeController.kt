@@ -281,8 +281,6 @@ class AutoModeController(
      * caller that does not model history.
      */
     private val historyProvider: suspend () -> Map<String, ServerHistoryView> = { emptyMap() },
-    /** Recent real-download throughput keyed by host/protocol for the current physical network. */
-    private val throughputHistoryProvider: suspend (NetworkType) -> Map<String, Long> = { emptyMap() },
     /**
      * F.29: where terminal connection outcomes are persisted.
      *
@@ -329,6 +327,8 @@ class AutoModeController(
      * its own clock.
      */
     private val quarantine: ServerQuarantine = ServerQuarantine(),
+    /** Recent real-download rates keyed by host/protocol for the current physical network. */
+    private val throughputHistoryProvider: suspend (NetworkType) -> Map<String, ThroughputRankingSample> = { emptyMap() },
 ) {
     interface ConnectionAdapter {
         /** Initiate the connection for [candidate] via [protocol]. */
@@ -2320,7 +2320,7 @@ enum class AttemptOutcome {
     private fun List<AutoModeCandidate>.withMeasuredThroughput(
         priorities: List<AutoModeProtocol>,
         history: Map<String, ServerHistoryView>,
-        samples: Map<String, Long>,
+        samples: Map<String, ThroughputRankingSample>,
     ): List<AutoModeCandidate> = map { candidate ->
         val identity = candidate.hostname?.trim()?.takeIf { it.isNotEmpty() }
             ?: candidate.ip?.trim().orEmpty()
@@ -2331,7 +2331,10 @@ enum class AttemptOutcome {
         val measured = if (identity.isNotEmpty() && firstProtocol != null) {
             samples[throughputSampleKey(identity, firstProtocol.id)]
         } else null
-        candidate.copy(measuredDownloadBps = measured?.takeIf { it > 0L })
+        candidate.copy(
+            measuredDownloadBps = measured?.medianDownloadBps?.takeIf { it > 0L },
+            peakDownloadBps = measured?.peakDownloadBps?.takeIf { it > 0L },
+        )
     }
 
     private fun List<AutoModeCandidate>.withActiveRtt(
@@ -4357,6 +4360,7 @@ enum class AttemptOutcome {
     private val byQuality =
         compareByDescending<AutoModeCandidate> { (it.measuredDownloadBps ?: it.speed) > 0L }
             .thenByDescending { it.measuredDownloadBps ?: it.speed }
+            .thenByDescending { it.peakDownloadBps ?: it.speed }
             .thenByDescending { it.speed }
             .thenByDescending<AutoModeCandidate> { it.ping > 0 }
             .thenBy { it.ping }
