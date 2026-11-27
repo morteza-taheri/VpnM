@@ -4007,7 +4007,7 @@ enum class AttemptOutcome {
      * stops waiting at the suspension boundary, so the run continues on time even if
      * the underlying call returns later.
      */
-    private suspend fun loadThroughputHistory(network: NetworkType): Map<String, Long> = try {
+    private suspend fun loadThroughputHistory(network: NetworkType): Map<String, ThroughputRankingSample> = try {
         withTimeoutOrNull(1_500L) { throughputHistoryProvider(network) }
             ?: run {
                 adapter.log("[THROUGHPUT] read timed out; using advertised server speeds")
