@@ -3145,7 +3145,7 @@ enum class AttemptOutcome {
                 continue
             }
             val serverDeadlineMs = System.currentTimeMillis() + attemptTimeoutMs()
-        val serverTargets = probeTargets(listOf(server), priorities)
+            val serverTargets = probeTargets(listOf(server), priorities)
             if (reachabilityFilter != null && serverTargets.isNotEmpty()) {
                 val probeStartedAt = System.currentTimeMillis()
                 val gate = try {
