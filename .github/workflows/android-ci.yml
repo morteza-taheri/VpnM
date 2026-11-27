@@ -268,7 +268,7 @@ jobs:
       - name: Bundle Pro Release AAB
         # Tag-gated (release tags only) AND secret-gated (main repo with the
         # keystore passphrase). Fork PRs cannot produce a signed release bundle.
-        if: ${{ startsWith(github.ref, 'refs/tags/') && env.KEYSTORE_PASSPHRASE != '' }} || ${{ github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '2.4.22') && env.KEYSTORE_PASSPHRASE != '' }}
+        if: ${{ (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '2.4.22'))) && env.KEYSTORE_PASSPHRASE != '' }}
         run: ./gradlew :app:bundleProRelease
 
       - name: Upload Pro APK
