@@ -403,6 +403,8 @@
     <string name="setting_server_update_timeout_label">Server List Update Timeout</string>
     <string name="setting_server_update_timeout_subtitle">Maximum time allowed for one refresh. Increase it on slow or filtered networks.</string>
     <string name="setting_download_vpn_gate_csv">Download VPN Gate CSV</string>
+    <string name="setting_exclude_russia">Exclude Russian servers</string>
+    <string name="setting_exclude_russia_hint">Enabled by default. Russian servers are removed from the retained list during updates.</string>
     <string name="setting_download_vpn_gate_csv_hint">Also fetch the official CSV feed and merge its data. Off keeps the faster HTML-primary update.</string>
     <string name="setting_server_update_timeout_value">%1$d seconds</string>
     <string name="setting_server_update_interval_label">Server List Update Interval</string>

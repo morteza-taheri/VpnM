@@ -747,6 +747,8 @@ class DataUtil(context: Context?) {
 
     /** BLOCK v1.0.86: how many servers the retained list may hold. */
     const val SETTING_SERVER_LIST_CAP: String = "SETTING_SERVER_LIST_CAP"
+    /** Exclude Russian VPN Gate servers from the retained server list by default. */
+    const val SETTING_EXCLUDE_RUSSIA: String = "SETTING_EXCLUDE_RUSSIA"
     const val DEFAULT_SERVER_LIST_CAP: Int = 300
     const val MIN_SERVER_LIST_CAP: Int = 10
     const val MAX_SERVER_LIST_CAP: Int = 2000

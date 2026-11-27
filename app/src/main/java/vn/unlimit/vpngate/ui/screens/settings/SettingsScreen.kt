@@ -170,6 +170,7 @@ fun SettingsScreen(
         ))
     }
     var downloadVpnGateCsv by remember { mutableStateOf(dataUtil.getDownloadVpnGateCsv()) }
+    var excludeRussia by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.SETTING_EXCLUDE_RUSSIA, true)) }
     var useCustomDns by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.USE_CUSTOM_DNS, false)) }
     // Defaults shown for the fields when nothing is stored yet. These are only
     // *applied* to the tunnel when Custom DNS is ON, so a fresh install keeps
@@ -760,6 +761,17 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.setting_server_update_timeout_subtitle),
                         icon = Icons.Outlined.Schedule,
                         onClick = { showServerUpdateTimeoutPicker = true },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_exclude_russia),
+                        subtitle = stringResource(R.string.setting_exclude_russia_hint),
+                        icon = Icons.Outlined.Language,
+                        checked = excludeRussia,
+                        onChecked = {
+                            excludeRussia = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_EXCLUDE_RUSSIA, it)
+                        },
                     )
                     SettingDivider()
                     SettingSwitchRow(

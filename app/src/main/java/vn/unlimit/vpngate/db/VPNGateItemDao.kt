@@ -21,6 +21,10 @@ interface VPNGateItemDao {
     @Query("DELETE FROM vpngateitem")
     fun deleteAll()
 
+    /** Remove VPN Gate rows whose published country is Russia. */
+    @Query("DELETE FROM vpngateitem WHERE UPPER(COALESCE(countryShort, '')) IN ('RU', 'RUS') OR LOWER(COALESCE(countryLong, '')) = 'russia'")
+    fun deleteRussianServers(): Int
+
 
     @Query("SELECT COUNT(hostName) FROM vpngateitem")
     fun count(): Int
