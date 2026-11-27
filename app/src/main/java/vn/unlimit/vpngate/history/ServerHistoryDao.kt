@@ -62,6 +62,16 @@ interface ServerHistoryDao {
     )
     fun historyViews(): List<ServerHistoryView>
 
+    /** Latest throughput windows for one physical network; bounded to recent observations. */
+    @Query(
+        "SELECT hostName AS hostName, protocol AS protocol, networkType AS networkType, " +
+            "qualityResult AS qualityResult, createdAt AS createdAt " +
+            "FROM server_history_event WHERE eventType = 'THROUGHPUT_SAMPLE' " +
+            "AND networkType = :networkType AND createdAt >= :since AND protocol IS NOT NULL " +
+            "ORDER BY createdAt DESC, id DESC LIMIT :limit",
+    )
+    fun throughputSamplesSince(networkType: String, since: Long, limit: Int): List<ServerThroughputSampleView>
+
     // ---------------------------------------------------------------------
     // Reads used by the recorder and by diagnosis.
     // ---------------------------------------------------------------------
@@ -89,6 +99,19 @@ interface ServerHistoryDao {
 
     @Query("SELECT COUNT(*) FROM server_history_event WHERE attemptToken = :token AND eventType = :eventType")
     fun countToken(token: String, eventType: String): Int
+
+    /** Keep only the latest five throughput windows for one server/protocol/network tuple. */
+    @Query(
+        "DELETE FROM server_history_event WHERE eventType = 'THROUGHPUT_SAMPLE' " +
+            "AND hostName = :hostName AND protocol = :protocol AND networkType = :networkType " +
+            "AND id NOT IN (SELECT id FROM server_history_event WHERE eventType = 'THROUGHPUT_SAMPLE' " +
+            "AND hostName = :hostName AND protocol = :protocol AND networkType = :networkType " +
+            "ORDER BY createdAt DESC, id DESC LIMIT 5)",
+    )
+    fun pruneThroughputSamples(hostName: String, protocol: String, networkType: String)
+
+    @Query("DELETE FROM server_history_event WHERE eventType = 'THROUGHPUT_SAMPLE' AND createdAt < :before")
+    fun pruneOldThroughputSamples(before: Long)
 
     // ---------------------------------------------------------------------
     // Writes
@@ -124,6 +147,14 @@ interface ServerHistoryDao {
             record.token != null &&
             countToken(record.token, record.eventType.name) > 0
         ) {
+            return
+        }
+
+        if (record.eventType == HistoryEventType.THROUGHPUT_SAMPLE) {
+            val protocol = record.protocol ?: return
+            insertEvent(ServerHistoryEvent.fromRecord(record))
+            pruneThroughputSamples(record.hostName, protocol, record.networkType.name)
+            pruneOldThroughputSamples(record.at - 7L * 24L * 60L * 60L * 1000L)
             return
         }
 

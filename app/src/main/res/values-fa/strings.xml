@@ -66,14 +66,19 @@
     <string name="cancel">انصراف</string>
     <string name="feature_not_available">این عملیات در حال حاضر امکان‌پذیر نیست</string>
     <!-- Settings -->
-    <string name="enable_notification_speed">نمایش سرعت/آمار در اعلان</string>
+    <string name="enable_notification_speed">نمایش سرعت و آمار در اعلان</string>
+    <string name="setting_disconnect_notifications">اعلان قطع اتصال و خطاها</string>
+    <string name="setting_disconnect_notifications_hint">پس از قطع ناخواسته اتصال یا بروز خطای VPN اعلان نمایش داده شود. این گزینه پیش‌فرض خاموش است؛ اعلان ضروری سرویس VPN هنگام اتصال همچنان نمایش داده می‌شود.</string>
+    <string name="setting_auto_mode_progress_notification">اعلان پیشرفت اتصال خودکار</string>
+    <string name="setting_auto_mode_progress_notification_hint">نمایش جست‌وجوی سرورها و تلاش‌های اتصال. این گزینه در حالت پیش‌فرض خاموش است؛ اعلان ضروری سرویس VPN هنگام اتصال همچنان نمایش داده می‌شود.</string>
     <string name="setting_startup_screen">صفحهٔ آغازین</string>
     <string-array name="startup_screen">
         <item>صفحهٔ فهرست</item>
         <item>صفحهٔ وضعیت</item>
     </string-array>
     <string name="setting_startup_screen_subtitle">صفحه‌ای که پس از اجرای برنامه (با حداقل یک اتصال موفق) نمایش داده می‌شود.\nاگر اتصال موفقی ثبت نشده باشد همیشه صفحهٔ فهرست نمایش داده می‌شود.\nبا ضربه به اعلان نیز همین صفحه باز می‌شود.</string>
-    <string name="enable_notification_speed_hint">نمایش سرعت/آمار در اعلان. در صورت خاموش بودن فقط وضعیت اتصال نمایش داده می‌شود و مصرف باتری کمتر می‌شود.</string>
+    <string name="enable_notification_speed_hint">نمایش سرعت و آمار ترافیک در اعلان اتصال. در حالت خاموش فقط وضعیت اتصال نمایش داده می‌شود.</string>
+    <string name="emergency_source_summary">منابع اختیاری پشتیبان برای فهرست سرورها. منبع پیش‌فرض برنامه از قبل ثبت شده اما خاموش است؛ برای دریافت اطلاعات اضطراری پس از شکست منابع اصلی، آن را فعال کنید یا منبع دیگری بیفزایید.</string>
     <string name="setting_cache_label">کش</string>
     <string name="setting_cache_clear">پاک‌سازی همین حالا</string>
     <string name="setting_clear_cache_success">کش با موفقیت پاک شد</string>
@@ -146,7 +151,19 @@
     <!-- VPN strings -->
     <string name="unknown_state">نامشخص</string>
     <string name="check_ip">بررسی IP عمومی فعلی شما</string>
-    <string name="about_html">%1$s یک کلاینت VPN چندپروتکلی رایگان و متن‌باز برای اندروید با پیاده‌سازی بومی SoftEther VPN است. همچنین از OpenVPN، MS-SSTP و L2TP/IPsec پشتیبانی می‌کند و به سرورهای رایگان عمومی پروژهٔ VPN Gate و سرورهای خصوصی متصل می‌شود.</string>
+    <string name="about_html">%1$s یک کلاینت چندپروتکلی رایگان و متن‌باز VPN برای اندروید است. این برنامه پیاده‌سازی بومی SoftEther را با پشتیبانی از پروتکل‌های رایج دیگر ترکیب می‌کند و به سرورهای عمومی VPN Gate و سرورهای خصوصی متصل می‌شود.</string>
+    <string name="about_protocols_title">پروتکل‌های پشتیبانی‌شده</string>
+    <string name="about_protocols_summary">SoftEther بومی TCP/UDP • OpenVPN TCP/UDP • Microsoft SSTP • L2TP/IPsec قدیمی</string>
+    <string name="about_features_title">اتصال VPN با انعطاف‌پذیری بیشتر</string>
+    <string name="about_features_summary">سرورهای عمومی VPN Gate را مرور کنید، به سرورهای خصوصی متصل شوید، فهرست سرورها را محلی نگه دارید، سرور دستی اضافه کنید و عبور برنامه‌های منتخب از VPN را مدیریت کنید.</string>
+    <string name="about_auto_mode_title">حالت اتصال خودکار</string>
+    <string name="about_auto_mode_summary">حالت خودکار از ترتیب پروتکل‌های فعال‌شده توسط شما پیروی می‌کند و سرورهایی را که چند بار بلافاصله پس از اتصال قطع می‌شوند، برای مدتی از چرخه خارج می‌کند. OpenVPN فقط زمانی برای اتصال خودکار انتخاب می‌شود که پروفایل آن از قبل روی دستگاه موجود باشد؛ هنگام جست‌وجوی خودکار پروفایل دانلود نمی‌شود.</string>
+    <string name="about_server_sources_title">دریافت فهرست سرورها و منابع جایگزین</string>
+    <string name="about_server_sources_summary">دریافت‌کنندهٔ سرورها از صفحه و API سایت VPN Gate با اعتبارسنجی و پشتیبانی از آینه‌ها استفاده می‌کند. منابع اضطراری CSV اختیاری هستند، به‌صورت پیش‌فرض غیرفعال‌اند و فقط زمانی به کار می‌روند که منابع زنده نتیجهٔ قابل‌قبولی ارائه نکنند.</string>
+    <string name="about_csv_title">مدیریت سرور دستی و فایل CSV</string>
+    <string name="about_csv_summary">سرور خصوصی اضافه کنید، قالب CSV برنامه یا CSV استاندارد API سایت VPN Gate را با چسباندن متن یا انتخاب فایل وارد کنید و هر سرور را از منوی لمس طولانی به‌صورت CSV خروجی بگیرید. پورت‌های TCP و UDP جداگانه حفظ می‌شوند. حجم و تعداد ردیف‌های ورودی محدود است.</string>
+    <string name="about_android_compatibility_title">سازگاری با نسخه‌های اندروید</string>
+    <string name="about_android_compatibility_summary">L2TP/IPsec به پیاده‌سازی قدیمی VPN اندروید وابسته است و در اندروید ۱۳ و نسخه‌های جدیدتر در دسترس نیست. استفاده از SoftEther، OpenVPN یا SSTP پیشنهاد می‌شود.</string>
     <string name="about_development">توسعه</string>
     <string name="about_author_label">توسعه و نگهداری توسط</string>
     <string name="about_source_title">کد منبع</string>
@@ -216,7 +233,8 @@
     <string name="setting_auto_protocol_priority_hint">پروتکل‌ها را فعال و مرتب کنید؛ اتصال خودکار روی هر سرور به‌ترتیب از بالا آن‌ها را امتحان می‌کند.</string>
     <string name="setting_auto_protocol_priority_default">هیچ‌کدام فعال نیست</string>
     <string name="setting_auto_protocol_priority_rank">اولویت #%1$d</string>
-    <string name="setting_auto_timeout_label">مدت انتظار اتصال حالت خودکار</string>
+    <string name="setting_auto_timeout_label">مهلت اتصال به هر سرور در حالت خودکار</string>
+    <string name="setting_auto_timeout_subtitle">این زمان بودجهٔ کل هر سرور است و بین پروتکل‌های فعال آن مشترک است.</string>
     <string name="setting_auto_max_attempts_label">تعداد تلاش روی هر سرور</string>
     <string name="setting_auto_max_attempts_subtitle">بعد از این تعداد تلاش روی یک سرور، حالت خودکار سراغ سرور بعدی می‌رود.</string>
     <string name="setting_auto_max_attempts_value">تا %1$d بار</string>
@@ -335,6 +353,10 @@
     <!-- Scheduled server list refresh interval (1–24 hours, default 12). -->
     <string name="setting_server_update_timeout_label">مدت انتظار بروزرسانی لیست سرورها</string>
     <string name="setting_server_update_timeout_subtitle">حداکثر زمان مجاز برای یک بار بروزرسانی. در شبکههای کند یا فیلترشده آنرا افزایش دهید.</string>
+    <string name="setting_download_vpn_gate_csv">دریافت CSV سایت VPN Gate</string>
+    <string name="setting_exclude_russia">حذف سرورهای روسیه</string>
+    <string name="setting_exclude_russia_hint">به‌صورت پیش‌فرض فعال است؛ سرورهای روسیه هنگام به‌روزرسانی از فهرست نگهداری‌شده حذف می‌شوند.</string>
+    <string name="setting_download_vpn_gate_csv_hint">همزمان فایل CSV رسمی نیز دریافت و ادغام شود. در حالت خاموش، بروزرسانی سریع مبتنی بر HTML حفظ میشود.</string>
     <string name="setting_server_update_timeout_value">%1$d ثانیه</string>
     <string name="setting_server_update_interval_label">فاصله بروزرسانی لیست سرورها</string>
     <string name="setting_server_update_interval_subtitle">لیست سرورها چند وقت یک‌بار به‌صورت خودکار بروزرسانی شود. شما همیشه می‌توانید دستی بروزرسانی کنید.</string>

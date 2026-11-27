@@ -70,6 +70,9 @@ class ConnectionListViewModel(application: Application) : BaseViewModel(applicat
      */
     var refreshNotice: MutableLiveData<CharSequence?> = MutableLiveData(null)
 
+    /** Current source-discovery stage, posted while a refresh is in flight. */
+    val sourceDiscoveryStage: MutableLiveData<String> = MutableLiveData("")
+
     /**
      * BLOCK v1.0.84: when the current update started, so a flag that never
      * cleared cannot disable the Update button permanently.
@@ -91,6 +94,12 @@ class ConnectionListViewModel(application: Application) : BaseViewModel(applicat
             mainTimeoutProvider = {
                 (App.instance?.dataUtil?.getServerListUpdateTimeoutSeconds()
                     ?: DataUtil.DEFAULT_SERVER_LIST_UPDATE_TIMEOUT_SECONDS) * 1000L
+            },
+            csvEnabledProvider = { dataUtil.getDownloadVpnGateCsv() },
+            mirrorRegistryProvider = { dataUtil.getMirrorRegistry() },
+            mirrorRegistrySaver = { entries -> dataUtil.setMirrorRegistry(entries) },
+            discoveryProgress = { stage, detail ->
+                sourceDiscoveryStage.postValue("$stage: $detail")
             },
         )
 
@@ -680,6 +689,7 @@ class ConnectionListViewModel(application: Application) : BaseViewModel(applicat
             } finally {
                 loadingSinceMs = 0L
                 isLoading.postValue(false)
+                sourceDiscoveryStage.postValue("")
             }
         }
     }

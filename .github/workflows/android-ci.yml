@@ -1,16 +1,22 @@
 name: Android CI
 
+permissions:
+  contents: write
+
 on:
   push:
     branches-ignore:
       - release
     tags:
       - 'p*'
+      - 'v*'
   workflow_dispatch: {}
 
 concurrency:
+  # Do not kill an active Android build when another commit is pushed to
+  # the same branch. Keep the in-flight run and queue the newest pending run.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   # The release keystore is stored in the repository as an AES-256 encrypted
@@ -265,15 +271,51 @@ jobs:
       - name: Bundle Pro Release AAB
         # Tag-gated (release tags only) AND secret-gated (main repo with the
         # keystore passphrase). Fork PRs cannot produce a signed release bundle.
-        if: ${{ startsWith(github.ref, 'refs/tags/') && env.KEYSTORE_PASSPHRASE != '' }}
+        if: ${{ (startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '2.4.22'))) && env.KEYSTORE_PASSPHRASE != '' }}
         run: ./gradlew :app:bundleProRelease
 
       - name: Upload Pro APK
-        if: startsWith(github.ref, 'refs/tags/')
+        # Publish signed APKs for feature-branch testing as well; this is only
+        # a workflow artifact, not a GitHub Release. AABs remain tag-gated.
+        if: ${{ success() && env.KEYSTORE_PASSPHRASE != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: apk-pro
           path: app/build/outputs/apk/pro/release/app-pro-release.apk
+
+
+      - name: Build per-ABI release APKs
+        if: ${{ github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '2.4.22') && env.KEYSTORE_PASSPHRASE != '' }}
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/^[[:space:]]*versionName "\([^"]*\)".*/\1/p' app/build.gradle | head -n1)"
+          mkdir -p release-assets
+          ./gradlew :app:assembleProRelease -PabiSplits
+          OUT="app/build/outputs/apk/pro/release"
+          cp "$OUT"/app-pro-armeabi-v7a-release.apk "release-assets/SoftEthergai-$VERSION-armeabi-v7a.apk"
+          cp "$OUT"/app-pro-x86-release.apk "release-assets/SoftEthergai-$VERSION-x86.apk"
+          cp "$OUT"/app-pro-x86_64-release.apk "release-assets/SoftEthergai-$VERSION-x86_64.apk"
+          cp "$OUT"/app-pro-universal-release.apk "release-assets/SoftEthergai-$VERSION-universal.apk"
+          rm -rf "$OUT"
+          ./gradlew :app:assembleProRelease -Parm64Fallback
+          cp "$OUT"/app-pro-release.apk "release-assets/SoftEthergai-$VERSION-arm64-v8a.apk"
+          (cd release-assets && sha256sum *.apk > SHA256SUMS.txt)
+
+      - name: Publish GitHub Release
+        if: ${{ github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '2.4.22') && env.KEYSTORE_PASSPHRASE != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.4.22
+          target_commitish: main
+          name: "v2.4.22 — VpnM 2.4.22 (build 156)"
+          body: |
+            VpnM 2.4.22 (build 156)
+
+            - Adds a Settings switch to exclude Russian VPN Gate servers (enabled by default).
+            - Removes previously retained Russian server rows during successful list updates while preserving the user's ability to disable the filter.
+            - Includes the latest Auto Mode server-selection and measured-throughput ranking improvements.
+          files: release-assets/*
+          fail_on_unmatched_files: true
 
       - name: Upload Pro AAB
         if: startsWith(github.ref, 'refs/tags/')

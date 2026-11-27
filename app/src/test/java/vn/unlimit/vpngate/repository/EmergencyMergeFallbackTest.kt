@@ -26,6 +26,8 @@ class EmergencyMergeFallbackTest {
     private class FakeDao : VPNGateItemDao {
         var rows: List<VPNGateItem> = emptyList()
 
+        override fun deleteRussianServers(): Int = 0
+
         override fun getAll(): List<VPNGateItem> = rows
 
         override fun replaceAll(items: List<VPNGateItem>) {

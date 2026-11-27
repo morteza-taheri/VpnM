@@ -41,20 +41,17 @@ class VpnM24x10TaskTest {
     // ---------------------------------------------------------------- STATUS
 
     @Test
-    fun `notify speed ships on for a fresh install`() {
-        assertEquals(
-            "a fresh install must show speed statistics in the notification by default",
-            true,
+    fun `notify speed is off for a fresh install`() {
+        assertFalse(
+            "optional speed statistics must be hidden by default",
             DataUtil.DEFAULT_NOTIFY_SPEED,
         )
     }
 
     @Test
     fun `notify speed default is the value the UI falls back to`() {
-        // The Settings toggle must resolve its initial state from the same
-        // constant, otherwise a fresh install could show OFF while every VPN
-        // service still renders speed.
-        assertTrue(DataUtil.DEFAULT_NOTIFY_SPEED)
+        // The Settings toggle and VPN services share the same OFF default.
+        assertFalse(DataUtil.DEFAULT_NOTIFY_SPEED)
     }
 
     // ------------------------------------------------------------- AUTO MODE

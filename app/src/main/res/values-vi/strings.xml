@@ -64,7 +64,11 @@
         <item>Màn hình danh sách</item>
         <item>Màn hình trạng thái</item>
     </string-array>
-    <string name="enable_notification_speed">Bật hiển thị tốc độ/thống kê ở thông báo</string>
+    <string name="enable_notification_speed">Hiển thị tốc độ và thống kê trong thông báo</string>
+    <string name="setting_disconnect_notifications">Cảnh báo ngắt kết nối và lỗi</string>
+    <string name="setting_disconnect_notifications_hint">Hiển thị cảnh báo khi kết nối bị ngắt ngoài ý muốn hoặc xảy ra lỗi VPN. Mặc định tắt; thông báo dịch vụ VPN bắt buộc vẫn hiển thị khi đang kết nối.</string>
+    <string name="setting_auto_mode_progress_notification">Thông báo tiến trình Auto Mode</string>
+    <string name="setting_auto_mode_progress_notification_hint">Hiển thị quá trình quét máy chủ và thử kết nối. Mặc định tắt; thông báo dịch vụ VPN bắt buộc vẫn hiển thị khi đang kết nối.</string>
     <string name="enable_notification_speed_hint">Hiển thị tốc độ/thống kê lưu lượng ở bảng thông báo. Nếu tắt chỉ trạng thái kết nối được hiển thị và tiêu thụ pin có thể giảm một chút.</string>
     <string name="setting_cache_label">Bộ nhớ đệm</string>
     <string name="setting_cache_clear">Xóa ngay</string>
@@ -110,7 +114,20 @@
     <string name="pauseVPN">Tạm dừng VPN</string>
     <string name="resumevpn">Tiếp tục VPN</string>
     <string name="check_ip">Kiểm tra IP hiện tại</string>
-    <string name="about_html">%1$s là ứng dụng khách VPN đa giao thức, miễn phí và mã nguồn mở cho Android với triển khai SoftEther VPN gốc. Ứng dụng cũng hỗ trợ OpenVPN, MS-SSTP và L2TP/IPsec, kết nối đến các máy chủ cộng đồng miễn phí từ dự án VPN Gate cũng như các máy chủ riêng.</string>
+    <string name="emergency_source_summary">Nguồn dự phòng tùy chọn cho danh sách máy chủ. Nguồn mặc định đã được cấu hình nhưng đang tắt; hãy bật nguồn này hoặc thêm nguồn riêng để cho phép tải dữ liệu dự phòng khi các nguồn chính gặp lỗi.</string>
+    <string name="about_html">%1$s là ứng dụng VPN đa giao thức miễn phí và mã nguồn mở cho Android. Ứng dụng kết hợp triển khai SoftEther gốc với các giao thức VPN phổ biến khác, hỗ trợ máy chủ công cộng VPN Gate và máy chủ riêng.</string>
+    <string name="about_protocols_title">Các giao thức được hỗ trợ</string>
+    <string name="about_protocols_summary">SoftEther gốc TCP/UDP • OpenVPN TCP/UDP • Microsoft SSTP • L2TP/IPsec cũ</string>
+    <string name="about_features_title">Kết nối VPN linh hoạt</string>
+    <string name="about_features_summary">Duyệt máy chủ VPN Gate công cộng, kết nối máy chủ riêng, lưu danh sách máy chủ cục bộ, quản lý máy chủ thủ công và chọn ứng dụng đi qua VPN.</string>
+    <string name="about_auto_mode_title">Chế độ tự động</string>
+    <string name="about_auto_mode_summary">Chế độ tự động tuân theo thứ tự giao thức bạn đã bật và tạm thời đưa các máy chủ thường xuyên ngắt kết nối ngay sau khi kết nối ra khỏi vòng thử. OpenVPN chỉ được thử khi hồ sơ đã có sẵn trên thiết bị; hồ sơ còn thiếu sẽ không được tải trong quá trình quét tự động.</string>
+    <string name="about_server_sources_title">Nguồn máy chủ và dự phòng</string>
+    <string name="about_server_sources_summary">Trình thu thập sử dụng trang web và API VPN Gate, kèm xác thực dữ liệu và hỗ trợ máy chủ mirror. Nguồn CSV khẩn cấp là tùy chọn, mặc định tắt và chỉ dùng khi nguồn trực tiếp không cung cấp được dữ liệu hợp lệ.</string>
+    <string name="about_csv_title">Máy chủ thủ công và công cụ CSV</string>
+    <string name="about_csv_summary">Thêm máy chủ riêng, nhập định dạng CSV của ứng dụng và API VPN Gate bằng cách dán văn bản hay chọn tệp, đồng thời xuất từng máy chủ từ menu nhấn giữ. Các cổng TCP và UDP được giữ riêng biệt. Dung lượng và số dòng nhập được giới hạn.</string>
+    <string name="about_android_compatibility_title">Khả năng tương thích Android</string>
+    <string name="about_android_compatibility_summary">L2TP/IPsec phụ thuộc vào triển khai VPN cũ của Android và không khả dụng trên Android 13 trở lên. Nên dùng SoftEther, OpenVPN hoặc SSTP thay thế.</string>
     <string name="about_development">Phát triển</string>
     <string name="about_author_label">Được phát triển và bảo trì bởi</string>
     <string name="about_source_title">Mã nguồn</string>
@@ -293,6 +310,8 @@
     <!-- Scheduled server list refresh interval (1–24 hours, default 12). -->
     <string name="setting_server_update_timeout_label">Server List Update Timeout</string>
     <string name="setting_server_update_timeout_subtitle">How long one refresh may take. Increase it on slow or filtered networks.</string>
+    <string name="setting_download_vpn_gate_csv">Tải CSV VPN Gate</string>
+    <string name="setting_download_vpn_gate_csv_hint">Tải thêm nguồn CSV chính thức và hợp nhất dữ liệu. Tắt để giữ cách cập nhật nhanh dùng HTML.</string>
     <string name="setting_server_update_timeout_value">%1$d seconds</string>
     <string name="setting_server_update_interval_label">Server List Update Interval</string>
     <string name="setting_server_update_interval_subtitle">How often the server list refreshes on its own. You can always update it manually.</string>

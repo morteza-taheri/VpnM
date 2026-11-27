@@ -558,8 +558,9 @@ fun AutoModeScreen(
             // Auto Connect screen now — next to the run it affects, instead of
             // buried in Settings. Same key and default as before.
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 20.dp),
@@ -579,8 +580,9 @@ fun AutoModeScreen(
             // Developer Log Panel
             if (developerMode) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 2.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 24.dp),
@@ -900,7 +902,7 @@ private fun ServerInfoCard(
     total: Int?,
 ) {
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
@@ -1000,7 +1002,7 @@ private fun MetricChip(
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         modifier = modifier,
     ) {
         Row(

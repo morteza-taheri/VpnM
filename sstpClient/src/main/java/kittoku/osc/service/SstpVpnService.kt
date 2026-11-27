@@ -104,6 +104,15 @@ class SstpVpnService : VpnService() {
         var lastTrafficSnapshot: SstpTrafficSnapshot = SstpTrafficSnapshot.EMPTY
             private set
         var mDisplaySpeed: Boolean = true
+        var mShowDisconnectNotifications: Boolean = false
+
+        fun cancelOptionalNotifications(context: Context) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(NOTIFICATION_CRITICAL_ID)
+            manager.cancel(NOTIFICATION_ERROR_ID)
+            manager.cancel(NOTIFICATION_RECONNECT_ID)
+            manager.cancel(NOTIFICATION_DISCONNECT_ID)
+        }
 
         private val trafficListeners = mutableListOf<TrafficListener>()
         private val mainHandler = Handler(Looper.getMainLooper())
@@ -152,6 +161,12 @@ class SstpVpnService : VpnService() {
     }
 
     private fun triggerDisconnectNotification() {
+        if (!mShowDisconnectNotifications) {
+            getSystemService(Context.NOTIFICATION_SERVICE)?.let { service ->
+                (service as NotificationManager).cancel(NOTIFICATION_CRITICAL_ID)
+            }
+            return
+        }
         val channelId = NOTIFICATION_CRITICAL_CHANNEL
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -216,7 +231,7 @@ class SstpVpnService : VpnService() {
         tryNotify(builder.build(), NOTIFICATION_CRITICAL_ID)
     }
 
-    private fun setRootState(state: Boolean) {
+    internal fun setRootState(state: Boolean) {
         setBooleanPrefValue(state, OscPrefKey.ROOT_STATE, prefs)
     }
 
@@ -292,9 +307,10 @@ class SstpVpnService : VpnService() {
 
                 logWriter?.write("Establish VPN connection")
 
+                // CONNECTED is published only after IPTerminal.establish()
+                // succeeds. Until then the tracker must remain CONNECTING.
+                setRootState(false)
                 initializeClient(generation)
-
-                setRootState(true)
 
                 Service.START_STICKY
             }
@@ -545,6 +561,12 @@ class SstpVpnService : VpnService() {
     }
 
     internal fun notifyMessage(message: String, id: Int, channel: String) {
+        if (!mShowDisconnectNotifications &&
+            (id == NOTIFICATION_ERROR_ID || id == NOTIFICATION_RECONNECT_ID || id == NOTIFICATION_DISCONNECT_ID)
+        ) {
+            notificationManager.cancel(id)
+            return
+        }
         NotificationCompat.Builder(this, channel).also {
             it.setSmallIcon(R.drawable.ic_notification)
             it.setContentText(message)
@@ -556,11 +578,21 @@ class SstpVpnService : VpnService() {
     }
 
     internal fun notifyError(message: String) {
+        if (!mShowDisconnectNotifications) {
+            notificationManager.cancel(NOTIFICATION_ERROR_ID)
+            notificationManager.cancel(NOTIFICATION_CRITICAL_ID)
+            mWasConnected = false
+            return
+        }
         if (mWasConnected) {
+            // The critical disconnect alert is the single notification for a
+            // lost established tunnel; the detailed error notification is
+            // reserved for failures before a tunnel was established.
             triggerDisconnectNotification()
             mWasConnected = false
+        } else {
+            notifyMessage(message, NOTIFICATION_ERROR_ID, NOTIFICATION_ERROR_CHANNEL)
         }
-        notifyMessage(message, NOTIFICATION_ERROR_ID, NOTIFICATION_ERROR_CHANNEL)
     }
 
     internal fun tryNotify(notification: Notification, id: Int) {

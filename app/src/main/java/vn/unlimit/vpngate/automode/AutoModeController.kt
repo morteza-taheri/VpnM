@@ -20,6 +20,7 @@ import vn.unlimit.vpngate.history.HistoryRecord
 import vn.unlimit.vpngate.history.NetworkType
 import vn.unlimit.vpngate.history.ServerHistorySink
 import vn.unlimit.vpngate.history.ServerHistoryView
+import vn.unlimit.vpngate.history.throughputSampleKey
 import vn.unlimit.vpngate.state.GlobalVpnTracker
 import vn.unlimit.vpngate.state.VpnConnectionStatus
 
@@ -52,9 +53,9 @@ class AutoModeController(
     private val serverProvider: suspend () -> List<AutoModeCandidate>,
     /** Called when a tunnel is verified so the caller can persist it (Â§19). */
     private val onSuccess: (AutoModeCandidate, AutoModeProtocol) -> Unit = { _, _ -> },
-    /** Per-attempt timeout in ms (Â§11). */
+    /** Total per-server dial budget in ms, shared across protocols (Â§11). */
     /**
-     * v1.0.42 (§1.6.35 / F1): per-attempt timeout in ms, read through a
+     * v1.0.42 (§1.6.35 / F1): per-server timeout in ms, read through a
      * **provider** instead of being frozen at construction.
      *
      * `AutoModeEngine.ensure()` builds this controller exactly once (the
@@ -67,8 +68,8 @@ class AutoModeController(
      * provider at ATTEMPT time makes a Settings change apply to the next
      * attempt.
      *
-     * Default is the documented 12 s, so a caller that does not model the
-     * setting keeps the pre-v1.0.42 behaviour exactly.
+     * Default is 8 s, aligned with the fresh-install Settings value. A caller that
+     * does not model the setting therefore keeps the same shipped default.
      */
     private val attemptTimeoutMsProvider: () -> Long = { DEFAULT_ATTEMPT_TIMEOUT_MS },
     /**
@@ -76,7 +77,7 @@ class AutoModeController(
      * operation to release the process-wide slot, before the run is declared stuck.
      *
      * Injected so the JVM suite can drive the "genuinely stuck" branch without a
-     * real 30 s wait. Production derives it from the per-attempt budget; see
+     * real 30 s wait. Production derives it from the per-server budget; see
      * [NATIVE_SLOT_AWAIT_MS] for why the factor is five.
      *
      * v1.0.42 (§1.6.35 / B-3): also a **provider**, for the same reason as
@@ -326,6 +327,8 @@ class AutoModeController(
      * its own clock.
      */
     private val quarantine: ServerQuarantine = ServerQuarantine(),
+    /** Recent real-download rates keyed by host/protocol for the current physical network. */
+    private val throughputHistoryProvider: suspend (NetworkType) -> Map<String, ThroughputRankingSample> = { emptyMap() },
 ) {
     interface ConnectionAdapter {
         /** Initiate the connection for [candidate] via [protocol]. */
@@ -633,7 +636,7 @@ enum class AttemptOutcome {
          * Connect walks protocols and servers faster.
          *
          * Before v1.0.31 this read `25_000L`, a third figure that agreed with
-         * neither the Settings default (12 s) nor the documented default (5 s).
+         * neither the Settings default (8 s) nor the documented default (5 s).
          * Three numbers described one setting, and no test pinned any of them,
          * so the drift was invisible to CI.
          *
@@ -641,11 +644,11 @@ enum class AttemptOutcome {
          * injects the user's setting explicitly. It exists for direct
          * construction (tests, library callers).
          *
-         * v1.0.70 (REQ-TIMEOUT-001): the approved default is 12 s again, with
+         * The approved fresh-install default is 8 s, with
          * the range 8..30. This constant, `DataUtil.getAutoModeTimeoutSeconds()`
          * and the Settings picker must stay one number.
          */
-        const val DEFAULT_ATTEMPT_TIMEOUT_MS = 12_000L
+        const val DEFAULT_ATTEMPT_TIMEOUT_MS = 8_000L
 
         /**
          * v1.0.32 (AUTOCONNECT-FIX-2, BUG-B): how many `NATIVE_BUSY` refusals on the
@@ -1157,9 +1160,13 @@ enum class AttemptOutcome {
                     // relaunched walk. When every candidate has been tried, the
                     // state says so — never a silent wrap.
                     val priorities = protocolPriorityProvider()
+                    val history = loadHistory()
+                    val networkType = safeNetworkType()
+                    val throughputHistory = loadThroughputHistory(networkType)
                     val all = (overrideServers ?: serverProvider())
+                        .withMeasuredThroughput(priorities, history, throughputHistory)
                         .withActiveRtt(priorities)
-                        .sortedForAutoConnect(loadHistory(), safeNetworkType())
+                        .sortedForAutoConnect(history, networkType)
                     var untried = all.filter {
                         serverKey(it) !in sessionTriedKeys &&
                             usableProtocols(it, priorities).isNotEmpty()
@@ -1321,9 +1328,13 @@ enum class AttemptOutcome {
                     sessionTriedKeys.add(currentKey)
                 }
                 val priorities = protocolPriorityProvider()
+                val history = loadHistory()
+                val networkType = safeNetworkType()
+                val throughputHistory = loadThroughputHistory(networkType)
                 val all = (overrideServers ?: serverProvider())
+                    .withMeasuredThroughput(priorities, history, throughputHistory)
                     .withActiveRtt(priorities)
-                    .sortedForAutoConnect(loadHistory(), safeNetworkType())
+                    .sortedForAutoConnect(history, networkType)
                 var untried = all.filter {
                     serverKey(it) !in sessionTriedKeys &&
                         usableProtocols(it, priorities).isNotEmpty()
@@ -2306,6 +2317,26 @@ enum class AttemptOutcome {
         .minOrNull()
 
     /** [candidates] carrying their aggregated active RTT, ready for ranking. */
+    private fun List<AutoModeCandidate>.withMeasuredThroughput(
+        priorities: List<AutoModeProtocol>,
+        history: Map<String, ServerHistoryView>,
+        samples: Map<String, ThroughputRankingSample>,
+    ): List<AutoModeCandidate> = map { candidate ->
+        val identity = candidate.hostname?.trim()?.takeIf { it.isNotEmpty() }
+            ?: candidate.ip?.trim().orEmpty()
+        val firstProtocol = orderWithRememberedProtocol(
+            usableProtocols(candidate, priorities),
+            history.viewOf(candidate),
+        ).firstOrNull()
+        val measured = if (identity.isNotEmpty() && firstProtocol != null) {
+            samples[throughputSampleKey(identity, firstProtocol.id)]
+        } else null
+        candidate.copy(
+            measuredDownloadBps = measured?.medianDownloadBps?.takeIf { it > 0L },
+            peakDownloadBps = measured?.peakDownloadBps?.takeIf { it > 0L },
+        )
+    }
+
     private fun List<AutoModeCandidate>.withActiveRtt(
         priorities: List<AutoModeProtocol>,
     ): List<AutoModeCandidate> = map { it.copy(activeRttMs = representativeRtt(it, priorities)) }
@@ -2692,7 +2723,7 @@ enum class AttemptOutcome {
                     "skipping them instead of waiting for a timeout",
             )
         }
-        adapter.log("[AUTO] Connection timeout = ${attemptTimeoutMs() / 1000} seconds")
+        adapter.log("[AUTO] Connection budget = ${attemptTimeoutMs() / 1000} seconds per server (shared across protocols)")
 
         val requested = overrideServers ?: serverProvider()
         // BLOCK v1.0.75 (C3): a Next/continuation run (overrideServers set) must
@@ -2807,6 +2838,12 @@ enum class AttemptOutcome {
         // runs per server.
         val runNetworkType = safeNetworkType()
         val history = loadHistory()
+        val throughputHistory = loadThroughputHistory(runNetworkType)
+        val throughputRanked = all.withMeasuredThroughput(
+            priorities = priorities,
+            history = history,
+            samples = throughputHistory,
+        )
 
         // BLOCK v1.0.75 (C3/D-5) — the last-known-good fast path. A USER-STARTED
         // run (not a Next continuation, not a reconnect override) first dials the
@@ -2816,7 +2853,7 @@ enum class AttemptOutcome {
         // pipeline runs. The log names the path and the elapsed time.
         var fastFailedKey: String? = null
         if (runOrigin == ConnectionOrigin.AUTO_CONNECT && !wasOverride && !wasReconnect) {
-            val fastTarget = knownGoodFastTarget(all, history, runNetworkType, priorities, System.currentTimeMillis())
+            val fastTarget = knownGoodFastTarget(throughputRanked, history, runNetworkType, priorities, System.currentTimeMillis())
             if (fastTarget != null) {
                 val (fastServer, fastProtocol) = fastTarget
                 val fastStart = System.currentTimeMillis()
@@ -2916,7 +2953,7 @@ enum class AttemptOutcome {
             }
         }
 
-        val qualitySorted = all
+        val qualitySorted = throughputRanked
             .withActiveRtt(priorities)
             .sortedForAutoConnect(history, runNetworkType)
         adapter.log("[AUTO] Servers available = ${all.size}")
@@ -2959,74 +2996,10 @@ enum class AttemptOutcome {
             rest + exhausted
         }
 
-        // Stage 2F-F.17 (D1): the probe is handed one protocol/endpoint pair per
-        // **usable protocol**, per server. A server with no usable protocol produces
-        // no target at all, so it is never probed and never gated on by D1 — it is
-        // still skipped later by the same capability rule that decides the attempt
-        // order.
-        //
-        // The previous code applied `priorities.first()` to the whole list, which
-        // turned Protocol Priority into a global eligibility gate: a server that
-        // could not speak that one protocol was discarded even when it could
-        // perfectly well speak the second one.
-        val targets = probeTargets(ranked, priorities)
-        val gate = if (reachabilityFilter != null && targets.isNotEmpty()) {
-            adapter.log(
-                "[AUTO] Pre-filtering reachable servers via probe " +
-                    "(${targets.size} endpoint(s) across ${targets.map { it.protocol.id }.distinct().joinToString(" > ")})...",
-            )
-            try {
-                reachabilityFilter.invoke(targets)
-            } catch (e: CancellationException) {
-                // v1.0.52 (§1.6.44) TASK B.3(b): cancellation is NOT a probe
-                // failure. Swallowing it here turned a user stop (or a scope
-                // cancel) into "no evidence, keep the full list", so the run
-                // carried on dialling after it had been cancelled.
-                throw e
-            } catch (e: Exception) {
-                // A probe that failed to run has measured nothing, which is not a
-                // verdict. Null means "no evidence", never "all down".
-                adapter.log("[AUTO] Reachability probe failed: ${e.message}; using original list")
-                null
-            }
-        } else {
-            null
-        }
-
-        // Stage 2F-F.17 (D1 = FILTER_ONLY): three outcomes, deliberately distinct.
-        //
-        // - the gate kept something -> use it. It is a subsequence of
-        //   `ranked`, so the comparator (plus the v1.0.88 budget deferral)
-        //   stays the only ranking authority;
-        // - the gate removed everything *and says so* -> that is a real
-        //   measurement (every usable protocol of every server definitively
-        //   UNREACHABLE), so honour it and let the existing empty-list path report
-        //   ERROR_NO_SERVER;
-        // - nothing measured at all (no filter, no targets, a throwing probe, or a
-        //   gate that could not conclude) -> keep the full list.
-        //
-        // The third case is the pre-existing "a probe must never empty the queue"
-        // rule, and it is why an empty `kept` cannot be read on its own: before
-        // D1 that read as "keep everything", which silently undid the removal of a
-        // genuinely dead network.
-        var servers = when {
-            gate == null -> ranked
-            gate.kept.isNotEmpty() -> {
-                adapter.log("[AUTO] Reachable servers selected: ${gate.kept.size}")
-                // The result is rebuilt by walking `ranked` and keeping the
-                // entries the gate named, never by walking the gate's own list.
-                // That is what makes the comparator the sole authority on order: a
-                // gate that returned its survivors in any other order still yields
-                // a subsequence of the ranked input. Identity, not equality, is the
-                // match — two different servers may compare equal by value.
-                ranked.filter { candidate -> gate.kept.any { it === candidate } }
-            }
-            gate.allUnreachable -> {
-                adapter.log("[AUTO] Every server's usable protocols are unreachable; none left to try")
-                emptyList()
-            }
-            else -> ranked
-        }
+        // Reachability is lazy: test only the server about to be dialled.
+        // The first connection no longer waits for probes across the full catalogue.
+        var servers = ranked
+        adapter.log("[AUTO] Reachability checks will run just-in-time per server")
 
         if (servers.isEmpty()) {
             adapter.log("[AUTO] No compatible server found")
@@ -3171,6 +3144,37 @@ enum class AttemptOutcome {
                 adapter.log("[AUTO] Skipping ${server.hostname ?: server.ip}: no supported protocol")
                 continue
             }
+            val serverDeadlineMs = System.currentTimeMillis() + attemptTimeoutMs()
+            val serverTargets = probeTargets(listOf(server), priorities)
+            if (reachabilityFilter != null && serverTargets.isNotEmpty()) {
+                val probeStartedAt = System.currentTimeMillis()
+                val gate = try {
+                    adapter.log(
+                        "[AUTO] Checking ${server.hostname ?: server.ip} reachability " +
+                            "(${serverTargets.size} usable endpoint(s))",
+                    )
+                    reachabilityFilter.invoke(serverTargets)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    adapter.log(
+                        "[AUTO] Reachability check failed for ${server.hostname ?: server.ip}: " +
+                            "${e.javaClass.simpleName}; keeping candidate",
+                    )
+                    null
+                }
+                if (gate != null && gate.kept.isEmpty() && gate.allUnreachable) {
+                    adapter.log(
+                        "[AUTO] Skipping ${server.hostname ?: server.ip}: all usable endpoints " +
+                            "unreachable (${System.currentTimeMillis() - probeStartedAt}ms)",
+                    )
+                    continue
+                }
+                adapter.log(
+                    "[AUTO] Reachability accepted ${server.hostname ?: server.ip} " +
+                        "in ${System.currentTimeMillis() - probeStartedAt}ms",
+                )
+            }
             // BLOCK v1.0.75 (C4/D-6): a server WITH history tries its last
             // successful protocol first; enablement and the user's relative
             // order are otherwise untouched.
@@ -3214,6 +3218,12 @@ enum class AttemptOutcome {
             var lastAttemptStartedAt: Long? = null
             for (protocol in protocolOrder) {
                 if (!currentCoroutineContext().isActive) return
+                val remainingServerBudgetMs = serverDeadlineMs - System.currentTimeMillis()
+                if (remainingServerBudgetMs <= 0L) {
+                    adapter.log("[AUTO] Server budget exhausted for ${server.hostname ?: server.ip}; moving on")
+                    break
+                }
+                val protocolTimeoutMs = minOf(attemptTimeoutMs(), remainingServerBudgetMs)
 
                 // F.29: measured from here, so `durationMs` describes the attempt
                 // rather than the run. The network type is read per attempt — the
@@ -3308,7 +3318,7 @@ enum class AttemptOutcome {
                     )
                     continue
                 }
-                val outcome = adapter.awaitArmedOutcome(protocol, attemptTimeoutMs())
+                val outcome = adapter.awaitArmedOutcome(protocol, protocolTimeoutMs)
 
                 if (!currentCoroutineContext().isActive) return
 
@@ -3520,7 +3530,7 @@ enum class AttemptOutcome {
                     // as the slot is free, so a normal rotation pays nothing for the cap.
                     // Only an actually-held slot hits the budget, and the cap makes the
                     // "stuck" verdict arrive sooner rather than later.
-                    val slotWaitBudget = minOf(nativeSlotAwaitMs(), attemptTimeoutMs())
+                    val slotWaitBudget = minOf(nativeSlotAwaitMs(), protocolTimeoutMs)
                     val released = adapter.awaitNativeSlotRelease(slotWaitBudget)
                     if (!released) {
                         // v1.0.37 (AUTOCONNECT-FIX-7, Fix-2): a slot-wait timeout no longer
@@ -3632,7 +3642,12 @@ enum class AttemptOutcome {
                         // its turn rather than being skipped.
                         continue
                     }
-                    val retryOutcome = adapter.awaitArmedOutcome(protocol, attemptTimeoutMs())
+                    val retryBudgetMs = (serverDeadlineMs - System.currentTimeMillis()).coerceAtLeast(0L)
+                    if (retryBudgetMs <= 0L) {
+                        adapter.log("[AUTO] Server budget exhausted before native retry")
+                        break
+                    }
+                    val retryOutcome = adapter.awaitArmedOutcome(protocol, retryBudgetMs)
                     if (!currentCoroutineContext().isActive) return
                     if (retryOutcome == AttemptOutcome.TUNNEL_UP) {
                         connectedProtocol = protocol
@@ -3687,7 +3702,7 @@ enum class AttemptOutcome {
                 // rotation below (next protocol, then next server) is its recovery.
                 if (outcome == AttemptOutcome.TIMED_OUT) {
                     adapter.log(
-                        "[AUTO] TIMED_OUT after ${attemptTimeoutMs()}ms on " +
+                        "[AUTO] TIMED_OUT after ${protocolTimeoutMs}ms on " +
                                 "${server.hostname ?: server.ip}/${protocol.id}; " +
                                 "cleanup then next protocol (no same-server retry)",
                     )
@@ -3776,7 +3791,7 @@ enum class AttemptOutcome {
                 //
                 // NATIVE_ERROR short-circuits the wait entirely (no slot was ever
                 // acquired), so the cap only affects the outcomes that really hold the slot.
-                val postWaitBudget = minOf(nativeSlotAwaitMs(), attemptTimeoutMs())
+                val postWaitBudget = minOf(nativeSlotAwaitMs(), protocolTimeoutMs)
                 val slotReleased =
                     outcome == AttemptOutcome.NATIVE_ERROR ||
                             adapter.awaitNativeSlotRelease(postWaitBudget)
@@ -3992,6 +4007,24 @@ enum class AttemptOutcome {
      * stops waiting at the suspension boundary, so the run continues on time even if
      * the underlying call returns later.
      */
+    private suspend fun loadThroughputHistory(network: NetworkType): Map<String, ThroughputRankingSample> = try {
+        val samples = withTimeoutOrNull(1_500L) { throughputHistoryProvider(network) }
+            ?: run {
+                adapter.log("[THROUGHPUT] read timed out; using advertised server speeds")
+                emptyMap()
+            }
+        adapter.log("[THROUGHPUT] loaded ${samples.size} measured server/protocol rates for ${network.name}")
+        samples
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        adapter.log(
+            "[THROUGHPUT] read failed: ${e.javaClass.simpleName}: ${e.message}; " +
+                "using advertised server speeds",
+        )
+        emptyMap()
+    }
+
     private suspend fun loadHistory(): Map<String, ServerHistoryView> = try {
         withTimeoutOrNull(HISTORY_READ_TIMEOUT_MS) { historyProvider() }
             ?: run {
@@ -4327,7 +4360,10 @@ enum class AttemptOutcome {
      * any decision. It remains a field on the candidate for diagnostics.
      */
     private val byQuality =
-        compareByDescending<AutoModeCandidate> { it.speed > 0 }
+        compareByDescending<AutoModeCandidate> { it.rankingDownloadBps > 0L }
+            .thenByDescending { it.rankingDownloadBps }
+            .thenByDescending { it.measuredDownloadBps ?: it.speed }
+            .thenByDescending { it.peakDownloadBps ?: it.speed }
             .thenByDescending { it.speed }
             .thenByDescending<AutoModeCandidate> { it.ping > 0 }
             .thenBy { it.ping }

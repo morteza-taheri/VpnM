@@ -46,7 +46,7 @@ class EmergencyDefaultSeedTest {
     // ── T-NEW-67: a fresh install gets exactly one row ────────────────────
 
     @Test
-    fun `T-NEW-67 fresh install seeds exactly one default row from the resource URL`() = runBlocking {
+    fun `T-NEW-67 fresh install seeds one disabled default row from the resource URL`() = runBlocking {
         val dao = FakeEmergencySourceDao()
         val dataUtil = dataUtil()
 
@@ -58,7 +58,7 @@ class EmergencyDefaultSeedTest {
         val row = dao.rows.single()
         assertEquals("the row must carry the resource URL", url, row.url)
         assertEquals("the label marks the row as the app's default", "Default", row.label)
-        assertTrue("the seeded source must be enabled", row.enabled)
+        assertFalse("the seeded emergency source must be disabled by default", row.enabled)
         assertEquals(1_700_000_000_000L, row.createdAt)
         assertEquals(1_700_000_000_000L, row.updatedAt)
         assertEquals("id must stay unset so Room autogenerates it", 0, row.id)

@@ -363,6 +363,13 @@ object ServerListUpdates {
             val successCounts = runCatching {
                 historyDao?.historyViews()?.associate { it.hostName.trim() to it.successCount }
             }.getOrNull().orEmpty()
+            val excludeRussia = runCatching {
+                vn.unlimit.vpngate.App.instance?.dataUtil
+                    ?.getBooleanSetting(vn.unlimit.vpngate.utils.DataUtil.SETTING_EXCLUDE_RUSSIA, true)
+                    ?: true
+            }.getOrDefault(true)
+            val allowedItems = ServerCountryPolicy.excludeRussia(items, excludeRussia)
+            val allowedManualRows = ServerCountryPolicy.excludeRussia(manual.rows, excludeRussia)
             if (fetchedFromCache()) {
                 // G-F29-1: a fallback (last-known-good snapshot, stored list or
                 // bundled seed) is not a network observation, but it must not
@@ -371,9 +378,14 @@ object ServerListUpdates {
                 // firstSeenAt / lastSeenAt / healthScore, so a raw replaceAll
                 // would reset them to 0; mergeFallback preserves the stored
                 // values instead.
-                mergeFallback(dao, items, manual.rows, System.currentTimeMillis(), successCounts)
+                mergeFallback(dao, allowedItems, allowedManualRows, System.currentTimeMillis(), successCounts)
             } else {
-                mergeAll(dao, items, manual.rows, System.currentTimeMillis(), successCounts)
+                mergeAll(dao, allowedItems, allowedManualRows, System.currentTimeMillis(), successCounts)
+            }
+            if (excludeRussia) {
+                // Retention normally preserves quiet servers. The opt-out country
+                // is an explicit policy exception: remove old Russian rows too.
+                dao?.deleteRussianServers()
             }
         }
 
@@ -402,7 +414,7 @@ object ServerListUpdates {
         // Written only after the accepted dataset is already in the table, so
         // the last-known-good fallback can never be replaced by a rejected one.
         override fun saveLastKnownGood(items: List<VPNGateItem>): Boolean =
-            repository.saveLastKnownGood(items)
+            repository.saveLastKnownGood(ServerCountryPolicy.excludeRussia(items, runCatching { vn.unlimit.vpngate.App.instance?.dataUtil?.getBooleanSetting(vn.unlimit.vpngate.utils.DataUtil.SETTING_EXCLUDE_RUSSIA, true) ?: true }.getOrDefault(true)))
     }
 }
 

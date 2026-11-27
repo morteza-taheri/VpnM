@@ -188,7 +188,7 @@ class VpnServerRepositoryRoutingDynamicTest {
         )
         // The order line must precede the fetchers so it is the first line a run emits.
         val ladderLine = repository.indexOf("""fetchLog("[ladder] order=""")
-        val firstFetchLine = repository.indexOf("val mirrorsDeferred = async")
+        val firstFetchLine = repository.indexOf("val discovery = fetchOnChosenPath(")
         assertTrue("ladder log must be emitted", ladderLine >= 0)
         assertTrue("first source must be launched after it", firstFetchLine > ladderLine)
     }
@@ -380,12 +380,12 @@ class VpnServerRepositoryRoutingDynamicTest {
         }
         val dataUtil = sourceOf("src/main/java/vn/unlimit/vpngate/utils/DataUtil.kt")
         assertTrue(
-            "REQ-TIMEOUT-001: the auto-mode timeout default must be 12 s",
-            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
+            "the auto-mode timeout default must be 8 s",
+            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
         )
         assertFalse(
-            "no stale 8 s default may survive",
-            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
+            "no stale 12 s default may survive",
+            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
         )
         assertTrue(
             "REQ-TIMEOUT-001: the range must be clamped to 8..30",

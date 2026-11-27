@@ -61,6 +61,7 @@ import vn.unlimit.vpngate.ui.screens.detail.VpnProtocol
 import vn.unlimit.vpngate.ui.theme.VpnGateTheme
 import vn.unlimit.vpngate.utils.AppConfig
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.ExcludeAppsManager
 import vn.unlimit.vpngate.utils.Ipv6Ula
 import vn.unlimit.vpngate.utils.NotificationUtil
@@ -317,8 +318,7 @@ class DetailActivity : AppCompatActivity(), VpnStatus.StateListener, ByteCountLi
             val isStartUpDetail = dataUtil.getIntSetting(DataUtil.SETTING_STARTUP_SCREEN, 0) == 0
             val targetClass = if (isStartUpDetail) DetailActivity::class.java else MainActivity::class.java
             SstpVpnService.notificationTargetActivity = targetClass
-            SstpVpnService.mDisplaySpeed =
-                dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
+            NotificationPolicy.applyNotificationPreferences(dataUtil, this)
         }
         val intent = Intent(applicationContext, SstpVpnService::class.java).setAction(action)
         if (action == ACTION_VPN_CONNECT && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -618,12 +618,7 @@ class DetailActivity : AppCompatActivity(), VpnStatus.StateListener, ByteCountLi
         try {
             Handler(Looper.getMainLooper()).postDelayed({
                 val intent = Intent(this, OpenVPNService::class.java)
-                OpenVPNService.mDisplaySpeed =
-                    dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
-                SoftEtherVpnService.mDisplaySpeed =
-                    dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
-                SstpVpnService.mDisplaySpeed =
-                    dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
+                NotificationPolicy.applyNotificationPreferences(dataUtil, this)
                 intent.action = OpenVPNService.START_SERVICE
                 bindService(intent, mConnection, BIND_AUTO_CREATE)
             }, 300)

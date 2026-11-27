@@ -100,6 +100,12 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
     private static final String PAUSE_VPN = "de.blinkt.openvpn.PAUSE_VPN";
     private static final String RESUME_VPN = "de.blinkt.openvpn.RESUME_VPN";
     public static boolean mDisplaySpeed = true;
+    public static boolean mShowDisconnectNotifications = false;
+
+    public static void cancelDisconnectNotifications(Context context) {
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.cancel(NOTIFICATION_CHANNEL_ERROR_ID.hashCode());
+    }
     private static final int PRIORITY_MIN = -2;
     private static final int PRIORITY_DEFAULT = 0;
     private static final int PRIORITY_MAX = 2;
@@ -1408,6 +1414,10 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
     private void triggerDisconnectNotification() {
         String channelId = NOTIFICATION_CHANNEL_ERROR_ID;
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (!mShowDisconnectNotifications) {
+            mNotificationManager.cancel(NOTIFICATION_CHANNEL_ERROR_ID.hashCode());
+            return;
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel chan = new NotificationChannel(channelId,

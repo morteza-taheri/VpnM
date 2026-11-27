@@ -178,4 +178,36 @@ class CleartextMirrorPolicyTest {
         assertFalse(CleartextMirrorPolicy.isCleartextPermitted("10.0.0.5"))
         assertFalse(CleartextMirrorPolicy.isCleartextPermitted("127.0.0.1"))
     }
+
+    @Test
+    fun `a discovered mirror outside known ranges is refused until registered`() {
+        val host = "8.8.4.4"
+        val identity = SourceUrl.forMirror(
+            "http://$host:8080/en/",
+            SourceKind.DISCOVERED_MIRROR,
+            MirrorOrigin.CANONICAL_DIRECTORY,
+        )!!
+        assertFalse(
+            "a new global IP outside the predefined prefixes must not be trusted yet",
+            CleartextMirrorPolicy.isCleartextPermitted(host),
+        )
+        VpnGateSourceCandidates.registerForCleartext(listOf(identity))
+        assertTrue(
+            "validated discovery must register the real cleartext policy",
+            CleartextMirrorPolicy.isCleartextPermitted(host),
+        )
+    }
+
+    @Test
+    fun `a permitted opengw net mirror is refused until registered`() {
+        val host = "mirror-review.opengw.net"
+        val identity = SourceUrl.forMirror(
+            "http://$host:7777/en/",
+            SourceKind.DISCOVERED_MIRROR,
+            MirrorOrigin.CANONICAL_DIRECTORY,
+        )!!
+        assertFalse(CleartextMirrorPolicy.isCleartextPermitted(host))
+        VpnGateSourceCandidates.registerForCleartext(listOf(identity))
+        assertTrue(CleartextMirrorPolicy.isCleartextPermitted(host))
+    }
 }

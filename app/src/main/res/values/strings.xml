@@ -88,7 +88,11 @@
     <string name="cancel">Cancel</string>
     <string name="feature_not_available">You can\'t do this action at this moment</string>
     <!--- Settings -->
-    <string name="enable_notification_speed">Enable speed/statistics in notify</string>
+    <string name="enable_notification_speed">Enable speed/statistics in notification</string>
+    <string name="setting_disconnect_notifications">Disconnect and error alerts</string>
+    <string name="setting_disconnect_notifications_hint">Show an alert after an unexpected disconnect or VPN error. Off by default; the required VPN foreground notification remains visible while connected.</string>
+    <string name="setting_auto_mode_progress_notification">Auto Mode progress notification</string>
+    <string name="setting_auto_mode_progress_notification_hint">Show server scanning and connection attempts. Disabled by default; the VPN foreground notification remains visible while connected.</string>
     <string name="setting_startup_screen">Startup screen</string>
     <string-array name="startup_screen">
         <item>List screen</item>
@@ -156,7 +160,19 @@
     <string name="unknown_state">Unknown</string>
     <string name="state_user_vpn_permission" translatable="false">Waiting for user permission to use VPN API</string>
     <string name="check_ip">Check your current public IP</string>
-    <string name="about_html">%1$s is a free, open-source, multi-protocol VPN client for Android with a native SoftEther VPN implementation. It also supports OpenVPN, MS-SSTP and L2TP/IPsec, connecting to free community servers from the VPN Gate project as well as private servers.</string>
+    <string name="about_html">%1$s is a free, open-source multi-protocol VPN client for Android. It combines a native SoftEther implementation with support for other widely used VPN protocols and public VPN Gate relays, as well as private VPN servers.</string>
+    <string name="about_protocols_title">Supported protocols</string>
+    <string name="about_protocols_summary">Native SoftEther TCP/UDP • OpenVPN TCP/UDP • Microsoft SSTP • Legacy L2TP/IPsec</string>
+    <string name="about_features_title">Designed for flexible VPN connections</string>
+    <string name="about_features_summary">Browse public VPN Gate relays, connect to private servers, keep a local server list, manage manual entries, and route selected apps through the VPN.</string>
+    <string name="about_auto_mode_title">Auto Mode</string>
+    <string name="about_auto_mode_summary">Auto Mode follows your enabled protocol order and temporarily cools down servers that repeatedly drop shortly after connecting. OpenVPN is considered only when its profile is already stored on the device; missing profiles are not downloaded during automatic scanning.</string>
+    <string name="about_server_sources_title">Server discovery and fallback</string>
+    <string name="about_server_sources_summary">The server collector uses VPN Gate web and API sources with validation and mirror support. Optional emergency CSV sources are disabled by default and are used only as a fallback when live sources cannot provide an acceptable result.</string>
+    <string name="about_csv_title">Manual server and CSV tools</string>
+    <string name="about_csv_summary">Add private server entries, import the app CSV and VPN Gate API CSV formats by pasting text or choosing a file, and export an individual server from its long-press actions. TCP and UDP port fields are kept separate. Imports are size- and row-limited.</string>
+    <string name="about_android_compatibility_title">Android compatibility</string>
+    <string name="about_android_compatibility_summary">L2TP/IPsec depends on the legacy Android VPN implementation and is unavailable on Android 13 and later. SoftEther, OpenVPN and SSTP are the recommended alternatives.</string>
     <string name="about_development">Development</string>
     <string name="about_author_label">Developed and maintained by</string>
     <string name="about_author_name" translatable="false">Morteza Taheri</string>
@@ -164,10 +180,10 @@
     <string name="about_author_github" translatable="false">https://github.com/morteza-taheri</string>
     <string name="about_source_title">Source code</string>
     <string name="about_source_description">This project is open source and released under the GPLv3 license. Contributions, bug reports and pull requests are welcome on GitHub.</string>
-    <string name="about_source_link" translatable="false">https://github.com/morteza-taheri/SoftEther</string>
+    <string name="about_source_link" translatable="false">https://github.com/morteza-taheri/VpnM</string>
     <string name="about_copyright" translatable="false">© 2026 Morteza Taheri</string>
     <string name="license_html">%1$s is under GPLv3 LICENSE. It means if you use this project or a part of this project in your project it must be open source. This project uses other open source projects as libraries, detail below.</string>
-    <string name="vpn_gate_link" translatable="false">http://www.vpngate.net/en/about_overview.aspx</string>
+    <string name="vpn_gate_link" translatable="false">https://www.vpngate.net/en/</string>
     <string name="version">Version:</string>
     <string name="license_label" translatable="false">OpenVPN for Android (GPLv2)</string>
     <string name="license_link" translatable="false">https://github.com/schwabe/ics-openvpn/blob/master/doc/LICENSE.txt</string>
@@ -238,7 +254,8 @@
     <string name="setting_auto_protocol_priority_hint">Enable protocols and order them; Auto Connect tries them top-down on each server.</string>
     <string name="setting_auto_protocol_priority_default">None enabled</string>
     <string name="setting_auto_protocol_priority_rank">Priority #%1$d</string>
-    <string name="setting_auto_timeout_label">Auto Mode Connection Timeout</string>
+    <string name="setting_auto_timeout_label">Auto Mode Per-Server Connection Budget</string>
+    <string name="setting_auto_timeout_subtitle">One total budget per server, shared across its enabled protocols.</string>
     <!-- v1.0.88: how many times Auto Mode may re-dial one server before it
          moves on to the next candidate. The value format is deliberately
          "Up to %1$d" rather than a pluralised "N attempts" so it stays
@@ -385,6 +402,10 @@
     <!-- Scheduled server list refresh interval (1–24 hours, default 12). -->
     <string name="setting_server_update_timeout_label">Server List Update Timeout</string>
     <string name="setting_server_update_timeout_subtitle">Maximum time allowed for one refresh. Increase it on slow or filtered networks.</string>
+    <string name="setting_download_vpn_gate_csv">Download VPN Gate CSV</string>
+    <string name="setting_exclude_russia">Exclude Russian servers</string>
+    <string name="setting_exclude_russia_hint">Enabled by default. Russian servers are removed from the retained list during updates.</string>
+    <string name="setting_download_vpn_gate_csv_hint">Also fetch the official CSV feed and merge its data. Off keeps the faster HTML-primary update.</string>
     <string name="setting_server_update_timeout_value">%1$d seconds</string>
     <string name="setting_server_update_interval_label">Server List Update Interval</string>
     <string name="setting_server_update_interval_subtitle">How often the server list refreshes on its own. You can always update it manually.</string>
@@ -394,7 +415,7 @@
     <string name="setting_server_update_interval_168h">Every week</string>
     <!-- Emergency Server Sources (Z1-IMPL-B, Roadmap §12.5.2 item B). Config-only for now: retrieval wiring is item C. -->
     <string name="emergency_source_title">Emergency Server Sources</string>
-    <string name="emergency_source_summary">Extra server-list sources kept for when the official sources cannot be reached. They are fetched only when every built-in source has answered "nothing", and only if you add one here.</string>
+    <string name="emergency_source_summary">Optional fallback server-list sources. The bundled default source is preconfigured but disabled; enable it or add your own source to allow emergency fetching after the built-in sources fail.</string>
     <string name="emergency_source_empty">No emergency sources configured</string>
     <string name="emergency_source_url_label">Source URL</string>
     <string name="emergency_source_label_label">Label (optional)</string>

@@ -9,7 +9,9 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.R
+import vn.unlimit.vpngate.utils.NotificationPolicy
 
 /**
  * Reflects the Auto Mode state in an ongoing notification while a run is
@@ -35,6 +37,11 @@ object AutoModeNotifier {
     private const val NOTIFICATION_ID = 0xA070
 
     fun notifyConnecting(context: Context, hostname: String?, attempt: Int, total: Int) {
+        val enabled = App.instance?.dataUtil?.let(NotificationPolicy::autoModeProgressEnabled) ?: false
+        if (!enabled) {
+            clear(context)
+            return
+        }
         val text = context.getString(
             R.string.auto_mode_notification_connecting,
             hostname ?: "",

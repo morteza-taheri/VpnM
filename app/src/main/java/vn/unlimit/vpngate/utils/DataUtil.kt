@@ -13,6 +13,11 @@ import vn.unlimit.vpngate.App
 import vn.unlimit.vpngate.BuildConfig
 import vn.unlimit.vpngate.automode.AutoModeProtocol
 import vn.unlimit.vpngate.data.persistence.VpnLastConnectionStore
+import vn.unlimit.vpngate.data.remote.MirrorOrigin
+import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
+import vn.unlimit.vpngate.data.remote.MirrorRegistryStore
+import vn.unlimit.vpngate.data.remote.SourceKind
+import vn.unlimit.vpngate.data.remote.SourceUrl
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import java.io.File
@@ -57,6 +62,9 @@ class DataUtil(context: Context?) {
      */
     internal constructor(sharedPreferences: SharedPreferences) : this(null) {
         sharedPreferencesSetting = sharedPreferences
+        // The primary constructor fails before `gson = Gson()` when context is
+        // null; preference-only tests still need JSON for the mirror registry.
+        if (gson == null) gson = Gson()
     }
 
     /**
@@ -300,13 +308,17 @@ class DataUtil(context: Context?) {
     //
     // v1.0.46: minimum raised from 5 to 8 seconds (operator requirement).
     // v1.0.52 (§1.6.44) TASK B.2: the default moved 12 -> 8 seconds.
-    // v1.0.70 (REQ-TIMEOUT-001): the approved baseline restores the DEFAULT to
-    // 12 seconds and lowers the CEILING from 60 to 30, keeping the 8 s floor.
+    // v1.0.70 (REQ-TIMEOUT-001): the approved baseline restores the fresh-install DEFAULT at
+    // 8 seconds and keeps the supported range at 8..30.
     // Both the reader and the writer clamp, so a value stored by an older build
     // outside 8..30 (e.g. 60) reads back as 30 with no migration, and a stored
     // 5/6/7 reads back as 8.
     fun getAutoModeTimeoutSeconds(): Int =
-        getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12).coerceIn(8, 30)
+        getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8).coerceIn(8, 30)
+
+    /** Optional disconnect/error alerts; the active VPN foreground notice is separate. */
+    fun getDisconnectNotificationsEnabled(): Boolean =
+        getBooleanSetting(SETTING_NOTIFY_DISCONNECT_ERRORS, DEFAULT_NOTIFY_DISCONNECT_ERRORS)
 
     fun setAutoModeTimeoutSeconds(seconds: Int) {
         setIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, seconds.coerceIn(8, 30))
@@ -497,6 +509,50 @@ class DataUtil(context: Context?) {
         val json = gson?.toJson(mirrors.take(15)) ?: return
         setStringSetting("KEY_CACHED_MIRRORS", json)
     }
+
+    /** Optional CSV alongside HTML. OFF keeps the original HTML-primary policy. */
+    fun getDownloadVpnGateCsv(): Boolean =
+        getBooleanSetting(SETTING_DOWNLOAD_VPN_GATE_CSV, DEFAULT_DOWNLOAD_VPN_GATE_CSV)
+
+    fun setDownloadVpnGateCsv(enabled: Boolean) =
+        setBooleanSetting(SETTING_DOWNLOAD_VPN_GATE_CSV, enabled)
+
+    /**
+     * Rich last-known-good mirror registry. Kept in prefs: no Room migration.
+     *
+     * Existing installations have `KEY_CACHED_MIRRORS` from the old collector.
+     * Those URLs are validated through [SourceUrl.forMirror] before they are
+     * imported, so a corrupted cache entry can never become a trusted mirror.
+     * The legacy key is left untouched as a fallback for older builds.
+     */
+    fun getMirrorRegistry(): List<MirrorRegistryEntry> {
+        val stored = MirrorRegistryStore.load(getStringSetting(KEY_MIRROR_REGISTRY, null))
+        val legacy = getCachedMirrors().mapNotNull { url ->
+            SourceUrl.forMirror(url, SourceKind.CACHED_MIRROR, MirrorOrigin.MIRROR_CACHE)
+                ?.let { identity ->
+                    MirrorRegistryEntry(
+                        publishedUrl = identity.url,
+                        baseUrl = identity.baseUrl,
+                        publishedPath = identity.path,
+                        discoveryOrigin = MirrorOrigin.MIRROR_CACHE,
+                    )
+                }
+        }
+        if (legacy.isEmpty()) return stored
+        val merged = MirrorRegistryStore.merge(stored, legacy, System.currentTimeMillis())
+        if (merged != stored) setMirrorRegistry(merged)
+        return merged
+    }
+
+    fun setMirrorRegistry(entries: List<MirrorRegistryEntry>) =
+        setStringSetting(KEY_MIRROR_REGISTRY, MirrorRegistryStore.toJson(entries))
+
+    /**
+     * Unified mirror bases for the OpenVPN profile downloader. Both the new
+     * collector and the legacy cache resolve through [getMirrorRegistry].
+     */
+    fun getUnifiedMirrorBases(): List<String> =
+        getMirrorRegistry().map { it.baseUrl }.distinct()
 
     // Developer Mode: on = keep all diagnostic logging; off = suppress every
     // collector/auto-mode log line for speed (logcat writes, logcat tap and the
@@ -691,10 +747,14 @@ class DataUtil(context: Context?) {
 
     /** BLOCK v1.0.86: how many servers the retained list may hold. */
     const val SETTING_SERVER_LIST_CAP: String = "SETTING_SERVER_LIST_CAP"
-    const val DEFAULT_SERVER_LIST_CAP: Int = 1000
+    /** Exclude Russian VPN Gate servers from the retained server list by default. */
+    const val SETTING_EXCLUDE_RUSSIA: String = "SETTING_EXCLUDE_RUSSIA"
+    const val DEFAULT_SERVER_LIST_CAP: Int = 300
     const val MIN_SERVER_LIST_CAP: Int = 10
     const val MAX_SERVER_LIST_CAP: Int = 2000
         const val SETTING_NOTIFY_SPEED: String = "SETTING_NOTIFY_SPEED"
+        const val SETTING_NOTIFY_DISCONNECT_ERRORS: String = "SETTING_NOTIFY_DISCONNECT_ERRORS"
+        const val SETTING_NOTIFY_AUTO_MODE_PROGRESS: String = "SETTING_NOTIFY_AUTO_MODE_PROGRESS"
         const val SETTING_AUTO_PROTOCOL_PRIORITY: String = "SETTING_AUTO_PROTOCOL_PRIORITY"
         const val SETTING_AUTO_MODE_TIMEOUT_SECONDS: String = "SETTING_AUTO_MODE_TIMEOUT_SECONDS"
 
@@ -715,14 +775,14 @@ class DataUtil(context: Context?) {
 
         /**
          * v1.0.54 (§1.6.47) PART 2.4: the profile a fresh install starts with.
-         * v1.0.70 (REQ-PROTO-001): the approved order is SoftEther UDP first,
-         * then SoftEther TCP, then Microsoft SSTP. It is an ORDER, so the first
+         * The fresh-install order is SoftEther UDP, OpenVPN UDP, then MS-SSTP.
+         * It is an ORDER, so the first
          * entry is attempted first on every server; a stored user choice always
          * wins over this default.
          */
         val DEFAULT_AUTO_PROTOCOL_PRIORITY: List<AutoModeProtocol> = listOf(
             AutoModeProtocol.SOFTETHER_UDP,
-            AutoModeProtocol.SOFTETHER_TCP,
+            AutoModeProtocol.OPENVPN_UDP,
             AutoModeProtocol.MS_SSTP,
         )
 
@@ -759,12 +819,13 @@ class DataUtil(context: Context?) {
         /**
          * Default for "Enable speed/statistics in notify".
          *
-         * A fresh install ships ON, so the user sees throughput/latency in the
-         * notification without having to find the toggle first. Once the user
-         * touches the switch the stored value wins and this default is no
-         * longer consulted, so turning it OFF sticks across restarts.
+         * A fresh install ships OFF to keep optional traffic statistics out of
+         * notifications until the user explicitly enables them. A stored user
+         * choice always wins and remains stable across restarts.
          */
-        const val DEFAULT_NOTIFY_SPEED: Boolean = true
+        const val DEFAULT_NOTIFY_SPEED: Boolean = false
+        const val DEFAULT_NOTIFY_DISCONNECT_ERRORS: Boolean = false
+        const val DEFAULT_NOTIFY_AUTO_MODE_PROGRESS: Boolean = false
 
         /**
          * Default target number of concurrent SoftEther TCP connections.
@@ -805,6 +866,13 @@ class DataUtil(context: Context?) {
 
         const val SETTING_SERVER_LIST_UPDATE_TIMEOUT_SECONDS: String =
             "SETTING_SERVER_LIST_UPDATE_TIMEOUT_SECONDS"
+
+        /** Opt-in CSV fetch alongside HTML. Default OFF preserves current policy. */
+        const val SETTING_DOWNLOAD_VPN_GATE_CSV: String = "SETTING_DOWNLOAD_VPN_GATE_CSV"
+        const val DEFAULT_DOWNLOAD_VPN_GATE_CSV: Boolean = false
+
+        /** Rich mirror registry (supersedes the plain URL list). */
+        internal const val KEY_MIRROR_REGISTRY: String = "KEY_MIRROR_REGISTRY"
 
         /** BLOCK v1.0.75 FIX: size of the last accepted fresh dataset (0 = unknown). */
         const val SETTING_LAST_ACCEPTED_DATASET_SIZE: String =

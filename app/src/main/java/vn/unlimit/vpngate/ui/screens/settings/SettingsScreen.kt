@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.FileUpload
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Launch
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Refresh
@@ -97,6 +99,7 @@ import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.repository.ManualCsvImport
 import vn.unlimit.vpngate.repository.ServerListUpdateScheduler
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.DnsPresets
 import vn.unlimit.vpngate.utils.ExcludeAppsManager
 import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
@@ -157,6 +160,17 @@ fun SettingsScreen(
     var notifySpeed by remember {
         mutableStateOf(dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED))
     }
+    var notifyDisconnectErrors by remember {
+        mutableStateOf(dataUtil.getDisconnectNotificationsEnabled())
+    }
+    var notifyAutoModeProgress by remember {
+        mutableStateOf(dataUtil.getBooleanSetting(
+            DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
+            DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
+        ))
+    }
+    var downloadVpnGateCsv by remember { mutableStateOf(dataUtil.getDownloadVpnGateCsv()) }
+    var excludeRussia by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.SETTING_EXCLUDE_RUSSIA, true)) }
     var useCustomDns by remember { mutableStateOf(dataUtil.getBooleanSetting(DataUtil.USE_CUSTOM_DNS, false)) }
     // Defaults shown for the fields when nothing is stored yet. These are only
     // *applied* to the tunnel when Custom DNS is ON, so a fresh install keeps
@@ -349,19 +363,24 @@ fun SettingsScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         importBusy = true
         scope.launch {
-            val text = withContext(Dispatchers.IO) {
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        readCappedUtf8(input, ManualCsvImport.MAX_BYTES)?.toString(Charsets.UTF_8)
-                    }
-                }.getOrNull()
+            try {
+                val text = withContext(Dispatchers.IO) {
+                    runCatching {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            readCappedUtf8(input, ManualCsvImport.MAX_BYTES)?.toString(Charsets.UTF_8)
+                        }
+                    }.getOrNull()
+                }
+                importSummary = if (text == null) {
+                    context.getString(R.string.manual_server_too_large)
+                } else {
+                    runImport(text)
+                }
+            } finally {
+                // A provider failure or parser/storage exception must never
+                // leave the import controls permanently disabled.
+                importBusy = false
             }
-            importSummary = if (text == null) {
-                context.getString(R.string.manual_server_too_large)
-            } else {
-                runImport(text)
-            }
-            importBusy = false
         }
     }
 
@@ -396,8 +415,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // ---------------- Connection section
             item {
@@ -413,6 +432,30 @@ fun SettingsScreen(
                             notifySpeed = it
                             Toast.makeText(context, applyNextConnectionNote, Toast.LENGTH_SHORT).show()
                             dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, it)
+                        },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_disconnect_notifications),
+                        subtitle = stringResource(R.string.setting_disconnect_notifications_hint),
+                        icon = Icons.Outlined.Notifications,
+                        checked = notifyDisconnectErrors,
+                        onChecked = {
+                            notifyDisconnectErrors = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_DISCONNECT_ERRORS, it)
+                            NotificationPolicy.applyNotificationPreferences(dataUtil, context)
+                        },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_auto_mode_progress_notification),
+                        subtitle = stringResource(R.string.setting_auto_mode_progress_notification_hint),
+                        icon = Icons.Outlined.Notifications,
+                        checked = notifyAutoModeProgress,
+                        onChecked = {
+                            notifyAutoModeProgress = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS, it)
+                            NotificationPolicy.applyNotificationPreferences(dataUtil, context)
                         },
                     )
                     SettingDivider()
@@ -614,7 +657,8 @@ fun SettingsScreen(
                     SettingDivider()
                     SettingValueRow(
                         title = stringResource(R.string.setting_auto_timeout_label),
-                        value = "$autoTimeout s",
+                        subtitle = stringResource(R.string.setting_auto_timeout_subtitle),
+                         value = "$autoTimeout s",
                         icon = Icons.Outlined.Timer,
                         onClick = { showAutoTimeoutPicker = true },
                     )
@@ -661,6 +705,7 @@ fun SettingsScreen(
                             R.string.setting_server_list_cap_value,
                             serverListCap,
                         ),
+                        icon = Icons.Outlined.Dns,
                         onClick = { showServerListCapPicker = true },
                     )
                     SettingDivider()
@@ -716,6 +761,28 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.setting_server_update_timeout_subtitle),
                         icon = Icons.Outlined.Schedule,
                         onClick = { showServerUpdateTimeoutPicker = true },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_exclude_russia),
+                        subtitle = stringResource(R.string.setting_exclude_russia_hint),
+                        icon = Icons.Outlined.Language,
+                        checked = excludeRussia,
+                        onChecked = {
+                            excludeRussia = it
+                            dataUtil.setBooleanSetting(DataUtil.SETTING_EXCLUDE_RUSSIA, it)
+                        },
+                    )
+                    SettingDivider()
+                    SettingSwitchRow(
+                        title = stringResource(R.string.setting_download_vpn_gate_csv),
+                        subtitle = stringResource(R.string.setting_download_vpn_gate_csv_hint),
+                        icon = Icons.Outlined.CloudDownload,
+                        checked = downloadVpnGateCsv,
+                        onChecked = {
+                            downloadVpnGateCsv = it
+                            dataUtil.setDownloadVpnGateCsv(it)
+                        },
                     )
                 }
             }
@@ -1162,7 +1229,7 @@ fun SettingsScreen(
     if (showAutoTimeoutPicker) {
         // v1.0.46 (§1.6.39) CHANGE B: floor raised 5 -> 8 (operator
         // requirement). v1.0.70 (REQ-TIMEOUT-001): the approved range is
-        // 8..30 with a 12 s default. `autoTimeout` comes from
+        // 8..30 with an 8 s default. `autoTimeout` comes from
         // DataUtil.getAutoModeTimeoutSeconds(), which clamps on read, so a
         // value stored by an older build at 31..60 arrives here as 30 and
         // `indexOf` always finds it.

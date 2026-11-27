@@ -9,6 +9,7 @@ import org.junit.Test
 import java.io.File
 import java.net.InetAddress
 import java.net.Socket
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
 
@@ -175,4 +176,55 @@ class HttpFetcherR4bTest {
             localPort: Int,
         ): Socket = throw UnsupportedOperationException("test double")
     }
+    @Test
+    fun `VPN-bound DNS prefers the selected Network resolver`() {
+        val vpnAddress = InetAddress.getByName("8.8.8.8")
+        val dns = networkBoundDns(
+            networkLookup = { listOf(vpnAddress) },
+            fallbackLookup = { throw AssertionError("fallback must not run") },
+        )
+
+        assertEquals(listOf(vpnAddress), dns.lookup("vpn.example"))
+    }
+
+    @Test
+    fun `VPN-bound DNS falls back when the VPN Network resolver throws`() {
+        val androidResolverAddress = InetAddress.getByName("1.1.1.1")
+        val dns = networkBoundDns(
+            networkLookup = { throw UnknownHostException("VPN DNS unavailable") },
+            fallbackLookup = { listOf(androidResolverAddress) },
+        )
+
+        assertEquals(listOf(androidResolverAddress), dns.lookup("vpn.example"))
+    }
+
+    @Test
+    fun `VPN-bound DNS falls back when the VPN Network resolver returns no addresses`() {
+        val androidResolverAddress = InetAddress.getByName("9.9.9.9")
+        val dns = networkBoundDns(
+            networkLookup = { emptyList() },
+            fallbackLookup = { listOf(androidResolverAddress) },
+        )
+
+        assertEquals(listOf(androidResolverAddress), dns.lookup("vpn.example"))
+    }
+
+    @Test
+    fun `VPN Network client uses networkBoundDns and keeps its socket factory binding`() {
+        val source = File("src/main/java/vn/unlimit/vpngate/data/remote/HttpFetcher.kt")
+            .takeIf { it.isFile }
+            ?: File("../app/src/main/java/vn/unlimit/vpngate/data/remote/HttpFetcher.kt")
+        assertTrue("HttpFetcher.kt must be readable from the test cwd", source.isFile)
+        val text = source.readText(Charsets.UTF_8)
+
+        val start = text.indexOf("fun boundToNetwork(network: Network)")
+        val end = text.indexOf("fun boundToPhysicalNetwork(network: Network)", start)
+        assertTrue("boundToNetwork must exist", start >= 0)
+        assertTrue("boundToPhysicalNetwork must follow boundToNetwork", end > start)
+        val body = text.substring(start, end)
+        assertTrue(body.contains("networkBoundDns"))
+        assertTrue(body.contains("network.getAllByName(hostname).toList()"))
+        assertTrue(body.contains("boundToSocketFactory(network.socketFactory, networkDns)"))
+    }
+
 }

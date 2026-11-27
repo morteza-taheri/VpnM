@@ -1,6 +1,5 @@
 package vn.unlimit.vpngate.ui.screens.settings
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -43,25 +43,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import vn.unlimit.vpngate.R
 
 /**
- * Modern settings visual language v2: tinted rounded cards, expressive pill
- * section headers, rounded-square icon chips on every row, and a refined
- * single-choice dialog. The component API is unchanged except for the
- * optional [SettingsSection.icon]; every existing call site still compiles.
+ * Shared Material 3 language for the Settings screen.
+ *
+ * Settings are grouped into calm, low-emphasis surfaces; consistent icon tiles
+ * make categories scannable, while accessible full-row controls keep touch
+ * targets predictable. This file is presentation-only: persistence and setting
+ * behaviour remain in SettingsScreen.
  */
 
-private val CardShape = RoundedCornerShape(22.dp)
-private val IconChipShape = RoundedCornerShape(14.dp)
-private val IconChipSize = 42.dp
+private val IconChipShape = RoundedCornerShape(13.dp)
+private val IconChipSize = 40.dp
 
 /**
- * Group container: an expressive pill-style header followed by a tinted,
- * rounded card holding the rows.
+ * Group container with a clear section heading and a softly elevated card.
  */
 @Composable
 fun SettingsSection(
@@ -73,36 +74,35 @@ fun SettingsSection(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 6.dp, top = 22.dp, bottom = 10.dp, end = 6.dp),
+            modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 8.dp, end = 4.dp),
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp),
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
             }
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         Surface(
-            shape = CardShape,
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -112,30 +112,26 @@ fun SettingsSection(
     }
 }
 
-/**
- * Shared leading icon chip used by every row.
- */
+/** Shared leading icon tile used by setting rows. */
 @Composable
 private fun RowIcon(icon: ImageVector) {
     Box(
         modifier = Modifier
             .size(IconChipSize)
             .clip(IconChipShape)
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            .background(MaterialTheme.colorScheme.secondaryContainer),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp),
+            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.size(21.dp),
         )
     }
 }
 
-/**
- * Setting row with a toggle switch.
- */
+/** Setting row with a switch; the complete row is one accessible toggle target. */
 @Composable
 fun SettingSwitchRow(
     title: String,
@@ -149,13 +145,17 @@ fun SettingSwitchRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .clickable { onChecked(!checked) }
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .heightIn(min = 72.dp)
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onChecked,
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (icon != null) {
             RowIcon(icon)
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -167,28 +167,23 @@ fun SettingSwitchRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            )
             }
         }
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Switch(
             checked = checked,
-            onCheckedChange = onChecked,
+            onCheckedChange = null,
         )
     }
 }
 
-/**
- * Setting row displaying a value with a trailing chevron, opening a dialog on click.
- *
- * The value is wrapped so it can never starve the title column (see prior note);
- * it stays on one line and ellipsizes.
- */
+/** Clickable setting row with a concise value and trailing navigation affordance. */
 @Composable
 fun SettingValueRow(
     title: String,
@@ -202,13 +197,13 @@ fun SettingValueRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .heightIn(min = 72.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (icon != null) {
             RowIcon(icon)
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -220,7 +215,7 @@ fun SettingValueRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -228,11 +223,11 @@ fun SettingValueRow(
                 )
             }
         }
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Row(
             modifier = Modifier
                 .weight(1f, fill = false)
-                .widthIn(max = 160.dp),
+                .widthIn(max = 152.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
@@ -247,16 +242,14 @@ fun SettingValueRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
         }
     }
 }
 
-/**
- * Clickable action setting row (e.g. clear cache, app exclusions).
- */
+/** Clickable action row (for example, cache clearing or app exclusions). */
 @Composable
 fun SettingActionRow(
     title: String,
@@ -270,13 +263,13 @@ fun SettingActionRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .heightIn(min = 72.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (icon != null) {
             RowIcon(icon)
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -288,7 +281,7 @@ fun SettingActionRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -297,14 +290,14 @@ fun SettingActionRow(
             }
         }
         if (actionLabel != null) {
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Button(
                 onClick = onClick,
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    contentColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
             ) {
                 Text(actionLabel, style = MaterialTheme.typography.labelMedium)
@@ -314,28 +307,24 @@ fun SettingActionRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
         }
     }
 }
 
-/**
- * Clean indented divider between settings rows.
- */
+/** Subtle inset divider aligned with the text column. */
 @Composable
 fun SettingDivider(hasIcon: Boolean = true) {
     HorizontalDivider(
-        modifier = Modifier.padding(start = if (hasIcon) 74.dp else 18.dp, end = 18.dp),
-        thickness = 0.5.dp,
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+        modifier = Modifier.padding(start = if (hasIcon) 68.dp else 16.dp, end = 16.dp),
+        thickness = 0.7.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
     )
 }
 
-/**
- * Modern single-choice picker dialog with a highlighted selected row.
- */
+/** Consistent single-choice dialog with a clearly highlighted selected option. */
 @Composable
 fun SingleChoiceDialog(
     title: String,
@@ -365,16 +354,14 @@ fun SingleChoiceDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .background(
-                                if (isSelected) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                } else {
-                                    Color.Transparent
-                                },
+                                if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                else Color.Transparent,
                             )
                             .selectable(
                                 selected = isSelected,
+                                role = Role.RadioButton,
                                 onClick = {
                                     onSelect(index)
                                     onDismiss()
@@ -384,17 +371,14 @@ fun SingleChoiceDialog(
                     ) {
                         RadioButton(
                             selected = isSelected,
-                            onClick = {
-                                onSelect(index)
-                                onDismiss()
-                            },
+                            onClick = null,
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = option,
                             style = MaterialTheme.typography.bodyLarge,
                             color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.onSecondaryContainer
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },
@@ -404,7 +388,7 @@ fun SingleChoiceDialog(
                             Icon(
                                 imageVector = Icons.Outlined.Check,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -418,6 +402,6 @@ fun SingleChoiceDialog(
                 Text(stringResource(R.string.cancel))
             }
         },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(26.dp),
     )
 }

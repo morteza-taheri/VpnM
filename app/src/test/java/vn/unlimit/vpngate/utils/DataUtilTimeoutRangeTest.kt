@@ -6,8 +6,7 @@ import org.junit.Test
 
 /**
  * v1.0.46 (§1.6.39) — T-NEW-70..72: the Auto Mode timeout range.
- * v1.0.52 moved the default 12 -> 8; **v1.0.70 (REQ-TIMEOUT-001) restores the
- * default to 12 s and narrows the range to 8..30** (the ceiling was 60).
+ * the fresh-install default is 8 s; the supported range remains 8..30 (the ceiling was 60).
  *
  * The clamp lives in **both** the reader and the writer. Clamping on read is
  * what makes the change safe for an existing install: a value of 5, 6 or 7
@@ -21,13 +20,13 @@ class DataUtilTimeoutRangeTest {
 
     private fun dataUtil() = DataUtil(TimeoutFakeSharedPreferences())
 
-    // ── T-NEW-70: the default is 12 (v1.0.70) ─────────────────────────────
+    // ── T-NEW-70: the default is 8 seconds ─────────────────────────────────
 
     @Test
-    fun `T-NEW-70 the default timeout with no stored value is 12 seconds`() {
+    fun `T-NEW-70 the default timeout with no stored value is 8 seconds`() {
         assertEquals(
-            "v1.0.70 (REQ-TIMEOUT-001) sets the default to 12 s",
-            12,
+            "the fresh-install default is 8 s",
+            8,
             dataUtil().getAutoModeTimeoutSeconds(),
         )
     }

@@ -255,17 +255,54 @@ object VpnServerMerger {
         return target
     }
 
-    /** Dedupe by IP→hostname and merge duplicates (§16/§17). */
+    /**
+     * A short VPN Gate API hostname and the HTML FQDN describe one server.
+     * Only feed-derived short hosts get the `.opengw.net` suffix; manual or
+     * private short names are left alone so they cannot collide with public
+     * servers.
+     */
+    private fun canonicalHostKey(host: String, sources: List<String>): String {
+        val normalized = VpnUtil.normalizeHost(host)
+        if (normalized.isEmpty() || VpnUtil.validIp(normalized)) return normalized
+        if (normalized.contains('.') || normalized.contains(':')) return normalized
+        val feedSource = sources.any { source ->
+            when (Provenance.sourceGroup(source)) {
+                "api", "html", "mirror", "emergency" -> true
+                else -> false
+            }
+        }
+        return if (feedSource) "$normalized.opengw.net" else normalized
+    }
+
+    /**
+     * Dedupe by normalized hostname + IP, with a guarded fallback (§16/§17).
+     *
+     * IP alone is NOT an identity: the live VPN Gate CSV has published two
+     * different hostnames on one IP. A record with no hostname can only use
+     * its IP, and is additionally separated by source group so two hostless
+     * feed rows cannot silently collapse.
+     */
     fun mergeRecords(records: List<VpnServerRecord>): List<VpnServerRecord> {
         val database = LinkedHashMap<String, VpnServerRecord>()
 
         for (record in records) {
             val identity = VpnRecords.identity(record)
             val ip = VpnRecords.str(identity["ip"])
-            val host = VpnUtil.normalizeHost(identity["hostname"])
+            val host = canonicalHostKey(
+                VpnRecords.str(identity["hostname"]),
+                VpnRecords.sources(record),
+            )
+            val validIp = VpnUtil.validIp(ip)
+            val sourceGroup = VpnRecords.sources(record)
+                .firstOrNull().orEmpty()
+                .let { Provenance.sourceGroup(it) }
 
-            val key = if (VpnUtil.validIp(ip)) ip else host
-            if (key.isEmpty()) continue
+            val key = when {
+                host.isNotEmpty() && validIp -> "host=$host|ip=$ip"
+                host.isNotEmpty() -> "host=$host"
+                validIp -> "iponly=$ip|source=$sourceGroup"
+                else -> continue
+            }
 
             val existing = database[key]
             if (existing == null) {

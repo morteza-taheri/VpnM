@@ -101,7 +101,7 @@ fun ServerCard(
                 onClick = onClick,
                 onLongClick = onLongClick,
             ),
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.large,
         color = if (highlight != null) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
         } else {
@@ -112,8 +112,8 @@ fun ServerCard(
         } else {
             null
         },
-        tonalElevation = 1.dp,
-        shadowElevation = if (highlight != null) 4.dp else 1.dp,
+        tonalElevation = 2.dp,
+        shadowElevation = if (highlight != null) 4.dp else 0.dp,
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

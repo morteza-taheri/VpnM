@@ -620,8 +620,12 @@ class AutoModeControllerTest {
             ip = "10.0.0.11"
             tcpPort = 1534
             udpPort = 1278
-            // No openVpnConfigData: the page only offered a download link.
+            // The server also publishes fresh download identifiers. Auto Mode
+            // must still reject it until profile bytes are already local.
+            openVpnDownloadSid = "download-sid"
+            openVpnDownloadHid = "download-hid"
         }
+        assertTrue("download identifiers exist but are not a local profile", conn.canDownloadOpenVpnConfig)
         val candidate = with(AutoModeEngine) { conn.toCandidate() }
         assertFalse(candidate.openVpnConfigAvailable)
         assertEquals(1534, candidate.openVpnTcpPort) // the port fact is preserved
@@ -2137,16 +2141,8 @@ val sstp = AutoModeCandidate(
     }
 
     /**
-     * TEST 15 / the end-to-end order regression the Phase 5 audit asked for.
-     *
-     * The gate returns its survivors in a deliberately wrong order — the reverse
-     * of the ranked input — and the controller must dial them in **quality
-     * order**, not in the order the gate happened to produce. Reachability is a
-     * filter; [AutoModeController.byQuality] is the only ranking authority.
-     *
-     * Speeds descend A > B > C > D, so the ranked input is A, B, C, D. C is
-     * removed by the gate. The survivors come back as D, B, A and must still be
-     * attempted A, B, D.
+     * Reachability is checked just-in-time for one server. It may reject that
+     * server, but it cannot reorder the quality-ranked queue.
      */
     @Test
     fun theGateNeverChangesTheDialledOrder() = runBlocking {
@@ -2154,29 +2150,65 @@ val sstp = AutoModeCandidate(
         val b = candidateWith("B", speed = 30_000_000, seTcp = 443)
         val c = candidateWith("C", speed = 20_000_000, seTcp = 443)
         val d = candidateWith("D", speed = 10_000_000, seTcp = 443)
-        // Every attempt fails, so all four would be dialled if the gate let them.
+        val probedHosts = mutableListOf<String>()
         adapter.failing += setOf("A", "B", "C", "D")
 
         val c1 = controller(
             servers = listOf(a, b, c, d),
             priorities = listOf(AutoModeProtocol.SOFTETHER_TCP),
             reachabilityFilter = { handed ->
-                val byHost = handed.map { it.candidate }
-                // Reverse of the ranked order, with C (index 2) dropped.
-                ReachabilityGate(
-                    kept = listOf(byHost[3], byHost[1], byHost[0]),
-                    allUnreachable = false,
-                )
+                val candidate = handed.first().candidate
+                val host = candidate.hostname.orEmpty()
+                probedHosts += host
+                if (host == "C") {
+                    ReachabilityGate(kept = emptyList(), allUnreachable = true)
+                } else {
+                    ReachabilityGate(kept = listOf(candidate), allUnreachable = false)
+                }
             },
         )
         c1.start()
         c1.awaitTerminal()
 
+        assertEquals(listOf("A", "B", "C", "D"), probedHosts)
         assertEquals(
-            "the gate filters; the comparator decides the order",
+            "the gate rejects only C; the quality comparator decides the dial order",
             listOf("A" to AutoModeProtocol.SOFTETHER_TCP, "B" to AutoModeProtocol.SOFTETHER_TCP, "D" to AutoModeProtocol.SOFTETHER_TCP),
             adapter.connects,
         )
+    }
+
+    @Test
+    fun lazyReachabilityStopsProbingAfterTheFirstSuccessfulServer() = runBlocking {
+        val a = candidateWith("A", seTcp = 443)
+        val b = candidateWith("B", seTcp = 443)
+        val probedHosts = mutableListOf<String>()
+        val c = controller(
+            servers = listOf(a, b),
+            priorities = listOf(AutoModeProtocol.SOFTETHER_TCP),
+            reachabilityFilter = { handed ->
+                val candidate = handed.first().candidate
+                probedHosts += candidate.hostname.orEmpty()
+                ReachabilityGate(kept = listOf(candidate), allUnreachable = false)
+            },
+        )
+
+        c.start()
+        assertTrue(c.awaitTerminal() is AutoModeState.Connected)
+        assertEquals(listOf("A"), probedHosts)
+        assertEquals(listOf("A" to AutoModeProtocol.SOFTETHER_TCP), adapter.connects)
+    }
+
+    @Test
+    fun measuredDownloadRankingBlendsMedianAndPeakAndFallsBackToAdvertisedSpeed() {
+        val measured = candidateWith("measured", speed = 90_000_000).copy(
+            measuredDownloadBps = 10_000_000,
+            peakDownloadBps = 30_000_000,
+        )
+        val unmeasured = candidateWith("unmeasured", speed = 20_000_000)
+
+        assertEquals(13_000_000L, measured.rankingDownloadBps)
+        assertEquals(20_000_000L, unmeasured.rankingDownloadBps)
     }
 
     /**
@@ -2963,19 +2995,19 @@ val sstp = AutoModeCandidate(
      * the two that are reachable from the JVM; the spec figure is asserted by
      * §6.7 R5 / §6.8 themselves. (v1.0.46: the *range floor* moved 5 → 8;
      * v1.0.52: the *default* moved 12 → 8; **v1.0.70 (REQ-TIMEOUT-001):
-     * default 12 s, range 8..30**.)
+     * default 8 s, range 8..30**.)
      */
     @Test
     fun defaultAttemptTimeoutMatchesTheSettingsDefault() {
         assertEquals(
-            "the controller fallback must equal the shipped Settings default (12 s)",
-            12_000L,
+            "the controller fallback must equal the shipped Settings default (8 s)",
+            8_000L,
             AutoModeController.DEFAULT_ATTEMPT_TIMEOUT_MS,
         )
         val dataUtil = sourceOf("src/main/java/vn/unlimit/vpngate/utils/DataUtil.kt")
         assertTrue(
-            "DataUtil must default SETTING_AUTO_MODE_TIMEOUT_SECONDS to 12",
-            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
+            "DataUtil must default SETTING_AUTO_MODE_TIMEOUT_SECONDS to 8",
+            dataUtil.contains("getIntSetting(SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
         )
         assertTrue(
             "the timeout must stay clamped to the approved 8..30 range " +
@@ -2983,8 +3015,8 @@ val sstp = AutoModeCandidate(
             dataUtil.contains(".coerceIn(8, 30)"),
         )
         assertFalse(
-            "no stale 8 s default may survive in DataUtil: $dataUtil",
-            dataUtil.contains("SETTING_AUTO_MODE_TIMEOUT_SECONDS, 8)"),
+            "the stale 12 s default must not survive in DataUtil: $dataUtil",
+            dataUtil.contains("SETTING_AUTO_MODE_TIMEOUT_SECONDS, 12)"),
         )
     }
 

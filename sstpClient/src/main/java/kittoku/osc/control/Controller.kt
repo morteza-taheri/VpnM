@@ -210,6 +210,10 @@ internal class Controller(
                 return@launch
             }
 
+            // IPTerminal sends PROCEEDED only after VpnService.Builder.establish()
+            // has returned a live TUN descriptor. Publish CONNECTED at this
+            // point, not when the user presses Connect.
+            bridge.service.setRootState(true)
 
             OutgoingManager(bridge).also {
                 it.launchJobMain()

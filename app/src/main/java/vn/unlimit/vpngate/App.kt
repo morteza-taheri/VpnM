@@ -30,6 +30,7 @@ import vn.unlimit.vpngate.history.ServerHistorySink
 import vn.unlimit.vpngate.models.ExcludedApp
 import vn.unlimit.vpngate.utils.AppConfig
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.ExcludedAppsSeeder
 
 class App : Application() {
@@ -138,6 +139,9 @@ class App : Application() {
         initializeDefaultExcludedApps()
         instance = this
         dataUtil = DataUtil(this)
+        // Restore notification preferences before any VPN service can be
+        // recreated by Android after process death.
+        NotificationPolicy.applyNotificationPreferences(dataUtil!!, this)
         isImportToOpenVPN = AppConfig.getBoolean("vpn_import_open_vpn")
 
         // v1.0.46 (§1.6.39) CHANGE A: seed the default emergency source from
@@ -361,13 +365,13 @@ class App : Application() {
                                 EmergencySourceConfigEntity(
                                     url = candidate,
                                     label = DEFAULT_EMERGENCY_LABEL,
-                                    enabled = true,
+                                    enabled = false,
                                     createdAt = now,
                                     updatedAt = now,
                                 ),
                             )
                             dataUtil.markEmergencyDefaultSeeded()
-                            logD("Seeded default emergency source")
+                            logD("Seeded default emergency source disabled by default")
                             true
                         }
                     }

@@ -129,8 +129,9 @@ android {
             // generation is refreshed from a live page before the download is
             // retried, and a downloaded profile is now accepted and cached by
             // the manual connect path.
-            versionCode 155
-            versionName "2.4.21"
+            // v2.4.22 (156) — configurable default exclusion of Russian servers.
+            versionCode 156
+            versionName "2.4.22"
         }
     }
 

@@ -24,13 +24,13 @@ import vn.unlimit.softether.TeardownCompletion
 import vn.unlimit.softether.model.ConnectionConfig
 import vn.unlimit.softether.model.Route
 import vn.unlimit.vpngate.App
-import vn.unlimit.vpngate.repository.VpnServerRepository
 import vn.unlimit.vpngate.BuildConfig
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.network.SstpHostResolver
 import vn.unlimit.vpngate.state.GlobalVpnTracker
 import vn.unlimit.vpngate.utils.AppConfig
 import vn.unlimit.vpngate.utils.DataUtil
+import vn.unlimit.vpngate.utils.NotificationPolicy
 import vn.unlimit.vpngate.utils.OpenVpnAuthDefaults
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
@@ -91,19 +91,6 @@ class AndroidConnectionAdapter(
     private var currentProtocol: AutoModeProtocol? = null
 
     /**
-     * Stage G-7: the profile download is bounded well inside one attempt's
-     * budget. A download that outlives this is treated exactly like "there is
-     * no profile", which is what the attempt would have concluded anyway.
-     *
-     * 20 s was measurably too small once the descriptor repair was added, and
-     * 28 s still assumed one round trip per phase: with a 12 s per-authority
-     * timeout the repair is a page read plus a retry (24 s), and the previous
-     * cap fired mid-flow — device log 2026-11-25, 12:19:12.871 → 12:19:32.915 is
-     * exactly 20.0 s and ended in a burst of instantly-cancelled sources.
-     */
-    private val openVpnConfigDownloadTimeoutMs = 30_000L
-
-    /**
      * AUTOCONNECT-FIX-5 (v1.0.35): the outcome of the most recent [disconnect] teardown.
      *
      * [disconnect] already computes this value to decide which line to log; it was
@@ -143,6 +130,7 @@ class AndroidConnectionAdapter(
 
     override suspend fun connect(candidate: AutoModeCandidate, protocol: AutoModeProtocol) {
         currentProtocol = protocol
+        NotificationPolicy.applyNotificationPreferences(dataUtil, context)
         val conn = candidate.payload as? VPNGateConnection ?: return
         // Publish the attempt into the app-wide tunnel state *before* touching a
         // service. Pressing Connect means CONNECTING, not CONNECTED: only the
@@ -154,20 +142,9 @@ class AndroidConnectionAdapter(
             serverIp = conn.ip,
         )
 
-        // Stage G-7: a server may be perfectly dialable over OpenVPN without
-        // its profile having been carried in the collected list. The page's
-        // `sid`/`hid` are enough to fetch that one profile now, so an attempt
-        // is not failed over data the app can still obtain. This runs on the
-        // caller's dispatcher (never the main thread) and is bounded; on any
-        // failure the attempt proceeds exactly as before and reports
-        // MISSING_CONFIG.
-        when (protocol) {
-            AutoModeProtocol.OPENVPN_TCP ->
-                ensureOpenVpnProfile(conn, useUdp = false)
-            AutoModeProtocol.OPENVPN_UDP ->
-                ensureOpenVpnProfile(conn, useUdp = true)
-            else -> Unit
-        }
+        // Auto Mode is deliberately cache-only for OpenVPN. Candidate
+        // eligibility requires a locally available profile, and this connect
+        // path never invokes the manual/on-demand profile downloader.
 
         // v1.0.87: MS-SSTP needs an address, not only a name.
         //
@@ -873,73 +850,13 @@ class AndroidConnectionAdapter(
         dataUtil.lastVPNConnection = conn
     }
 
-    /**
-     * Stage G-7: obtain the `.ovpn` profile for [conn] if the collector did
-     * not carry one, using the download identifiers the page published.
-     *
-     * Contract:
-     *  - does nothing when a profile is already present (the common case);
-     *  - does nothing when the server published no `sid`/`hid` (nothing to
-     *    ask for — the attempt then reports MISSING_CONFIG as before);
-     *  - is bounded by [openVpnConfigDownloadTimeoutMs] and never throws;
-     *  - writes the result into [VPNGateConnection.openVpnConfigData], i.e.
-     *    the canonical slot, so the existing UDP/domain transforms apply to a
-     *    downloaded profile exactly as they do to a collected one.
-     */
-    private suspend fun ensureOpenVpnProfile(conn: VPNGateConnection, useUdp: Boolean) {
-        val existing = if (useUdp) conn.openVpnConfigDataUdp else conn.openVpnConfigData
-        if (!existing.isNullOrEmpty()) return
-
-        if (!conn.canDownloadOpenVpnConfig) {
-            Log.w(
-                TAG,
-                "No OpenVPN profile and no download identifiers for ${conn.hostName}; " +
-                    "the attempt will report MISSING_CONFIG",
-            )
-            return
-        }
-
-        // One implementation, shared with the manual connect path: the
-        // repository picks the measured transport (own tunnel, foreign VPN or
-        // physical), validates the descriptor, escalates to the rotating
-        // mirror directory only when the canonical host and the cached mirrors
-        // both fail, and never returns a body whose remote/port/proto do not
-        // match the server being dialled.
-        val profile = withTimeoutOrNull(openVpnConfigDownloadTimeoutMs) {
-            runCatching { VpnServerRepository().fetchOpenVpnProfile(conn, useUdp = useUdp) }
-                .getOrNull()
-        }
-        if (profile.isNullOrBlank()) {
-            Log.w(TAG, "On-demand OpenVPN profile download failed for ${conn.hostName}")
-            return
-        }
-
-        conn.openVpnConfigData = profile
-        // Persist it so the next attempt on this server is a plain connect and
-        // a refresh that omits the profile no longer costs a download. Failure
-        // here is not fatal: the profile is already in memory for this attempt.
-        runCatching {
-            val hostName = conn.hostName.orEmpty()
-            if (hostName.isNotBlank()) {
-                App.instance?.vpnGateItemDao?.updateOpenVpnConfig(hostName, profile)
-            }
-        }.onFailure {
-            Log.w(TAG, "OpenVPN profile downloaded but cache write failed", it)
-        }
-        Log.i(TAG, "Downloaded OpenVPN profile on demand for ${conn.hostName}")
-    }
-
     private fun connectOpenVpn(conn: VPNGateConnection, useUdp: Boolean) {
         if (VpnService.prepare(context) != null) {
             Log.w(TAG, "VPN permission not granted; cannot connect in background")
             throw AutoModeController.VpnPermissionMissingException()
         }
-        // v1.0.87: the profile for the REQUESTED transport. The raw
-        // `openVpnConfigData` used to be handed to the core for TCP, which is
-        // wrong as soon as the stored profile is the UDP one downloaded on
-        // demand (`ensureOpenVpnProfile(preferUdp = true)`), and it also skipped
-        // the "connect by domain" transform. The getter reads the profile's own
-        // proto/remote lines and applies both.
+        // Auto Mode is cache-only for OpenVPN: profile acquisition belongs to
+        // the explicit/manual connection flow. Never download a profile here.
         val data = conn.getOpenVpnConfigDataString(useUdp)
         if (data.isNullOrEmpty()) {
             // v1.0.53 (§1.6.45) TASK B.6: this used to `return` silently, which made the
@@ -1012,8 +929,7 @@ class AndroidConnectionAdapter(
             .apply()
         SstpVpnService.notificationTargetActivity =
             vn.unlimit.vpngate.activities.MainActivity::class.java
-        SstpVpnService.mDisplaySpeed =
-            dataUtil.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED)
+        NotificationPolicy.applyNotificationPreferences(dataUtil, context)
         val intent = Intent(context, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
         startForegroundCompatible(intent, SstpVpnService::class.java)
         dataUtil.setStringSetting(DataUtil.LAST_CONNECT_METHOD, "sstp")

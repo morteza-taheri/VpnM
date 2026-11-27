@@ -38,6 +38,8 @@ class AutoModeDatasetSourceTest {
         var items: List<VPNGateItem> = initial
         var replaceAllCalls = 0
 
+        override fun deleteRussianServers(): Int = 0
+
         override fun getAll(): List<VPNGateItem> = items
 
         override fun filterAndSort(query: SupportSQLiteQuery): List<VPNGateItem> = items

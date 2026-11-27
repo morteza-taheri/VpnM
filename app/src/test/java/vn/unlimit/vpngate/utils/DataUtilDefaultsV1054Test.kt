@@ -2,6 +2,7 @@ package vn.unlimit.vpngate.utils
 
 import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import vn.unlimit.vpngate.automode.AutoModeProtocol
@@ -14,7 +15,7 @@ import vn.unlimit.vpngate.automode.AutoModeProtocol
  * needed:
  *
  *  1. **PART 2.4** — an unset Auto Connect protocol profile reads as
- *     SoftEther TCP then SoftEther UDP, both enabled. Before v1.0.54 it read as
+ *     SoftEther UDP, OpenVPN UDP, and MS-SSTP. Before v1.0.54 it read as
  *     an EMPTY list, and an empty list is the contract for "the user disabled
  *     everything", so Auto Connect refused to start on a fresh install.
  *  2. **PART 2.4** — a stored choice is never overwritten by that default, and
@@ -31,11 +32,11 @@ class DataUtilDefaultsV1054Test {
     // ── PART 2.4: fresh install ───────────────────────────────────────────
 
     @Test
-    fun `unset protocol profile defaults to SoftEther UDP then TCP then SSTP`() {
+    fun `unset protocol profile defaults to SoftEther UDP then OpenVPN UDP then SSTP`() {
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
-                AutoModeProtocol.SOFTETHER_TCP,
+                AutoModeProtocol.OPENVPN_UDP,
                 AutoModeProtocol.MS_SSTP,
             ),
             dataUtil().getAutoModeProtocolPriority(),
@@ -47,23 +48,55 @@ class DataUtilDefaultsV1054Test {
         val default = DataUtil.DEFAULT_AUTO_PROTOCOL_PRIORITY
         assertEquals(3, default.size)
         assertEquals(AutoModeProtocol.SOFTETHER_UDP, default[0])
-        assertEquals(AutoModeProtocol.SOFTETHER_TCP, default[1])
+        assertEquals(AutoModeProtocol.OPENVPN_UDP, default[1])
         assertEquals(AutoModeProtocol.MS_SSTP, default[2])
         assertTrue(default.none { it == AutoModeProtocol.L2TP_IPSEC })
+        assertTrue(default.none { it == AutoModeProtocol.SOFTETHER_TCP })
         assertTrue(default.none { it == AutoModeProtocol.OPENVPN_TCP })
-        assertTrue(default.none { it == AutoModeProtocol.OPENVPN_UDP })
     }
 
     /**
      * BLOCK v1.0.75 PART D1 — one test per shipped default. Auto-Reconnect is
      * ON for a fresh install; the server-list interval is 168 h
      * ([vn.unlimit.vpngate.ServerListUpdaterTest] pins that one); the attempt
-     * timeout is 12 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
+     * per-server Auto Mode budget is 8 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
      * emergency default source is pinned by [vn.unlimit.vpngate.db.EmergencyDefaultSeedTest].
      */
     @Test
+    fun `optional notification content defaults to OFF for a fresh install`() {
+        val util = dataUtil()
+        assertFalse(
+            util.getBooleanSetting(DataUtil.SETTING_NOTIFY_SPEED, DataUtil.DEFAULT_NOTIFY_SPEED),
+        )
+        assertFalse(
+            util.getBooleanSetting(
+                DataUtil.SETTING_NOTIFY_AUTO_MODE_PROGRESS,
+                DataUtil.DEFAULT_NOTIFY_AUTO_MODE_PROGRESS,
+            ),
+        )
+        assertFalse(
+            util.getDisconnectNotificationsEnabled(),
+        )
+    }
+
+    @Test
     fun `auto-reconnect defaults to ON for a fresh install`() {
         assertTrue(dataUtil().getAutoReconnectInAutoMode())
+    }
+
+    @Test
+    fun `server list cap defaults to 300 on a fresh install`() {
+        assertEquals(300, dataUtil().getServerListCap())
+    }
+
+    @Test
+    fun `server list update timeout defaults to 45 seconds`() {
+        assertEquals(45, dataUtil().getServerListUpdateTimeoutSeconds())
+    }
+
+    @Test
+    fun `Auto Mode connection budget defaults to 8 seconds per server`() {
+        assertEquals(8, dataUtil().getAutoModeTimeoutSeconds())
     }
 
     // ── PART 2.4: a stored choice always wins ─────────────────────────────
@@ -144,7 +177,7 @@ class DataUtilDefaultsV1054Test {
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
-                AutoModeProtocol.SOFTETHER_TCP,
+                AutoModeProtocol.OPENVPN_UDP,
                 AutoModeProtocol.MS_SSTP,
             ),
             util.getAutoModeProtocolPriority(),

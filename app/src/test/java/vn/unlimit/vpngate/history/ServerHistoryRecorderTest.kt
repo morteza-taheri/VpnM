@@ -43,6 +43,15 @@ class ServerHistoryRecorderTest {
         override fun historyViews(): List<ServerHistoryView> =
             summaries.values.map { it.toView() }
 
+        override fun throughputSamplesSince(
+            networkType: String,
+            since: Long,
+            limit: Int,
+        ): List<ServerThroughputSampleView> = emptyList()
+
+        override fun pruneThroughputSamples(hostName: String, protocol: String, networkType: String) = Unit
+        override fun pruneOldThroughputSamples(before: Long) = Unit
+
         override fun summary(hostName: String): ServerHistorySummary? = summaries[hostName]
 
         override fun protocols(hostName: String): List<ServerProtocolSummary> =
@@ -337,6 +346,22 @@ class ServerHistoryRecorderTest {
     }
 
     @Test
+    fun `throughput samples are event-only and do not alter health summaries`() {
+        val dao = FakeHistoryDao()
+        dao.apply(
+            record(
+                eventType = HistoryEventType.THROUGHPUT_SAMPLE,
+                outcome = HistoryOutcome.NEUTRAL,
+            ).copy(qualityResult = "12500000"),
+        )
+
+        assertEquals(0, dao.summaryWrites)
+        assertEquals(0, dao.protocolWrites)
+        assertEquals(1, dao.eventWrites)
+        assertEquals("12500000", dao.events.single().qualityResult)
+    }
+
+    @Test
     fun `the sink runs the dao write off the calling thread`() = runBlocking {
         val inner = FakeHistoryDao()
         val callerThread = Thread.currentThread().name
@@ -350,6 +375,14 @@ class ServerHistoryRecorderTest {
                 inner.insertEvent(row)
             }
             override fun historyViews(): List<ServerHistoryView> = inner.historyViews()
+            override fun throughputSamplesSince(
+                networkType: String,
+                since: Long,
+                limit: Int,
+            ): List<ServerThroughputSampleView> = inner.throughputSamplesSince(networkType, since, limit)
+            override fun pruneThroughputSamples(hostName: String, protocol: String, networkType: String) =
+                inner.pruneThroughputSamples(hostName, protocol, networkType)
+            override fun pruneOldThroughputSamples(before: Long) = inner.pruneOldThroughputSamples(before)
             override fun summary(hostName: String): ServerHistorySummary? = inner.summary(hostName)
             override fun protocols(hostName: String): List<ServerProtocolSummary> = inner.protocols(hostName)
             override fun protocolSummary(hostName: String, protocol: String): ServerProtocolSummary? =
@@ -373,6 +406,11 @@ class ServerHistoryRecorderTest {
     /** A DAO that throws on every call, for the containment tests. */
     private class ThrowingDao : ServerHistoryDao {
         override fun historyViews(): List<ServerHistoryView> = throw IllegalStateException("locked")
+        override fun throughputSamplesSince(networkType: String, since: Long, limit: Int): List<ServerThroughputSampleView> =
+            throw IllegalStateException("locked")
+        override fun pruneThroughputSamples(hostName: String, protocol: String, networkType: String) =
+            throw IllegalStateException("locked")
+        override fun pruneOldThroughputSamples(before: Long) = throw IllegalStateException("locked")
         override fun summary(hostName: String): ServerHistorySummary? = throw IllegalStateException("locked")
         override fun protocols(hostName: String): List<ServerProtocolSummary> = throw IllegalStateException("locked")
         override fun protocolSummary(hostName: String, protocol: String): ServerProtocolSummary? =
@@ -391,6 +429,10 @@ class ServerHistoryRecorderTest {
     /** A DAO whose write is cancelled, for the cancellation test. */
     private class CancellingDao : ServerHistoryDao {
         override fun historyViews(): List<ServerHistoryView> = emptyList()
+        override fun throughputSamplesSince(networkType: String, since: Long, limit: Int): List<ServerThroughputSampleView> =
+            emptyList()
+        override fun pruneThroughputSamples(hostName: String, protocol: String, networkType: String) = Unit
+        override fun pruneOldThroughputSamples(before: Long) = Unit
         override fun summary(hostName: String): ServerHistorySummary? = null
         override fun protocols(hostName: String): List<ServerProtocolSummary> = emptyList()
         override fun protocolSummary(hostName: String, protocol: String): ServerProtocolSummary? = null
