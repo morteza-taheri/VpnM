@@ -38,7 +38,7 @@ class AutoModeLifecycleF28Test {
      * tunnel that the notification wait never reported.
      */
     private class RecordingAdapter : AutoModeController.ConnectionAdapter {
-        val calls = mutableListOf<String>()
+        val calls = CopyOnWriteArrayList<String>()
         val connects = mutableListOf<Pair<String?, AutoModeProtocol>>()
         val failures = mutableSetOf<String>()
 
