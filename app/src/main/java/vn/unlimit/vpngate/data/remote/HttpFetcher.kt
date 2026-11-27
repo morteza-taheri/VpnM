@@ -181,12 +181,38 @@ fun boundToSocketFactory(
  * *socket-open-time* EPERM (surfaced later in `OkHttpFetcher.execute`). Control flow
  * is unchanged: every exception is re-thrown.
  */
+/**
+ * Resolve through the selected VPN Network first. Some VpnService stacks expose
+ * a usable VPN socket route but do not expose working per-Network DNS through
+ * Network.getAllByName(). In that case Android's active-network resolver is a
+ * safe DNS fallback while the actual TCP socket remains bound to the selected
+ * VPN SocketFactory. This never changes the transport rung or binds a socket
+ * to the process default network.
+ */
+internal fun networkBoundDns(
+    networkLookup: (String) -> List<InetAddress>,
+    fallbackLookup: (String) -> List<InetAddress> = { Dns.SYSTEM.lookup(it) },
+): Dns = ResilientDns { hostname ->
+    val networkAddresses = try {
+        networkLookup(hostname).takeIf { it.isNotEmpty() }
+    } catch (e: Exception) {
+        CollectorLog.d(
+            "[dns] VPN Network resolver failed host=$hostname " +
+                "exception=${e.javaClass.simpleName}; trying Android active-network resolver",
+        )
+        null
+    }
+    networkAddresses ?: fallbackLookup(hostname).takeIf { it.isNotEmpty() }
+        ?: throw java.net.UnknownHostException("No DNS addresses for $hostname")
+}
+
 fun boundToNetwork(network: Network): OkHttpClient =
     try {
-        // DNS and TCP must use the same Android Network. Binding only the
-        // SocketFactory leaves OkHttp's default resolver on the process
-        // default network, which may differ from this VPN during handover.
-        val networkDns = ResilientDns { hostname ->
+        // Keep DNS and TCP on the VPN whenever its resolver is functional.
+        // Certain OpenVPN/SSTP providers do not publish DNS on this Network;
+        // networkBoundDns retries name resolution through Android's active
+        // network resolver but the resulting TCP socket is still VPN-bound.
+        val networkDns = networkBoundDns { hostname ->
             network.getAllByName(hostname).toList()
         }
         val client = boundToSocketFactory(network.socketFactory, networkDns)
