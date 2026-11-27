@@ -94,7 +94,7 @@ object AutoModeEngine {
                     if (origin == null) du.clearLastConnectionOrigin()
                     else du.setLastConnectionOrigin(origin, key ?: "")
                 },
-                // §3 §4 §5 §14 Read timeout from Settings per attempt (per-server, not total)
+                // §3 §4 §5 §14 Read one total dial budget from Settings per server, shared across protocols
                 // v1.0.42 (§1.6.35 / F1): a PROVIDER, not a value. `ensure()` is a
                 // singleton, so a frozen Long diverged from the adapter (which
                 // re-reads the setting per call) the moment the user changed it.

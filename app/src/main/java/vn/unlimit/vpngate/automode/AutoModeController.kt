@@ -53,9 +53,9 @@ class AutoModeController(
     private val serverProvider: suspend () -> List<AutoModeCandidate>,
     /** Called when a tunnel is verified so the caller can persist it (Â§19). */
     private val onSuccess: (AutoModeCandidate, AutoModeProtocol) -> Unit = { _, _ -> },
-    /** Per-attempt timeout in ms (Â§11). */
+    /** Total per-server dial budget in ms, shared across protocols (Â§11). */
     /**
-     * v1.0.42 (§1.6.35 / F1): per-attempt timeout in ms, read through a
+     * v1.0.42 (§1.6.35 / F1): per-server timeout in ms, read through a
      * **provider** instead of being frozen at construction.
      *
      * `AutoModeEngine.ensure()` builds this controller exactly once (the
@@ -77,7 +77,7 @@ class AutoModeController(
      * operation to release the process-wide slot, before the run is declared stuck.
      *
      * Injected so the JVM suite can drive the "genuinely stuck" branch without a
-     * real 30 s wait. Production derives it from the per-attempt budget; see
+     * real 30 s wait. Production derives it from the per-server budget; see
      * [NATIVE_SLOT_AWAIT_MS] for why the factor is five.
      *
      * v1.0.42 (§1.6.35 / B-3): also a **provider**, for the same reason as

@@ -78,7 +78,7 @@ internal class AutoModeThroughputMonitor(
         accept(snapshot.diffInBytes)
     }
 
-    override fun updateByteCount(in: Long, out: Long, diffIn: Long, diffOut: Long) {
+    override fun updateByteCount(totalIn: Long, totalOut: Long, diffIn: Long, diffOut: Long) {
         accept(diffIn)
     }
 

@@ -39,9 +39,9 @@ enum class NetworkType {
 /**
  * The bounded event taxonomy (F.29 §6.3).
  *
- * **Five** of these have a producer in the current lifecycle — CONNECTED,
- * PROTOCOL_ATTEMPT, SERVER_ABANDONED, CONNECTION_LOST and ATTEMPT_CANCELLED.
- * Two have none, for different reasons:
+ * **Six** of these have a producer in the current lifecycle — CONNECTED,
+ * PROTOCOL_ATTEMPT, SERVER_ABANDONED, CONNECTION_LOST, ATTEMPT_CANCELLED and
+ * THROUGHPUT_SAMPLE. Two have none, for different reasons:
  *
  *  - [QUALITY_REJECTED] — the application has **no** post-connect
  *    quality-rejection trigger (see `PROJECT_SPECIFICATION.md` §11.15.2.5), so
