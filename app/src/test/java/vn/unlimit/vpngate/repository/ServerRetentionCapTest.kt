@@ -30,6 +30,8 @@ class ServerRetentionCapTest {
         var rows: List<VPNGateItem> = initial
         var replaceCount = 0
 
+        override fun deleteRussianServers(): Int = 0
+
         override fun getAll(): List<VPNGateItem> = rows
         override fun replaceAll(items: List<VPNGateItem>) {
             rows = VPNGateItem.dedupeForStorage(items)
