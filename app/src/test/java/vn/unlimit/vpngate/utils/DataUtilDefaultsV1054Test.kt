@@ -59,7 +59,7 @@ class DataUtilDefaultsV1054Test {
      * BLOCK v1.0.75 PART D1 — one test per shipped default. Auto-Reconnect is
      * ON for a fresh install; the server-list interval is 168 h
      * ([vn.unlimit.vpngate.ServerListUpdaterTest] pins that one); the attempt
-     * timeout is 8 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
+     * per-server Auto Mode budget is 8 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
      * emergency default source is pinned by [vn.unlimit.vpngate.db.EmergencyDefaultSeedTest].
      */
     @Test
@@ -87,6 +87,16 @@ class DataUtilDefaultsV1054Test {
     @Test
     fun `server list cap defaults to 300 on a fresh install`() {
         assertEquals(300, dataUtil().getServerListCap())
+    }
+
+    @Test
+    fun `server list update timeout defaults to 45 seconds`() {
+        assertEquals(45, dataUtil().getServerListUpdateTimeoutSeconds())
+    }
+
+    @Test
+    fun `Auto Mode connection budget defaults to 8 seconds per server`() {
+        assertEquals(8, dataUtil().getAutoModeTimeoutSeconds())
     }
 
     // ── PART 2.4: a stored choice always wins ─────────────────────────────
@@ -167,8 +177,8 @@ class DataUtilDefaultsV1054Test {
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
-                AutoModeProtocol.MS_SSTP,
                 AutoModeProtocol.OPENVPN_UDP,
+                AutoModeProtocol.MS_SSTP,
             ),
             util.getAutoModeProtocolPriority(),
         )
