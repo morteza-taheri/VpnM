@@ -137,6 +137,8 @@ object HistoryCounters {
                 firstObservedAt = firstObservedAt,
                 qualityRejectionCount = base.qualityRejectionCount + 1,
             )
+
+            HistoryEventType.THROUGHPUT_SAMPLE -> base
         }
     }
 

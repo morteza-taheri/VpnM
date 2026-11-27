@@ -87,6 +87,8 @@ data class AutoModeCandidate(
      * honest answer ("not measured yet"), not zero.
      */
     val activeRttMs: Long? = null,
+    /** Median real download rate for the first usable protocol on the current physical network. */
+    val measuredDownloadBps: Long? = null,
     val payload: Any? = null,
 )
 

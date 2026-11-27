@@ -747,7 +747,7 @@ class DataUtil(context: Context?) {
 
     /** BLOCK v1.0.86: how many servers the retained list may hold. */
     const val SETTING_SERVER_LIST_CAP: String = "SETTING_SERVER_LIST_CAP"
-    const val DEFAULT_SERVER_LIST_CAP: Int = 1000
+    const val DEFAULT_SERVER_LIST_CAP: Int = 300
     const val MIN_SERVER_LIST_CAP: Int = 10
     const val MAX_SERVER_LIST_CAP: Int = 2000
         const val SETTING_NOTIFY_SPEED: String = "SETTING_NOTIFY_SPEED"

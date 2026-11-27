@@ -226,7 +226,7 @@ data class ServerHistoryEvent(
     val durationMs: Long? = null,
     val failureReason: String? = null,
 
-    /** Reserved (OD-5): always null in this build. */
+    /** Numeric download throughput for THROUGHPUT_SAMPLE; null for other events. */
     val qualityResult: String? = null,
 
     val createdAt: Long,
@@ -243,7 +243,7 @@ data class ServerHistoryEvent(
             attemptToken = record.token,
             durationMs = record.durationMs,
             failureReason = record.failureReason,
-            qualityResult = null,
+            qualityResult = record.qualityResult,
             createdAt = record.at,
         )
     }

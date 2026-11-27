@@ -95,6 +95,9 @@ enum class HistoryEventType {
 
     /** The attempt was cancelled by the user (skip / stop). */
     ATTEMPT_CANCELLED,
+
+    /** Real inbound traffic observed while an established tunnel carries user data. */
+    THROUGHPUT_SAMPLE,
 }
 
 /** How an event is counted. `NEUTRAL` is a record, not a verdict. */
@@ -187,6 +190,8 @@ data class HistoryRecord(
     val durationMs: Long?,
     val failureReason: String?,
     val at: Long,
+    /** Numeric download throughput in bits/second for THROUGHPUT_SAMPLE only. */
+    val qualityResult: String? = null,
 )
 
 /**
@@ -208,6 +213,20 @@ fun interface ServerHistorySink {
  * per server or scanning the event table. `null`/absent means *no history*,
  * which the ordering treats as "unknown", never as "bad".
  */
+/** Narrow projection for recent per-protocol download-throughput samples. */
+data class ServerThroughputSampleView(
+    val hostName: String,
+    val protocol: String?,
+    val networkType: String,
+    val qualityResult: String?,
+    val createdAt: Long,
+)
+
+/** Stable key shared by the recorder and Auto Mode's ranking snapshot. */
+internal fun throughputSampleKey(hostName: String, protocolId: String): String =
+    "${hostName.trim()}\u001f$protocolId"
+
+/** Narrow projection for history-aware server ordering. */
 data class ServerHistoryView(
     val hostName: String,
     val successCount: Int,

@@ -9,6 +9,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.unlimit.vpngate.data.model.VpnPortSource
 import vn.unlimit.vpngate.history.NetworkTypeClassifier
+import vn.unlimit.vpngate.history.HistoryEventType
+import vn.unlimit.vpngate.history.HistoryOutcome
+import vn.unlimit.vpngate.history.HistoryRecord
+import vn.unlimit.vpngate.history.throughputSampleKey
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import vn.unlimit.vpngate.utils.DataUtil
@@ -25,6 +29,8 @@ object AutoModeEngine {
     private var controller: AutoModeController? = null
 
     private val _state = MutableStateFlow<AutoModeState>(AutoModeState.Disconnected)
+    private val throughputScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var throughputMonitor: AutoModeThroughputMonitor? = null
 
     /**
      * Observable Auto Mode state that exists even before the engine is
@@ -55,8 +61,9 @@ object AutoModeEngine {
         controller?.let { return it }
         synchronized(this) {
             controller?.let { return it }
-            val du = dataUtil ?: vn.unlimit.vpngate.App.instance!!.dataUtil!!
-            val adapter = AndroidConnectionAdapter(vn.unlimit.vpngate.App.instance!!, du)
+            val app = vn.unlimit.vpngate.App.instance!!
+            val du = dataUtil ?: app.dataUtil!!
+            val adapter = AndroidConnectionAdapter(app, du)
             TunnelStateWatcher.attach(vn.unlimit.vpngate.App.instance!!)
             AutoModeModuleLogTap.attach(vn.unlimit.vpngate.App.instance!!)
                         val created = AutoModeController(
@@ -208,18 +215,26 @@ object AutoModeEngine {
                 historyProvider = {
                     withContext(Dispatchers.IO) {
                         runCatching {
-                            vn.unlimit.vpngate.App.instance?.serverHistoryDao
-                                ?.historyViews()
-                                // BLOCK v1.0.81 (review finding #8): key by the
-                                // same trimmed host name that `viewOf` looks
-                                // up. `associateBy { it.hostName }` kept the
-                                // stored spelling, so a row whose host name
-                                // carried whitespace could never be found and
-                                // its history silently stopped breaking ties —
-                                // the same trim is already used by
-                                // ServerListUpdates.mergeAll.
-                                ?.associateBy { it.hostName.trim() }
+                            app.serverHistoryDao?.historyViews()?.associateBy { it.hostName.trim() }
                         }.getOrNull().orEmpty()
+                    }
+                },
+                throughputHistoryProvider = { networkType ->
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            val since = System.currentTimeMillis() - 7L * 24L * 60L * 60L * 1000L
+                            app.serverHistoryDao
+                                ?.throughputSamplesSince(networkType.name, since, 6_000)
+                                .orEmpty()
+                                .groupBy { row -> throughputSampleKey(row.hostName, row.protocol.orEmpty()) }
+                                .mapNotNull { (key, rows) ->
+                                    val rates = rows.mapNotNull { it.qualityResult?.toLongOrNull() }
+                                        .filter { it > 0L }
+                                        .take(5)
+                                    if (rates.size < 2) null else key to rates.sorted()[rates.size / 2]
+                                }
+                                .toMap()
+                        }.getOrDefault(emptyMap())
                     }
                 },
                 // F.29 §8/§9: the single writer every outcome is recorded
@@ -244,6 +259,49 @@ object AutoModeEngine {
             val appContext = vn.unlimit.vpngate.App.instance!!.applicationContext
             created.onStateChange = { state ->
                 _state.value = state
+                when (state) {
+                    is AutoModeState.Connected -> {
+                        val candidate = AutoModeRun.lastSuccess
+                        val protocol = state.protocol
+                        val identity = candidate?.hostname?.trim()?.takeIf { it.isNotEmpty() }
+                            ?: candidate?.ip?.trim()?.takeIf { it.isNotEmpty() }
+                        if (candidate != null && protocol != null && identity != null) {
+                            val current = throughputMonitor
+                            if (current?.matches(identity, protocol) != true) {
+                                current?.stop()
+                                val monitor = AutoModeThroughputMonitor { downloadBps, durationMs ->
+                                    val host = candidate.hostname?.trim()?.takeIf { it.isNotEmpty() }
+                                        ?: candidate.ip?.trim().orEmpty()
+                                    if (host.isNotEmpty()) {
+                                        val record = HistoryRecord(
+                                            hostName = host,
+                                            ip = candidate.ip,
+                                            eventType = HistoryEventType.THROUGHPUT_SAMPLE,
+                                            outcome = HistoryOutcome.NEUTRAL,
+                                            networkType = NetworkTypeClassifier.current(appContext),
+                                            protocol = protocol.id,
+                                            token = null,
+                                            durationMs = durationMs,
+                                            failureReason = null,
+                                            at = System.currentTimeMillis(),
+                                            qualityResult = downloadBps.toString(),
+                                        )
+                                        throughputScope.launch { app.serverHistorySink?.record(record) }
+                                    }
+                                }
+                                monitor.start(identity, protocol)
+                                throughputMonitor = monitor
+                            }
+                        } else {
+                            throughputMonitor?.stop()
+                            throughputMonitor = null
+                        }
+                    }
+                    else -> {
+                        throughputMonitor?.stop()
+                        throughputMonitor = null
+                    }
+                }
                 when (state) {
                     is AutoModeState.Connecting -> AutoModeNotifier.notifyConnecting(
                         appContext, state.hostname, state.attempt, state.total,
