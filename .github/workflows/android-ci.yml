@@ -271,7 +271,9 @@ jobs:
         run: ./gradlew :app:bundleProRelease
 
       - name: Upload Pro APK
-        if: startsWith(github.ref, 'refs/tags/')
+        # Publish signed APKs for feature-branch testing as well; this is only
+        # a workflow artifact, not a GitHub Release. AABs remain tag-gated.
+        if: ${{ success() && env.KEYSTORE_PASSPHRASE != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: apk-pro
