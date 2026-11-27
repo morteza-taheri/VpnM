@@ -1,6 +1,5 @@
 package vn.unlimit.vpngate.ui.screens.settings
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +58,6 @@ import vn.unlimit.vpngate.R
  * behaviour remain in SettingsScreen.
  */
 
-private val CardShape = RoundedCornerShape(24.dp)
 private val IconChipShape = RoundedCornerShape(13.dp)
 private val IconChipSize = 40.dp
 
@@ -102,10 +100,9 @@ fun SettingsSection(
             )
         }
         Surface(
-            shape = CardShape,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            tonalElevation = 0.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
