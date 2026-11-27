@@ -14,8 +14,8 @@ The app is designed around three practical workflows:
 > |---|---|
 > | Application | VpnM |
 > | Android application ID | `vn.unlimit.vpngatepro` |
-> | Source version | `2.4.21` |
-> | Version code | `155` |
+> | Source version | `2.4.22` |
+> | Version code | `156` |
 > | Minimum Android version | Android 7.0 (API 24) |
 > | Compile / target SDK | API 37 / API 37 |
 > | Maintainer | Morteza Taheri |
