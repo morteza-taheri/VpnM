@@ -414,8 +414,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // ---------------- Connection section
             item {
@@ -703,6 +703,7 @@ fun SettingsScreen(
                             R.string.setting_server_list_cap_value,
                             serverListCap,
                         ),
+                        icon = Icons.Outlined.Dns,
                         onClick = { showServerListCapPicker = true },
                     )
                     SettingDivider()
