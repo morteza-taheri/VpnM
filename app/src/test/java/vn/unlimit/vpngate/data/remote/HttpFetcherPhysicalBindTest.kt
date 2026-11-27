@@ -113,7 +113,9 @@ class HttpFetcherPhysicalBindTest {
         assertTrue(
             "the physical client must be built by the shared boundToSocketFactory, " +
                 "or its timeouts/DNS could drift from the tunnel client: $body",
-            body.contains("boundToSocketFactory(network.socketFactory)"),
+            body.contains("ResilientDns { hostname ->") &&
+                body.contains("network.getAllByName(hostname).toList()") &&
+                body.contains("boundToSocketFactory(network.socketFactory, networkDns)"),
         )
         assertTrue(
             "a failed bind must rethrow so the caller sees a real failure: $body",
