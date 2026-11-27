@@ -438,7 +438,7 @@ class DataUtil(context: Context?) {
     /**
      * BLOCK v1.0.86: the user-configurable server-list ceiling. Clamped at the
      * boundary so a corrupt preference can never make the retention cap 0 or
-     * 2 000 000. Default 1,000, range 10..2000.
+     * 2 000 000. Default 300, range 10..2000.
      */
     fun getServerListCap(): Int =
         getIntSetting(SETTING_SERVER_LIST_CAP, DEFAULT_SERVER_LIST_CAP)
@@ -773,15 +773,15 @@ class DataUtil(context: Context?) {
 
         /**
          * v1.0.54 (§1.6.47) PART 2.4: the profile a fresh install starts with.
-         * The fresh-install order is SoftEther UDP, MS-SSTP, then OpenVPN UDP.
+         * The fresh-install order is SoftEther UDP, OpenVPN UDP, then MS-SSTP.
          * It is an ORDER, so the first
          * entry is attempted first on every server; a stored user choice always
          * wins over this default.
          */
         val DEFAULT_AUTO_PROTOCOL_PRIORITY: List<AutoModeProtocol> = listOf(
             AutoModeProtocol.SOFTETHER_UDP,
-            AutoModeProtocol.MS_SSTP,
             AutoModeProtocol.OPENVPN_UDP,
+            AutoModeProtocol.MS_SSTP,
         )
 
         /**
