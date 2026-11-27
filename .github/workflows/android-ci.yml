@@ -302,7 +302,7 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') && env.KEYSTORE_PASSPHRASE != '' }}
         uses: softprops/action-gh-release@v2
         with:
-          name: "v${{ github.ref_name }} — VpnM 2.4.22 (build 156)"
+          name: "${{ github.ref_name }} — VpnM 2.4.22 (build 156)"
           body: |
             VpnM 2.4.22 (build 156)
 
