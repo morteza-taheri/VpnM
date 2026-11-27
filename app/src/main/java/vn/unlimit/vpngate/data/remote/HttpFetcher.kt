@@ -202,8 +202,11 @@ internal fun networkBoundDns(
         )
         null
     }
-    networkAddresses ?: fallbackLookup(hostname).takeIf { it.isNotEmpty() }
-        ?: throw java.net.UnknownHostException("No DNS addresses for $hostname")
+    networkAddresses ?: run {
+        CollectorLog.d("[dns] using Android active-network resolver host=$hostname")
+        fallbackLookup(hostname).takeIf { it.isNotEmpty() }
+            ?: throw java.net.UnknownHostException("No DNS addresses for $hostname")
+    }
 }
 
 fun boundToNetwork(network: Network): OkHttpClient =
@@ -489,7 +492,10 @@ class OkHttpFetcher(
                 // ("Binding socket to network N failed: EPERM"); we add only the
                 // exception class for attribution. The return below is unchanged.
                 val causeClass = e.javaClass.simpleName
-                CollectorLog.d("Request failed: [exception=$causeClass] ${e.message}")
+                val failedHost = runCatching { URI(current).host }.getOrNull() ?: "unknown"
+                CollectorLog.d(
+                    "Request failed: [exception=$causeClass] host=$failedHost ${e.message}",
+                )
                 return null
             }
 
