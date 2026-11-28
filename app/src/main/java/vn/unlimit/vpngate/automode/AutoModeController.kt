@@ -1489,6 +1489,13 @@ enum class AttemptOutcome {
             return
         }
         networkRetryJob?.cancel()
+        // A user stop increments [sessionEpoch]. A retry armed in an older
+        // session must never dial into a newer one: `stop()` cancels this job,
+        // but cancellation is cooperative, and the window between the
+        // `isActive` check below and the `start()` call has no suspension
+        // point — a stop landing there left the retry free to reconnect the
+        // tunnel the user had just disconnected.
+        val epoch = sessionEpoch.get()
         networkRetryJob = scope.launch {
             adapter.log(
                 "[AUTO] No network; waiting up to ${NETWORK_RETRY_WINDOW_MS / 60_000} min " +
@@ -1496,13 +1503,23 @@ enum class AttemptOutcome {
             )
             val deadline = System.currentTimeMillis() + NETWORK_RETRY_WINDOW_MS
             while (System.currentTimeMillis() < deadline) {
-                kotlinx.coroutines.delay(NETWORK_RETRY_POLL_MS)
+                kotlinx.coroutines.                delay(NETWORK_RETRY_POLL_MS)
                 if (!currentCoroutineContext().isActive) return@launch
+                if (sessionEpoch.get() != epoch) {
+                    adapter.log("[AUTO] Session ended; dropping the network retry")
+                    return@launch
+                }
                 if (isRunning) {
                     adapter.log("[AUTO] A run is already active; dropping the network retry")
                     return@launch
                 }
                 if (!isNetworkAvailable()) continue
+                // Re-checked immediately before dialling: `stop()` may have run
+                // between the checks above and here.
+                if (sessionEpoch.get() != epoch) {
+                    adapter.log("[AUTO] Session ended; dropping the network retry")
+                    return@launch
+                }
                 adapter.log("[AUTO] Network is back; reconnecting")
                 // Same seeding as an unexpected disconnect: whatever the previous
                 // run had left to try, then the normal order. Origin is
