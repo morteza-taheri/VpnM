@@ -48,8 +48,8 @@ data class ConnectionConfig(
     val clientProductName: String = "VPN Gate Connector",
     val clientVersion: String = "1.0.0",
     val clientBuild: Int = 1,
-    // Target number of concurrent TCP connections requested in the login PACK
-    // (native MAX_SE_CONNECTIONS = 8; default 4 preserves the original runtime behavior)
+    // Target number of concurrent TCP connections requested in the login PACK.
+    // The native ceiling is 32; the app's fresh-install default is 8.
     val maxConnections: Int = 8,
     // Phase 17: manual override for half/full-duplex auto-selection.
     // null = auto-select by device tier; true = force full-duplex (all BOTH);
