@@ -130,8 +130,13 @@ android {
             // retried, and a downloaded profile is now accepted and cached by
             // the manual connect path.
             // v2.4.22 (156) — configurable default exclusion of Russian servers.
-            versionCode 156
-            versionName "2.4.22"
+            // v2.4.23 (157) — daily list refresh by default, emergency list
+            // enabled and published as Servers.csv at the repository root,
+            // VpnM-<version>-<abi> release asset names, and the SoftEther
+            // module's foreground-service hardening (stub notification before
+            // the real one, network callback registered off the FGS deadline).
+            versionCode 157
+            versionName "2.4.23"
         }
     }
 
