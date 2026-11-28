@@ -292,13 +292,13 @@ jobs:
           mkdir -p release-assets
           ./gradlew :app:assembleProRelease -PabiSplits
           OUT="app/build/outputs/apk/pro/release"
-          cp "$OUT"/app-pro-armeabi-v7a-release.apk "release-assets/SoftEthergai-$VERSION-armeabi-v7a.apk"
-          cp "$OUT"/app-pro-x86-release.apk "release-assets/SoftEthergai-$VERSION-x86.apk"
-          cp "$OUT"/app-pro-x86_64-release.apk "release-assets/SoftEthergai-$VERSION-x86_64.apk"
-          cp "$OUT"/app-pro-universal-release.apk "release-assets/SoftEthergai-$VERSION-universal.apk"
+          cp "$OUT"/app-pro-armeabi-v7a-release.apk "release-assets/VpnM-$VERSION-armeabi-v7a.apk"
+          cp "$OUT"/app-pro-x86-release.apk "release-assets/VpnM-$VERSION-x86.apk"
+          cp "$OUT"/app-pro-x86_64-release.apk "release-assets/VpnM-$VERSION-x86_64.apk"
+          cp "$OUT"/app-pro-universal-release.apk "release-assets/VpnM-$VERSION-universal.apk"
           rm -rf "$OUT"
           ./gradlew :app:assembleProRelease -Parm64Fallback
-          cp "$OUT"/app-pro-release.apk "release-assets/SoftEthergai-$VERSION-arm64-v8a.apk"
+          cp "$OUT"/app-pro-release.apk "release-assets/VpnM-$VERSION-arm64-v8a.apk"
           (cd release-assets && sha256sum *.apk > SHA256SUMS.txt)
 
       - name: Publish GitHub Release
