@@ -70,6 +70,8 @@ The version above describes the checked-in source configuration. A locally built
 
 SoftEther is implemented in the project and does not require a separate VPN application. The integrated native module provides the protocol engine and Android service integration. TCP and UDP availability depends on the remote server's advertised capabilities and the endpoint being reachable.
 
+The concurrent TCP connection target is configurable from **1 to 32**, with a fresh-install default of **8**. The client sends the selected target in the login PACK, applies the same value to the native connection handle on initial connect and reconnect, and respects the server's negotiated maximum. NAT-T relay sessions intentionally use one connection. During a live session, Logcat reports changes to the actual active socket count with the `[SOFTETHER_CONNECTIONS]` tag; the active count can therefore be lower than the requested target when the server or transport imposes a lower limit.
+
 ### OpenVPN
 
 OpenVPN is provided by the integrated OpenVPN client library.
@@ -136,10 +138,12 @@ The cap is a retention policy, not a promise that every server will remain forev
 Auto Mode uses the enabled protocol list and order stored in Settings. The fresh-install order is:
 
 1. SoftEther UDP
-2. Microsoft SSTP
-3. OpenVPN UDP
+2. OpenVPN UDP
+3. Microsoft SSTP
 
 SoftEther TCP and OpenVPN TCP are not enabled in the fresh-install profile. Users can enable, disable and reorder protocols. An explicitly saved user selection is preserved and takes precedence over fresh-install defaults.
+
+The protocol order is stored in two independent profiles: **Wi-Fi** and **Mobile data**. Auto Mode selects the profile from the device's physical network classification before starting a run. Existing installs with the former single global order migrate that order independently into both profiles on first access, so the upgrade does not silently reset a user's choices. If the physical network cannot be identified safely, Auto Mode uses the legacy/global profile rather than guessing Wi-Fi or cellular.
 
 Other rules:
 
