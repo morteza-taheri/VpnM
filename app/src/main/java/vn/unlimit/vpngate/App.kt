@@ -315,6 +315,12 @@ class App : Application() {
          * `emergencyDataset()` (which calls `dao.listEnabled()`) never had a
          * source to fetch.
          *
+         * Operator decision (2026-11-28): the seeded row is **enabled**, not
+         * disabled. The emergency list is the app's last-resort dataset on a
+         * censored link, and a fallback the user has to switch on after the
+         * refresh has already failed is not a fallback. The user can still turn
+         * it off in Settings, and that choice is never overridden.
+         *
          * Contract:
          *  - **Once only.** Guarded by
          *    [DataUtil.hasSeededEmergencyDefault]. A user who deletes the
@@ -323,6 +329,10 @@ class App : Application() {
          *  - **Non-destructive.** If the table already holds any row (enabled
          *    or not — a user may have disabled their own source), nothing is
          *    inserted and only the flag is set.
+         *  - **Upgrade-safe.** A row seeded by an older build still points at
+         *    the retired `emergency-sources/servers.csv` URL; it is rewritten
+         *    in place to the current URL (and enabled) exactly once, so an
+         *    upgraded install ends up with the same state as a fresh one.
          *  - **Idempotent.** Re-running with the flag set is a no-op, so a
          *    duplicate row can never be created.
          *  - **Non-fatal.** Never throws; a failure leaves the flag unset so
@@ -341,6 +351,9 @@ class App : Application() {
             now: Long = System.currentTimeMillis(),
         ): Boolean = try {
             if (dataUtil.hasSeededEmergencyDefault()) {
+                // Upgrade path: an older build seeded the retired URL. Fix it in
+                // place so the row the user already has keeps working.
+                migrateSeededEmergencyUrl(dao, url, now)
                 false
             } else {
                 val candidate = url.trim()
@@ -365,13 +378,13 @@ class App : Application() {
                                 EmergencySourceConfigEntity(
                                     url = candidate,
                                     label = DEFAULT_EMERGENCY_LABEL,
-                                    enabled = false,
+                                    enabled = true,
                                     createdAt = now,
                                     updatedAt = now,
                                 ),
                             )
                             dataUtil.markEmergencyDefaultSeeded()
-                            logD("Seeded default emergency source disabled by default")
+                            logD("Seeded default emergency source enabled by default")
                             true
                         }
                     }
@@ -383,8 +396,63 @@ class App : Application() {
             false
         }
 
+        /**
+         * 2026-11-28 — rewrite a row seeded with the retired URL.
+         *
+         * The published list moved from `emergency-sources/servers.csv` to
+         * `Servers.csv` at the repository root. Every install that has already
+         * run the old seeder holds the old URL and `enabled = 0`, so on upgrade
+         * it would keep polling a path that no longer exists — and the user
+         * would have to fix it by hand. This moves that one row to the current
+         * URL and enables it.
+         *
+         * Deliberately narrow: it only ever touches a row whose URL is EXACTLY
+         * [LEGACY_DEFAULT_EMERGENCY_URL], i.e. a row this app created. A
+         * user-added source, a user-disabled row with the current URL, and an
+         * empty table (the user deleted the row) are all left alone.
+         *
+         * @return true when a row was migrated.
+         */
+        internal suspend fun migrateSeededEmergencyUrl(
+            dao: EmergencySourceConfigDao,
+            url: String,
+            now: Long = System.currentTimeMillis(),
+        ): Boolean = try {
+            val candidate = url.trim()
+            if (candidate.isEmpty() || candidate == LEGACY_DEFAULT_EMERGENCY_URL) {
+                false
+            } else {
+                val legacy = dao.getByUrl(LEGACY_DEFAULT_EMERGENCY_URL)
+                when {
+                    legacy == null -> false
+                    dao.getByUrl(candidate) != null -> {
+                        // Both rows exist: keep the current one untouched and
+                        // drop only the retired duplicate.
+                        dao.deleteByUrl(LEGACY_DEFAULT_EMERGENCY_URL)
+                        logD("Removed the retired emergency source URL")
+                        true
+                    }
+                    else -> {
+                        dao.upsert(legacy.copy(url = candidate, enabled = true, updatedAt = now))
+                        logD("Migrated the seeded emergency source to the current URL (enabled)")
+                        true
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logW("Emergency source migration failed", e)
+            false
+        }
+
         /** Label written on the seeded row, so the UI can tell it from user rows. */
         internal const val DEFAULT_EMERGENCY_LABEL: String = "Default"
+
+        /**
+         * The URL older builds seeded (the retired `emergency-sources/` folder).
+         * Kept only so [migrateSeededEmergencyUrl] can recognise that row.
+         */
+        internal const val LEGACY_DEFAULT_EMERGENCY_URL: String =
+            "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/emergency-sources/servers.csv"
 
         /**
          * `android.util.Log` is a throwing stub on a plain JVM (this module's
