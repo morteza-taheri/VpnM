@@ -95,6 +95,7 @@ import vn.unlimit.vpngate.activities.MainActivity
 import vn.unlimit.vpngate.automode.AutoModeLogStore
 import vn.unlimit.vpngate.automode.AutoModeProtocol
 import vn.unlimit.vpngate.data.model.CollectorLog
+import vn.unlimit.vpngate.history.NetworkType
 import vn.unlimit.vpngate.provider.BaseProvider
 import vn.unlimit.vpngate.repository.ManualCsvImport
 import vn.unlimit.vpngate.repository.ServerListUpdateScheduler
@@ -229,7 +230,8 @@ fun SettingsScreen(
     var showThemePicker by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showStartupPicker by remember { mutableStateOf(false) }
-    var showProtocolPriorityDialog by remember { mutableStateOf(false) }
+    var showWifiProtocolPriorityDialog by remember { mutableStateOf(false) }
+    var showCellularProtocolPriorityDialog by remember { mutableStateOf(false) }
     var showAutoTimeoutPicker by remember { mutableStateOf(false) }
     var showSoftetherConnectionsPicker by remember { mutableStateOf(false) }
     // BLOCK v1.0.86: operator-configurable server-list ceiling.
@@ -645,15 +647,23 @@ fun SettingsScreen(
                 SettingsSection(title = stringResource(R.string.auto_mode),
                     icon = Icons.Outlined.Reorder,
                 ) {
-                    // No "Default VPN Protocol" row: Auto Connect Protocol
-                    // Priority below is the only source of protocol order.
+                    // Each physical network has its own persisted protocol order.
                     SettingValueRow(
-                        title = stringResource(R.string.setting_auto_protocol_priority_label),
-                        value = dataUtil.getAutoModeProtocolPriority()
+                        title = stringResource(R.string.setting_auto_protocol_priority_wifi),
+                        value = dataUtil.getAutoModeProtocolPriority(NetworkType.WIFI)
                             .joinToString(" → ") { it.id.lowercase().replace('_', ' ') }
-                            .ifEmpty { stringResource(R.string.setting_auto_protocol_priority_default) },
+                            .ifEmpty { stringResource(R.string.setting_auto_protocol_priority_none) },
                         icon = Icons.Outlined.Reorder,
-                        onClick = { showProtocolPriorityDialog = true },
+                        onClick = { showWifiProtocolPriorityDialog = true },
+                    )
+                    SettingDivider()
+                    SettingValueRow(
+                        title = stringResource(R.string.setting_auto_protocol_priority_mobile_data),
+                        value = dataUtil.getAutoModeProtocolPriority(NetworkType.CELLULAR)
+                            .joinToString(" → ") { it.id.lowercase().replace('_', ' ') }
+                            .ifEmpty { stringResource(R.string.setting_auto_protocol_priority_none) },
+                        icon = Icons.Outlined.Reorder,
+                        onClick = { showCellularProtocolPriorityDialog = true },
                     )
                     SettingDivider()
                     SettingValueRow(
@@ -1220,10 +1230,18 @@ fun SettingsScreen(
         )
     }
 
-    if (showProtocolPriorityDialog) {
+    if (showWifiProtocolPriorityDialog) {
         ProtocolPriorityDialog(
             dataUtil = dataUtil,
-            onDismiss = { showProtocolPriorityDialog = false },
+            networkType = NetworkType.WIFI,
+            onDismiss = { showWifiProtocolPriorityDialog = false },
+        )
+    }
+    if (showCellularProtocolPriorityDialog) {
+        ProtocolPriorityDialog(
+            dataUtil = dataUtil,
+            networkType = NetworkType.CELLULAR,
+            onDismiss = { showCellularProtocolPriorityDialog = false },
         )
     }
 
@@ -1299,12 +1317,12 @@ fun SettingsScreen(
     if (showSoftetherConnectionsPicker) {
         // BLOCK v1.0.80: the ladder reaches the protocol ceiling (32). Quality
         // above 8 is being measured by the operator; a high value cannot wedge the
-        // session (watchdog grace + connect backoff). Default stays 4.
+        // session (watchdog grace + connect backoff). Fresh-install default is 8.
         val values = listOf(1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32)
         SingleChoiceDialog(
             title = stringResource(R.string.setting_softether_max_connections_label),
             options = values.map { context.getString(R.string.setting_softether_max_connections_value, it) },
-            selectedIndex = values.indexOf(softetherMaxConnections).let { if (it < 0) values.indexOf(4) else it },
+            selectedIndex = values.indexOf(softetherMaxConnections).let { if (it < 0) values.indexOf(8) else it },
             onSelect = { index ->
                 softetherMaxConnections = values[index]
                 dataUtil.setSoftEtherMaxConnections(values[index])
@@ -1447,22 +1465,36 @@ internal fun readCappedUtf8(input: java.io.InputStream, maxBytes: Int): ByteArra
 @Composable
 private fun ProtocolPriorityDialog(
     dataUtil: DataUtil,
+    networkType: NetworkType,
     onDismiss: () -> Unit,
 ) {
-    var ordered by remember {
-        mutableStateOf(AutoModeProtocol.entries.toList())
+    // Start from the persisted order, then append disabled protocols so every
+    // protocol remains available to enable. Previously this was initialized
+    // from enum declaration order, which made saved reordering appear to reset.
+    var ordered by remember(dataUtil, networkType) {
+        val saved = dataUtil.getAutoModeProtocolPriority(networkType)
+        mutableStateOf(saved + AutoModeProtocol.entries.filterNot { it in saved })
     }
-    var enabledIds by remember {
-        mutableStateOf(dataUtil.getAutoModeProtocolPriority().map { it.id }.toSet())
+    var enabledIds by remember(dataUtil, networkType) {
+        mutableStateOf(dataUtil.getAutoModeProtocolPriority(networkType).map { it.id }.toSet())
     }
 
     fun persist() {
-        dataUtil.setAutoModeProtocolPriority(ordered.filter { it.id in enabledIds })
+        dataUtil.setAutoModeProtocolPriority(
+            networkType,
+            ordered.filter { it.id in enabledIds },
+        )
+    }
+
+    val profileTitle = when (networkType) {
+        NetworkType.WIFI -> stringResource(R.string.setting_auto_protocol_priority_wifi)
+        NetworkType.CELLULAR -> stringResource(R.string.setting_auto_protocol_priority_mobile_data)
+        NetworkType.UNKNOWN -> stringResource(R.string.setting_auto_protocol_priority_label)
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.setting_auto_protocol_priority_label)) },
+        title = { Text(profileTitle) },
         text = {
             Column {
                 Text(
