@@ -73,10 +73,12 @@ object AutoModeEngine {
                 // is the single source of truth for which protocol Auto Connect
                 // tries and in what order — there is no separate "default
                 // protocol" setting anymore.
-                protocolPriorityProvider = { du.getAutoModeProtocolPriority() },
+                protocolPriorityProvider = { du.getAutoModeProtocolPriority(NetworkTypeClassifier.current(app.applicationContext)) },
                 serverProvider = {
                     serversProvider?.invoke() ?: defaultServers(
-                        openVpnEnabled = du.getAutoModeProtocolPriority().any {
+                        openVpnEnabled = du.getAutoModeProtocolPriority(
+                            NetworkTypeClassifier.current(app.applicationContext),
+                        ).any {
                             it == AutoModeProtocol.OPENVPN_TCP || it == AutoModeProtocol.OPENVPN_UDP
                         },
                     )
