@@ -122,8 +122,20 @@ object ServerListUpdates {
                 manual.refresh()
                 val result = try {
                     repository.refresh()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    // Preserve lifecycle/user cancellation; never turn it into a refresh failure.
+                    throw e
                 } catch (e: Exception) {
-                    throw ServerListParseException(e)
+                    // A repository exception can happen before a response exists
+                    // (routing, DNS, socket setup, timeout, HTTP or internal error).
+                    // It is NOT evidence that a response parser failed. Preserve
+                    // the original exception type so ServerListUpdater classifies
+                    // transport/runtime failures as NETWORK_FAILURE and keeps the
+                    // previously accepted dataset untouched.
+                    CollectorLog.d(
+                        "Server list refresh failed: ${e.javaClass.name}: ${e.message}",
+                    )
+                    throw e
                 }
                 when {
                     result == null -> null
