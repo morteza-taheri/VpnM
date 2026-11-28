@@ -509,4 +509,7 @@
     <string name="server_export_copied">Server CSV copied to clipboard</string>
     <string name="server_export_saved">Server CSV saved</string>
     <string name="server_export_failed">Could not export server CSV</string>
+    <string name="setting_auto_protocol_priority_wifi">Wi-Fi protocol priority</string>
+    <string name="setting_auto_protocol_priority_mobile_data">Mobile data protocol priority</string>
+    <string name="setting_auto_protocol_priority_none">No protocols enabled</string>
 </resources>
