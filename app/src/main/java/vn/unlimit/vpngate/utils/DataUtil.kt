@@ -18,6 +18,7 @@ import vn.unlimit.vpngate.data.remote.MirrorRegistryEntry
 import vn.unlimit.vpngate.data.remote.MirrorRegistryStore
 import vn.unlimit.vpngate.data.remote.SourceKind
 import vn.unlimit.vpngate.data.remote.SourceUrl
+import vn.unlimit.vpngate.history.NetworkType
 import vn.unlimit.vpngate.models.VPNGateConnection
 import vn.unlimit.vpngate.models.VPNGateConnectionList
 import java.io.File
@@ -416,8 +417,46 @@ class DataUtil(context: Context?) {
     fun getAutoModeProtocolPriority(): List<AutoModeProtocol> =
         parseAutoModeProtocolPriority(getStringSetting(SETTING_AUTO_PROTOCOL_PRIORITY, null))
 
+    /**
+     * Read the profile for the physical network Auto Mode is currently using.
+     *
+     * Existing installs stored one global order. On first access to either
+     * network profile, migrate that exact legacy value (including an explicitly
+     * empty profile) without changing its order. Fresh installs keep using the
+     * current default until the user saves a profile.
+     *
+     * UNKNOWN deliberately uses the legacy/global profile: Ethernet or an
+     * ambiguous physical route must never be guessed to be Wi-Fi or cellular.
+     */
+    fun getAutoModeProtocolPriority(networkType: NetworkType): List<AutoModeProtocol> {
+        val profileKey = when (networkType) {
+            NetworkType.WIFI -> SETTING_AUTO_PROTOCOL_PRIORITY_WIFI
+            NetworkType.CELLULAR -> SETTING_AUTO_PROTOCOL_PRIORITY_CELLULAR
+            NetworkType.UNKNOWN -> return getAutoModeProtocolPriority()
+        }
+        val stored = getStringSetting(profileKey, null)
+        if (stored != null) return parseAutoModeProtocolPriority(stored)
+
+        val legacy = getStringSetting(SETTING_AUTO_PROTOCOL_PRIORITY, null)
+            ?: return DEFAULT_AUTO_PROTOCOL_PRIORITY
+        setStringSetting(profileKey, legacy)
+        return parseAutoModeProtocolPriority(legacy)
+    }
+
     fun setAutoModeProtocolPriority(protocols: List<AutoModeProtocol>) {
         setStringSetting(SETTING_AUTO_PROTOCOL_PRIORITY, protocols.joinToString(",") { it.id })
+    }
+
+    fun setAutoModeProtocolPriority(
+        networkType: NetworkType,
+        protocols: List<AutoModeProtocol>,
+    ) {
+        val key = when (networkType) {
+            NetworkType.WIFI -> SETTING_AUTO_PROTOCOL_PRIORITY_WIFI
+            NetworkType.CELLULAR -> SETTING_AUTO_PROTOCOL_PRIORITY_CELLULAR
+            NetworkType.UNKNOWN -> SETTING_AUTO_PROTOCOL_PRIORITY
+        }
+        setStringSetting(key, protocols.joinToString(",") { it.id })
     }
 
     // SoftEther client concurrent TCP connections (1–8, native MAX_SE_CONNECTIONS).
