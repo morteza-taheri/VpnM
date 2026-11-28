@@ -1690,6 +1690,10 @@ class ConnectionController(
     private fun startStatisticsLogging() {
         statisticsJob?.cancel()
         statisticsJob = scope.launch {
+            // nativeGetNumConnections() reports the primary socket plus every
+            // additional TCP socket that is actually active. Log only changes,
+            // so gradual ramp-up is observable without flooding Logcat.
+            var lastReportedConnectionCount = -1
             while (!isCancelled.get() &&
                 !nativeLifecycle.isDestroyed() &&
                 currentState == ConnectionState.CONNECTED
@@ -1700,6 +1704,18 @@ class ConnectionController(
                         publishTrafficSnapshot()
                         Log.d(TAG, "Stats: sent=${bytesSent.get()} bytes (${packetsSent.get()} pkts), " +
                                 "received=${bytesReceived.get()} bytes (${packetsReceived.get()} pkts)")
+
+                        val activeConnections = runCatching {
+                            client.nativeGetNumConnections(nativeHandle)
+                        }.getOrDefault(-1)
+                        if (activeConnections >= 0 && activeConnections != lastReportedConnectionCount) {
+                            Log.i(
+                                TAG,
+                                "[SOFTETHER_CONNECTIONS] active=$activeConnections " +
+                                    "requested=${config.maxConnections}",
+                            )
+                            lastReportedConnectionCount = activeConnections
+                        }
                     }
                 } catch (e: CancellationException) {
                     break
