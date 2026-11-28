@@ -563,12 +563,12 @@ class DataUtil(context: Context?) {
     // How often the server list may refresh itself in the background.
     //
     // The value is stored in hours and is always clamped: anything outside
-    // 1..24 is corrected on read *and* on write, so a corrupted or
+    // 1..168 is corrected on read *and* on write, so a corrupted or
     // hand-edited preference can never produce a 0-minute update loop (which
     // would hammer the upstream API) or a multi-day stale list.
     //
-    // 12 hours is the default and matches the cache-time default the app
-    // already shipped with, so a fresh install behaves as before.
+    // 24 hours (daily) is the default — see
+    // [DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS].
     fun getServerListUpdateIntervalHours(): Int =
         getIntSetting(
             SETTING_SERVER_LIST_UPDATE_INTERVAL_HOURS,
@@ -684,7 +684,13 @@ class DataUtil(context: Context?) {
     fun setAppUpdateDismissedCode(code: Int) =
         setIntSetting(SETTING_APP_UPDATE_DISMISSED_CODE, code)
 
-    /** The selectable values, in hours. Index 0 is the default. */
+    /**
+     * The selectable values, in hours.
+     *
+     * The default ([DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS] = 24) is one of
+     * these entries; the picker selects it by value, not by index, so the list
+     * order is presentation only.
+     */
     val serverListUpdateIntervalOptions: IntArray
         get() = intArrayOf(1, 3, 6, 12, 18, 24, 168)
 
@@ -894,8 +900,16 @@ class DataUtil(context: Context?) {
         const val SETTING_APP_UPDATE_DISMISSED_CODE: String =
             "SETTING_APP_UPDATE_DISMISSED_CODE"
 
-        /** Server List Update Interval: default 12 hours, hard bounds 1..24. */
-        const val DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS: Int = 168
+        /**
+         * Server List Update Interval.
+         *
+         * Operator decision (2026-11-28): a fresh install refreshes the list
+         * **once a day** (24 h) instead of once a week. VPN Gate rotates its
+         * relays continuously and a week-old list is mostly dead servers, so
+         * daily is the sensible default; the ceiling stays 168 h so a user who
+         * wants the old behaviour can still pick it.
+         */
+        const val DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS: Int = 24
         const val MIN_SERVER_LIST_UPDATE_INTERVAL_HOURS: Int = 1
         const val MAX_SERVER_LIST_UPDATE_INTERVAL_HOURS: Int = 168
 

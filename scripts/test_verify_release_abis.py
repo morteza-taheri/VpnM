@@ -39,11 +39,11 @@ class ParseNativeCodeTest(unittest.TestCase):
 class ClassifyAssetTest(unittest.TestCase):
     def test_recognises_every_release_asset(self) -> None:
         for kind in ("arm64-v8a", "armeabi-v7a", "x86_64", "x86", "universal"):
-            name = f"SoftEthergai-2.4.20-{kind}.apk"
+            name = f"VpnM-2.4.20-{kind}.apk"
             self.assertEqual(classify_asset(name), kind)
 
     def test_x86_is_not_shadowed_by_x86_64(self) -> None:
-        self.assertEqual(classify_asset("SoftEthergai-2.4.20-x86.apk"), "x86")
+        self.assertEqual(classify_asset("VpnM-2.4.20-x86.apk"), "x86")
 
     def test_unknown_name(self) -> None:
         self.assertIsNone(classify_asset("app-pro-debug.apk"))
@@ -53,7 +53,7 @@ class ValidateAssetTest(unittest.TestCase):
     def test_dual_abi_arm64_asset_passes(self) -> None:
         self.assertEqual(
             validate_asset(
-                "SoftEthergai-2.4.20-arm64-v8a.apk",
+                "VpnM-2.4.20-arm64-v8a.apk",
                 frozenset({"arm64-v8a", "armeabi-v7a"}),
             ),
             [],
@@ -62,7 +62,7 @@ class ValidateAssetTest(unittest.TestCase):
     def test_strict_arm64_asset_is_rejected(self) -> None:
         """This is the exact defect reported by users for v2.4.16 / v2.4.19."""
         problems = validate_asset(
-            "SoftEthergai-2.4.19-arm64-v8a.apk",
+            "VpnM-2.4.19-arm64-v8a.apk",
             frozenset({"arm64-v8a"}),
         )
         self.assertTrue(any("32-bit ARM fallback" in p for p in problems))
@@ -70,21 +70,21 @@ class ValidateAssetTest(unittest.TestCase):
     def test_universal_asset_must_have_all_four(self) -> None:
         self.assertEqual(
             validate_asset(
-                "SoftEthergai-2.4.20-universal.apk",
+                "VpnM-2.4.20-universal.apk",
                 frozenset({"arm64-v8a", "armeabi-v7a", "x86", "x86_64"}),
             ),
             [],
         )
         self.assertTrue(
             validate_asset(
-                "SoftEthergai-2.4.20-universal.apk",
+                "VpnM-2.4.20-universal.apk",
                 frozenset({"arm64-v8a", "armeabi-v7a"}),
             )
         )
 
     def test_strict_slices_must_not_gain_extra_abis(self) -> None:
         for kind in ("armeabi-v7a", "x86", "x86_64"):
-            name = f"SoftEthergai-2.4.20-{kind}.apk"
+            name = f"VpnM-2.4.20-{kind}.apk"
             self.assertEqual(validate_asset(name, frozenset({kind})), [])
             self.assertTrue(
                 validate_asset(name, frozenset({kind, "arm64-v8a"})),
@@ -93,11 +93,11 @@ class ValidateAssetTest(unittest.TestCase):
 
     def test_empty_or_unknown_abi_sets_are_rejected(self) -> None:
         self.assertTrue(
-            validate_asset("SoftEthergai-2.4.20-arm64-v8a.apk", frozenset())
+            validate_asset("VpnM-2.4.20-arm64-v8a.apk", frozenset())
         )
         self.assertTrue(
             validate_asset(
-                "SoftEthergai-2.4.20-arm64-v8a.apk",
+                "VpnM-2.4.20-arm64-v8a.apk",
                 frozenset({"arm64-v8a", "armeabi-v7a", "mips"}),
             )
         )

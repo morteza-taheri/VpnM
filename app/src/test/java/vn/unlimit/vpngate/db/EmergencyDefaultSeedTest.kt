@@ -39,14 +39,14 @@ import vn.unlimit.vpngate.utils.DataUtil
 class EmergencyDefaultSeedTest {
 
     private val url =
-        "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/emergency-sources/servers.csv"
+        "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/Servers.csv"
 
     private fun dataUtil() = DataUtil(SeedFakeSharedPreferences())
 
     // ── T-NEW-67: a fresh install gets exactly one row ────────────────────
 
     @Test
-    fun `T-NEW-67 fresh install seeds one disabled default row from the resource URL`() = runBlocking {
+    fun `T-NEW-67 fresh install seeds one enabled default row from the resource URL`() = runBlocking {
         val dao = FakeEmergencySourceDao()
         val dataUtil = dataUtil()
 
@@ -58,7 +58,7 @@ class EmergencyDefaultSeedTest {
         val row = dao.rows.single()
         assertEquals("the row must carry the resource URL", url, row.url)
         assertEquals("the label marks the row as the app's default", "Default", row.label)
-        assertFalse("the seeded emergency source must be disabled by default", row.enabled)
+        assertTrue("the seeded emergency source must be ENABLED by default", row.enabled)
         assertEquals(1_700_000_000_000L, row.createdAt)
         assertEquals(1_700_000_000_000L, row.updatedAt)
         assertEquals("id must stay unset so Room autogenerates it", 0, row.id)
@@ -67,6 +67,81 @@ class EmergencyDefaultSeedTest {
             "the once-only flag must be set, or every start would try again",
             dataUtil.hasSeededEmergencyDefault(),
         )
+    }
+
+    // ── 2026-11-28: the seeded URL moved to the repository root ────────────
+
+    @Test
+    fun `a row seeded with the retired URL is migrated to the current one and enabled`() = runBlocking {
+        val legacy = EmergencySourceConfigEntity(
+            id = 11,
+            url = App.LEGACY_DEFAULT_EMERGENCY_URL,
+            label = "Default",
+            enabled = false,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+        val dao = FakeEmergencySourceDao(mutableListOf(legacy))
+        val dataUtil = dataUtil()
+        // An upgraded install: the old seeder already ran.
+        dataUtil.markEmergencyDefaultSeeded()
+
+        App.seedEmergencyDefaultIfNeeded(dataUtil, dao, url, now = 2_000L)
+
+        val row = dao.rows.single()
+        assertEquals("the retired URL must be replaced in place", url, row.url)
+        assertTrue("the migrated row must be enabled", row.enabled)
+        assertEquals("the row keeps its identity", 11, row.id)
+        assertEquals(2_000L, row.updatedAt)
+        assertEquals("createdAt is history and must not be rewritten", 1L, row.createdAt)
+    }
+
+    @Test
+    fun `migration leaves a user source and an empty table alone`() = runBlocking {
+        val userRow = EmergencySourceConfigEntity(
+            id = 4,
+            url = "https://example.com/mine.csv",
+            label = "Mine",
+            enabled = false,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+        val dao = FakeEmergencySourceDao(mutableListOf(userRow))
+        val dataUtil = dataUtil()
+        dataUtil.markEmergencyDefaultSeeded()
+
+        App.seedEmergencyDefaultIfNeeded(dataUtil, dao, url)
+
+        assertEquals("a user row must be untouched", listOf(userRow), dao.rows)
+        assertEquals("no write may happen", 0, dao.upsertCount)
+    }
+
+    @Test
+    fun `migration drops the retired duplicate when the current URL is already present`() = runBlocking {
+        val current = EmergencySourceConfigEntity(
+            id = 21,
+            url = url,
+            label = "Default",
+            enabled = false, // the user turned it off on purpose
+            createdAt = 2L,
+            updatedAt = 2L,
+        )
+        val legacy = EmergencySourceConfigEntity(
+            id = 22,
+            url = App.LEGACY_DEFAULT_EMERGENCY_URL,
+            label = "Default",
+            enabled = false,
+            createdAt = 1L,
+            updatedAt = 1L,
+        )
+        val dao = FakeEmergencySourceDao(mutableListOf(legacy, current))
+        val dataUtil = dataUtil()
+        dataUtil.markEmergencyDefaultSeeded()
+
+        App.seedEmergencyDefaultIfNeeded(dataUtil, dao, url)
+
+        assertEquals("only the current row may remain", listOf(current), dao.rows)
+        assertFalse("a deliberate user disable must not be overridden", dao.rows.single().enabled)
     }
 
     // ── T-NEW-68: never overwrite a source the user already configured ─────
@@ -214,7 +289,15 @@ private class FakeEmergencySourceDao(
 
     override suspend fun upsert(item: EmergencySourceConfigEntity) {
         upsertCount++
-        rows.removeAll { it.url == item.url }
+        // Faithful to Room's @Insert(onConflict = REPLACE) on the primary key:
+        // an entity that already carries an id REPLACES that row (which is what
+        // the URL migration does), and only a new entity (id == 0) is matched by
+        // URL to keep the "add the same URL twice" case idempotent.
+        if (item.id != 0) {
+            rows.removeAll { it.id == item.id }
+        } else {
+            rows.removeAll { it.url == item.url }
+        }
         rows.add(item)
     }
 

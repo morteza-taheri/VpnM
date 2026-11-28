@@ -304,7 +304,7 @@ class RepoResolution(unittest.TestCase):
             a = captured["a"]
             root = Path(d).resolve()
             self.assertEqual(Path(a.repo_dir).resolve(), root)
-            self.assertEqual(Path(a.output).resolve(), root / "emergency-sources" / "servers.csv")
+            self.assertEqual(Path(a.output).resolve(), root / "Servers.csv")
             self.assertEqual(Path(a.url_output).resolve(),
                              root / "app" / "src" / "main" / "res" / "values" / "emergency_defaults.xml")
 
@@ -364,7 +364,7 @@ class SizeBudget(unittest.TestCase):
 # A REDUCED EXCERPT of a real shipped profile — not invented server data. The
 # `remote`/`proto` lines are the ones the published row for 123.48.124.169
 # carries (config 1558 while its OpenVPN_TCP_Port column said 1534), taken from
-# emergency-sources/servers.csv at commit 0387d37. The rest is the standard
+# Servers.csv at commit 0387d37. The rest is the standard
 # SoftEther-generated preamble, shortened so the fixture stays readable.
 REAL_OVPN_EXCERPT = """\
 ###############################################################################

@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 
 # OPERATOR-ONLY TOOL - runs on the developer's computer, NEVER inside the app.
-# It produces emergency-sources/servers.csv and
+# It produces Servers.csv (repository root) and
 # app/src/main/res/values/emergency_defaults.xml and commits/pushes them to git.
 # The XML is compiled into the APK at build time; the app never runs this script.
 """
 VpnM emergency-source publisher
 =======================================
 
-Builds, validates and publishes `emergency-sources/servers.csv` (the app's
-emergency fallback server list) and registers its public raw URL in
+Builds, validates and publishes `Servers.csv` — the app's emergency fallback
+server list, kept at the REPOSITORY ROOT so the raw URL stays short and the file
+is visible next to the project — and registers its public raw URL in
 `app/src/main/res/values/emergency_defaults.xml`.
 
 Schema: SERVER_SOURCE_ARCHITECTURE.md section 10 (29 columns, schema_version
@@ -74,8 +75,7 @@ SCHEMA_VERSION = "1.0"
 API_URL = "https://www.vpngate.net/api/iphone/"
 HTML_URL = "https://www.vpngate.net/en/"
 DEFAULT_RAW_URL = (
-    "https://raw.githubusercontent.com/morteza-taheri/VpnM/"
-    "main/emergency-sources/servers.csv"
+    "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/Servers.csv"
 )
 
 # Section 10.2 order. The Kotlin parser is header driven, but we keep the
@@ -148,7 +148,7 @@ def is_public_ipv4(value: str) -> bool:
     publisher would health-check those destinations (`probe_tcp` opens a real
     connection to them), and they could be admitted into the emergency feed that
     ships inside the app. `ipaddress.is_global` is the maintained answer and is
-    exactly the contract `emergency-sources/README.md` already states.
+    exactly the contract `SERVER_SOURCE_ARCHITECTURE.md` section 10 states.
     """
     try:
         addr = ipaddress.IPv4Address(value)
@@ -1165,7 +1165,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--config", default="collector.toml", help="optional TOML file; CLI flags override it")
     p.add_argument("--max-servers", type=int, default=500)
-    p.add_argument("--output", default="emergency-sources/servers.csv")
+    p.add_argument("--output", default="Servers.csv")
     p.add_argument("--url-output", default="app/src/main/res/values/emergency_defaults.xml")
     p.add_argument("--published-raw-url", default=DEFAULT_RAW_URL,
                    help="public raw URL registered as the app default (default assumes branch 'main')")

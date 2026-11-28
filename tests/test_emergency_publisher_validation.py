@@ -6,7 +6,7 @@ the artifact that ships inside the app:
 1. `normalize_ip` validated IPv4 *syntax* only, so loopback / private /
    link-local / CGNAT / multicast / reserved addresses passed and were then
    health-checked (`probe_tcp` opens a real TCP connection) and could be
-   published into `emergency-sources/servers.csv`.
+   published into `Servers.csv` (repository root).
 2. `--published-raw-url` was written verbatim into
    `app/src/main/res/values/emergency_defaults.xml`, i.e. into the APK.
 

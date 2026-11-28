@@ -494,8 +494,8 @@ class ServerListUpdaterTest {
     // ---------------------------------------------- interval setting bounds
 
     @Test
-    fun `the server update interval defaults to one week`() {
-        assertEquals(168, DataUtil.DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS)
+    fun `the server update interval defaults to one day`() {
+        assertEquals(24, DataUtil.DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS)
     }
 
     @Test

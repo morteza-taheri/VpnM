@@ -114,7 +114,7 @@
     <string name="pauseVPN">Tạm dừng VPN</string>
     <string name="resumevpn">Tiếp tục VPN</string>
     <string name="check_ip">Kiểm tra IP hiện tại</string>
-    <string name="emergency_source_summary">Nguồn dự phòng tùy chọn cho danh sách máy chủ. Nguồn mặc định đã được cấu hình nhưng đang tắt; hãy bật nguồn này hoặc thêm nguồn riêng để cho phép tải dữ liệu dự phòng khi các nguồn chính gặp lỗi.</string>
+    <string name="emergency_source_summary">Nguồn dự phòng tùy chọn cho danh sách máy chủ. Nguồn mặc định đã được cấu hình và đang bật; hãy tắt nó hoặc thêm nguồn riêng. Dữ liệu dự phòng chỉ được tải khi các nguồn chính gặp lỗi.</string>
     <string name="about_html">%1$s là ứng dụng VPN đa giao thức miễn phí và mã nguồn mở cho Android. Ứng dụng kết hợp triển khai SoftEther gốc với các giao thức VPN phổ biến khác, hỗ trợ máy chủ công cộng VPN Gate và máy chủ riêng.</string>
     <string name="about_protocols_title">Các giao thức được hỗ trợ</string>
     <string name="about_protocols_summary">SoftEther gốc TCP/UDP • OpenVPN TCP/UDP • Microsoft SSTP • L2TP/IPsec cũ</string>

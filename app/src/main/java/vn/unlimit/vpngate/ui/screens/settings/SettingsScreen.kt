@@ -106,10 +106,11 @@ import vn.unlimit.vpngate.viewmodels.ConnectionListViewModel
 import java.text.DateFormat
 
 /**
- * Index of the 1-week (168 h) entry in `DataUtil.serverListUpdateIntervalOptions`.
- * Used only as a UI fallback if the stored value somehow matches no option.
+ * Index of the daily (24 h) entry in `DataUtil.serverListUpdateIntervalOptions`.
+ * Used only as a UI fallback if the stored value somehow matches no option; the
+ * default itself is `DataUtil.DEFAULT_SERVER_LIST_UPDATE_INTERVAL_HOURS`.
  */
-private const val DEFAULT_SERVER_UPDATE_INTERVAL_INDEX = 6
+private const val DEFAULT_SERVER_UPDATE_INTERVAL_INDEX = 5
 
 /**
  * Redesigned Settings screen: sleek, well-ordered Material 3 layout with compact
