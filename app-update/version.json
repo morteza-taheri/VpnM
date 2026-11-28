@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "versionCode": 155,
-  "versionName": "2.4.21",
+  "versionCode": 157,
+  "versionName": "2.4.23",
   "releasePageUrl": "https://github.com/morteza-taheri/VpnM/releases",
-  "notes": "Resilient HTML-only server-list collection with a per-server OpenVPN download descriptor and Room 13; repaired on-demand profile download (expired page-generation tokens are refreshed, one page load per Auto Mode sweep, TCP template accepted); manual connect now caches the profile it downloads. Signed with a new release key - uninstall any older build first."
+  "notes": "Server list refreshes daily by default (24 h; the 168 h option is still available). The emergency source now ships enabled and its list is published as Servers.csv at the repository root, with the retired emergency-sources URL migrated on upgrade. Source discovery now stops below the refresh deadline, so a blocked link falls through to the emergency dataset instead of discarding the whole run. Release assets are named VpnM-<version>-<abi>.apk. SoftEther: the foreground slot is taken with a stub notification before the real one, removing the startForegroundService() crash window. Auto Mode: a user stop can no longer be undone by the pending network retry."
 }
