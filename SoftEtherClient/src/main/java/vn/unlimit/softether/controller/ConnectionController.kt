@@ -665,9 +665,9 @@ class ConnectionController(
         // BLOCK v1.0.79: the "SoftEther Max Connections" setting was DEAD.
         // `nativeSetMaxConnection` was declared on SoftEtherClient and never
         // called from anywhere, so `conn->max_connection` kept the native default
-        // of 4 — and the login PACK sent a literal 4 on top of that. The user
-        // could pick 1..8 in Settings and the server was still asked for 4. Push
-        // the configured value here, before the handshake; the JNI clamps it to
+        // and the login PACK sent a literal 4. The user could pick a different
+        // value in Settings but the server was still asked for 4. Push the
+        // configured value here, before the handshake; the JNI clamps it to
         // MAX_SE_CONNECTIONS and the server's own answer (server_max_connection)
         // still wins after the handshake.
         client.nativeSetMaxConnection(nativeHandle, config.maxConnections)
