@@ -461,11 +461,8 @@ class DataUtil(context: Context?) {
 
     // SoftEther client concurrent TCP connections (1..32, native MAX_SE_CONNECTIONS).
     //
-    // The default mirrors the reference client shipped in-tree
-    // (SoftEtherClient): softether_protocol.c initializes
-    // `conn->max_connection = 4` and ConnectionConfig.maxConnections defaults
-    // to 4, so a fresh install asks for the same 4 connections the native
-    // layer would use on its own. Users can still pick any value 1..8.
+    // The app and native layers both default to 8. The protocol/native ceiling
+    // is 32; users may select any supported value from 1..32.
     fun getSoftEtherMaxConnections(): Int =
         getIntSetting(SETTING_SOFTETHER_MAX_CONNECTIONS, DEFAULT_SOFTETHER_MAX_CONNECTIONS)
             .coerceIn(1, MAX_SOFTETHER_CONNECTIONS)
@@ -875,11 +872,8 @@ class DataUtil(context: Context?) {
         /**
          * Default target number of concurrent SoftEther TCP connections.
          *
-         * Taken from the reference client in this repository
-         * (SoftEtherClient): `softether_protocol.c` initializes
-         * `conn->max_connection = 4`, and `ConnectionConfig.maxConnections`
-         * defaults to 4 — so 4 is what the native layer uses when the app does
-         * not override it. Hard upper bound is the native `MAX_SE_CONNECTIONS`.
+         * The app and native connection config both default to 8. The hard
+         * upper bound is the native `MAX_SE_CONNECTIONS` (32).
          */
         /**
          * BLOCK v1.0.80: the default moves 4 -> 8 (operator decision) now that the
