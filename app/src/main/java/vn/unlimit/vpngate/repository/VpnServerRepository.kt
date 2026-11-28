@@ -152,6 +152,26 @@ class VpnServerRepository(
         get() = mainTimeoutProvider?.invoke()?.takeIf { it > 0L } ?: mainTimeoutMs
 
     /**
+     * 2026-11-28 — the budget handed to source discovery, strictly BELOW the
+     * outer deadline.
+     *
+     * `refresh()` wraps `refreshLocked()` in `withTimeoutOrNull(effectiveMainTimeoutMs)`,
+     * and the coordinator was given that same number as its own budget. Equal
+     * budgets cannot both hold: the coordinator keeps testing mirrors until its
+     * last millisecond, the outer timeout fires first, and the entire run is
+     * discarded — `[ladder] deadline exceeded (120000ms); preserving DB` on a
+     * device with 12 mirrors to try and no tunnel. Measured on 5585fecc
+     * 2026-11-28 17:24 with the setting at 120 s.
+     *
+     * Reserving [MAIN_DEADLINE_RESERVE_MS] lets the coordinator stop cleanly
+     * with whatever it has, and leaves the repository time to parse, merge,
+     * validate and store that result inside the same outer deadline.
+     */
+    private val discoveryBudgetMs: Long
+        get() = (effectiveMainTimeoutMs - MAIN_DEADLINE_RESERVE_MS)
+            .coerceAtLeast(MIN_SOURCE_TIMEOUT_MS)
+
+    /**
      * v1.0.87 — how long ONE source may take, derived from the user's budget.
      *
      * Before this, every source had a hard-coded 12 s race timeout while the
@@ -211,6 +231,12 @@ class VpnServerRepository(
         /** v1.0.87: floor/ceiling for the per-source budget derived above. */
         private const val MIN_SOURCE_TIMEOUT_MS = 12_000L
         private const val MAX_SOURCE_TIMEOUT_MS = 90_000L
+        /**
+         * 2026-11-28: head-room kept for parsing/merging/storing between the
+         * discovery budget and the outer refresh deadline. See
+         * [discoveryBudgetMs].
+         */
+        private const val MAIN_DEADLINE_RESERVE_MS = 10_000L
         private const val MIN_DIRECTORY_TIMEOUT_MS = 8_000L
         private const val MAX_DIRECTORY_TIMEOUT_MS = 20_000L
         private const val RAW_CAPTURE_LIMIT = 512 * 1024
@@ -679,7 +705,7 @@ class VpnServerRepository(
                 },
                 timeoutMs = sourceTimeoutMs,
                 directoryTimeoutMs = directoryTimeoutMs,
-                totalTimeoutMs = effectiveMainTimeoutMs,
+                totalTimeoutMs = discoveryBudgetMs,
             ).discover(includeCsv = includeCsv)
         }
 
