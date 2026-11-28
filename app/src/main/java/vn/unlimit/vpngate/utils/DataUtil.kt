@@ -459,7 +459,7 @@ class DataUtil(context: Context?) {
         setStringSetting(key, protocols.joinToString(",") { it.id })
     }
 
-    // SoftEther client concurrent TCP connections (1–8, native MAX_SE_CONNECTIONS).
+    // SoftEther client concurrent TCP connections (1..32, native MAX_SE_CONNECTIONS).
     //
     // The default mirrors the reference client shipped in-tree
     // (SoftEtherClient): softether_protocol.c initializes
