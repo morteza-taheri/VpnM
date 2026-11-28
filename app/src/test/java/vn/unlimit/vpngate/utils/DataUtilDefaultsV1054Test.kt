@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import vn.unlimit.vpngate.automode.AutoModeProtocol
+import vn.unlimit.vpngate.history.NetworkType
 
 /**
  * v1.0.54 (§1.6.47) PART 2 — the defaults that replaced removed settings.
@@ -125,6 +126,57 @@ class DataUtilDefaultsV1054Test {
             emptyList<AutoModeProtocol>(),
             dataUtil(prefs).getAutoModeProtocolPriority(),
         )
+    }
+
+    @Test
+    fun `wifi and cellular protocol profiles persist independently and keep their order`() {
+        val prefs = DefaultsFakeSharedPreferences()
+        val util = dataUtil(prefs)
+        val wifiOrder = listOf(
+            AutoModeProtocol.MS_SSTP,
+            AutoModeProtocol.SOFTETHER_TCP,
+            AutoModeProtocol.OPENVPN_UDP,
+        )
+        val cellularOrder = listOf(
+            AutoModeProtocol.OPENVPN_TCP,
+            AutoModeProtocol.SOFTETHER_UDP,
+        )
+
+        util.setAutoModeProtocolPriority(NetworkType.WIFI, wifiOrder)
+        util.setAutoModeProtocolPriority(NetworkType.CELLULAR, cellularOrder)
+
+        val reopened = dataUtil(prefs)
+        assertEquals(wifiOrder, reopened.getAutoModeProtocolPriority(NetworkType.WIFI))
+        assertEquals(cellularOrder, reopened.getAutoModeProtocolPriority(NetworkType.CELLULAR))
+    }
+
+    @Test
+    fun `legacy global order migrates independently to both network profiles`() {
+        val prefs = DefaultsFakeSharedPreferences()
+        val legacyOrder = listOf(
+            AutoModeProtocol.OPENVPN_TCP,
+            AutoModeProtocol.MS_SSTP,
+            AutoModeProtocol.SOFTETHER_UDP,
+        )
+        prefs.edit()
+            .putString(
+                DataUtil.SETTING_AUTO_PROTOCOL_PRIORITY,
+                legacyOrder.joinToString(",") { it.id },
+            )
+            .apply()
+
+        val util = dataUtil(prefs)
+        assertEquals(legacyOrder, util.getAutoModeProtocolPriority(NetworkType.WIFI))
+        assertEquals(legacyOrder, util.getAutoModeProtocolPriority(NetworkType.CELLULAR))
+    }
+
+    @Test
+    fun `unknown physical network keeps using the legacy global profile`() {
+        val prefs = DefaultsFakeSharedPreferences()
+        val legacyOrder = listOf(AutoModeProtocol.MS_SSTP, AutoModeProtocol.SOFTETHER_TCP)
+        dataUtil(prefs).setAutoModeProtocolPriority(legacyOrder)
+
+        assertEquals(legacyOrder, dataUtil(prefs).getAutoModeProtocolPriority(NetworkType.UNKNOWN))
     }
 
     @Test
