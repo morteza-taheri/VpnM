@@ -38,9 +38,17 @@ data class AppUpdateManifest(
         const val MANIFEST_URL: String =
             "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/app-update/version.json"
 
-        /** The page the dialog opens; GitHub redirects /latest to the newest release. */
+        /**
+         * The page the dialog opens.
+         *
+         * Operator decision (2026-11-28): point at the repository's release
+         * index rather than `/releases/latest`, so the user can see every
+         * published build (the release notes and the per-ABI assets live one
+         * click deeper). Both URLs are under [RELEASE_REPO_PATH], so the
+         * validation below accepts either form a manifest may carry.
+         */
         const val FALLBACK_RELEASE_PAGE_URL: String =
-            "https://github.com/morteza-taheri/VpnM/releases/latest"
+            "https://github.com/morteza-taheri/VpnM/releases"
 
         /**
          * BLOCK v1.0.76 audit fix: the only hosts a manifest's release page may

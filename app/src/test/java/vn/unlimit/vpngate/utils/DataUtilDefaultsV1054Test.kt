@@ -57,7 +57,7 @@ class DataUtilDefaultsV1054Test {
 
     /**
      * BLOCK v1.0.75 PART D1 — one test per shipped default. Auto-Reconnect is
-     * ON for a fresh install; the server-list interval is 168 h
+     * ON for a fresh install; the server-list interval is 24 h (daily)
      * ([vn.unlimit.vpngate.ServerListUpdaterTest] pins that one); the attempt
      * per-server Auto Mode budget is 8 s clamped to 8..30 ([DataUtilTimeoutRangeTest]); the
      * emergency default source is pinned by [vn.unlimit.vpngate.db.EmergencyDefaultSeedTest].
@@ -150,7 +150,7 @@ class DataUtilDefaultsV1054Test {
         val prefs = DefaultsFakeSharedPreferences()
         val util = dataUtil(prefs)
 
-        assertEquals("default is 168 hours (1 week)", 168, util.getServerListUpdateIntervalHours())
+        assertEquals("default is 24 hours (daily)", 24, util.getServerListUpdateIntervalHours())
         assertEquals(
             listOf(1, 3, 6, 12, 18, 24, 168),
             util.serverListUpdateIntervalOptions.toList(),
@@ -173,7 +173,7 @@ class DataUtilDefaultsV1054Test {
         prefs.edit().putInt("SETTING_CACHE_TIME_KEY", 3).apply()
 
         val util = dataUtil(prefs)
-        assertEquals("the setting no longer influences anything", 168, util.getServerListUpdateIntervalHours())
+        assertEquals("the setting no longer influences anything", 24, util.getServerListUpdateIntervalHours())
         assertEquals(
             listOf(
                 AutoModeProtocol.SOFTETHER_UDP,
