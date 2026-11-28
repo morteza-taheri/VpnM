@@ -346,6 +346,19 @@ class SoftEtherVpnService : VpnService() {
     private var pendingStateUpdate: (() -> Unit)? = null
     private var currentSessionName: String? = null
 
+    /**
+     * 2026-11-28 (ported from upstream 9a7d17b) — whether the default-network
+     * callback is currently registered.
+     *
+     * The registration moved from [onCreate] to [startVpn] because
+     * `registerDefaultNetworkCallback` is a binder round trip to
+     * ConnectivityService, and `onCreate` runs inside the
+     * `startForegroundService()` deadline. The flag keeps the move safe:
+     * `startVpn` can be reached again (reconnect, Try Next, Auto Mode) and a
+     * second registration of the same callback would leak one.
+     */
+    private var networkCallbackRegistered = false
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             Log.d(TAG, "Network available")
@@ -361,8 +374,11 @@ class SoftEtherVpnService : VpnService() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service created")
+        // Only the channel is created here. This method runs inside the
+        // startForegroundService() window, so no other binder round trip (the
+        // network callback registration talks to ConnectivityService) belongs
+        // on this path; it moved to startVpn() (upstream 9a7d17b).
         createNotificationChannel()
-        registerNetworkReceiver()
     }
 
     private fun triggerDisconnectNotification() {
@@ -449,7 +465,19 @@ class SoftEtherVpnService : VpnService() {
         Log.d(TAG, "onStartCommand: action=${intent?.action}")
 
         // Android requires startForeground() within ~5s of startForegroundService().
-        // Use the correct text and omit the disconnect action when disconnecting.
+        //
+        // 2026-11-28 (ported from upstream 9a7d17b): take the slot FIRST with a
+        // notification that needs no PendingIntent and no reflection.
+        // `PendingIntent.getActivity()` inside createNotification() is a
+        // synchronous binder call into ActivityManagerService, and this service
+        // is started from the UI thread right after another AMS round trip
+        // (startForegroundService). When AMS is busy — e.g. while the system is
+        // bringing up a VPN — that call can eat the deadline and the process is
+        // killed with "Context.startForegroundService() did not then call
+        // Service.startForeground()". The real notification replaces the stub
+        // immediately below.
+        startForeground(NOTIFICATION_ID, createStubNotification())
+
         val isDisconnectAction = intent?.action == ACTION_DISCONNECT
         startForeground(
             NOTIFICATION_ID,
@@ -681,6 +709,14 @@ private fun acquireNativeSlotOrRecover(): NativeLifetimeRegistry.Lease? {
 }
 
 private fun startVpn(config: ConnectionConfig) {
+        // 2026-11-28 (ported from upstream 9a7d17b): the default-network callback
+        // is registered here, not in onCreate(). onCreate runs inside the
+        // startForegroundService() deadline, and registering the callback is a
+        // binder round trip to ConnectivityService that can spend that budget.
+        // The deadline is already satisfied at this point (the stub notification
+        // is posted as the first statement of onStartCommand).
+        registerNetworkReceiver()
+
         // Stage 2F-F.28 Fix A + Stage 2F-F.28C (A-2): the start guard is
         // RESOURCE-AWARE and total.
         //
@@ -1568,6 +1604,28 @@ if (sessionPolicy.isRunning) {
         }
     }
 
+    /**
+     * 2026-11-28 (ported from upstream 9a7d17b) — the cheapest possible
+     * foreground notification.
+     *
+     * Deliberately has no content intent, no action and no reflection: it only
+     * exists to satisfy the `startForeground()` deadline, and is replaced by
+     * [createNotification] in the same `onStartCommand` call. Every call it
+     * avoids (`PendingIntent.getActivity`, the reflection on the target
+     * activity) is a binder round trip that can run out the clock while AMS is
+     * busy bringing up a VPN.
+     */
+    private fun createStubNotification(): Notification =
+        NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(getString(R.string.softether_notification_title_notconnect))
+            .setContentText(getString(R.string.softether_connecting))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setShowWhen(false)
+            .build()
+
     private fun createNotification(content: String, showDisconnectAction: Boolean = true): Notification {
         // Intent to open DetailActivity when notification is tapped
         val contentIntent = Intent().apply {
@@ -1810,24 +1868,37 @@ if (sessionPolicy.isRunning) {
     }
 
     private fun registerNetworkReceiver() {
+        // Idempotent: startVpn() can run again for a reconnect, and registering
+        // the same callback twice leaks one registration.
+        if (networkCallbackRegistered) return
         val cm = ContextCompat.getSystemService(this, ConnectivityManager::class.java)
             ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            cm.registerDefaultNetworkCallback(networkCallback)
-        } else {
-            // registerDefaultNetworkCallback is API 26+; minSdk is 24.
-            @Suppress("DEPRECATION")
-            cm.registerNetworkCallback(NetworkRequest.Builder().build(), networkCallback)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                cm.registerDefaultNetworkCallback(networkCallback)
+            } else {
+                // registerDefaultNetworkCallback is API 26+; minSdk is 24.
+                @Suppress("DEPRECATION")
+                cm.registerNetworkCallback(NetworkRequest.Builder().build(), networkCallback)
+            }
+            networkCallbackRegistered = true
+        } catch (e: Exception) {
+            // A refused registration must not fail the connect: the tunnel works
+            // without the callback, it only loses network-change notification.
+            Log.w(TAG, "Network callback registration failed: ${e.message}")
         }
     }
 
     private fun unregisterNetworkReceiver() {
+        if (!networkCallbackRegistered) return
         val cm = ContextCompat.getSystemService(this, ConnectivityManager::class.java)
             ?: return
         try {
             cm.unregisterNetworkCallback(networkCallback)
         } catch (e: IllegalArgumentException) {
             // Callback was not registered
+        } finally {
+            networkCallbackRegistered = false
         }
     }
 }
