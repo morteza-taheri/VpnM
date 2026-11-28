@@ -264,6 +264,24 @@ jobs:
           path: app/build/outputs/apk/pro/debug/app-pro-debug.apk
           if-no-files-found: error
 
+      - name: Build ARM64-compatible Pro Debug APK for Android 8+
+        # This single APK contains arm64-v8a and armeabi-v7a native libraries.
+        # It is installable on 64-bit ARM devices and ARM devices whose Android
+        # userspace is 32-bit. minSdk 24 keeps Android 8 (API 26) supported.
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleProDebug -Parm64Fallback
+          mkdir -p release-assets
+          cp app/build/outputs/apk/pro/debug/app-pro-debug.apk \
+            release-assets/VpnM-debug-arm64-android8.apk
+
+      - name: Upload ARM64-compatible Pro Debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: vpnm-pro-arm64-android8-debug-apk
+          path: release-assets/VpnM-debug-arm64-android8.apk
+          if-no-files-found: error
+
       - name: Upload unit-test reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -279,6 +297,25 @@ jobs:
         # is attempted without it. Skip for forks; they still run unit tests.
         if: ${{ env.KEYSTORE_PASSPHRASE != '' }}
         run: ./gradlew assembleProRelease
+
+      - name: Build signed ARM64-compatible Pro Release APK
+        # Same release key as existing installations; both ARM ABIs are
+        # packaged so Android 8 devices with 32-bit userspace can install it.
+        if: ${{ env.KEYSTORE_PASSPHRASE != '' }}
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleProRelease -Parm64Fallback
+          mkdir -p release-assets
+          cp app/build/outputs/apk/pro/release/app-pro-release.apk \
+            release-assets/VpnM-arm64-android8.apk
+
+      - name: Upload signed ARM64-compatible Pro APK
+        if: ${{ success() && env.KEYSTORE_PASSPHRASE != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: vpnm-pro-arm64-android8-release-apk
+          path: release-assets/VpnM-arm64-android8.apk
+          if-no-files-found: error
 
       - name: Bundle Pro Release AAB
         # Tag-gated (release tags only) AND secret-gated (main repo with the
