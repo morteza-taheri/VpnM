@@ -285,7 +285,7 @@ VpnM/
 ├── sstpClient/           # Microsoft SSTP client
 ├── vpnLib/               # Integrated OpenVPN client library
 ├── server-setup/         # Server configuration and setup resources
-├── emergency-sources/    # Emergency CSV source assets and documentation
+├── Servers.csv           # Emergency server list published to the app (repo root)
 ├── docs/                 # Engineering audits, reports and implementation notes
 ├── PROJECT_SPECIFICATION.md
 ├── SERVER_SOURCE_ARCHITECTURE.md
@@ -300,7 +300,6 @@ Further reading:
 - [sstpClient/README.md](sstpClient/README.md) — SSTP module notes.
 - [vpnLib/README.md](vpnLib/README.md) — OpenVPN integration notes.
 - [server-setup/README.md](server-setup/README.md) — server setup resources.
-- [emergency-sources/README.md](emergency-sources/README.md) — emergency CSV source data and format notes.
 
 The top-level README is the user-facing overview. The detailed engineering documents include historical audit records; for the behaviour of the current build, prefer the current source code and tests over an older dated report.
 

@@ -433,7 +433,9 @@ To be resolved before implementation:
 
 ## Section 10 — Extended Server CSV Schema for Emergency Source (`servers.csv`)
 
-> **Implementation status (2026-10-18 repair):** §10 is **approved as the design basis** (spec v1.0.20, §11.9.3) and **implemented** in v1.0.21 (`EmergencyCsvParser.kt`, `EmergencySourceFetcher.kt`, opt-in last-rung wire-in). A real data asset exists at `emergency-sources/servers.csv` (v1.0.24; 3-row point-in-time snapshot, 29 columns). Of §10.9's open questions: **Q2 (column ordering) is settled by the implementation** — the parser is header-driven, so column order is not load-bearing; **Q1, Q3, Q4 and Q5 remain UNKNOWN**. This section remains the canonical CSV contract; where §3 conflicts with it, §10 wins (§3 banner).
+> **Implementation status (2026-10-18 repair):** §10 is **approved as the design basis** (spec v1.0.20, §11.9.3) and **implemented** in v1.0.21 (`EmergencyCsvParser.kt`, `EmergencySourceFetcher.kt`, opt-in last-rung wire-in). A real data asset exists at `Servers.csv` in the **repository root** (v1.0.24; 29 columns). Of §10.9's open questions: **Q2 (column ordering) is settled by the implementation** — the parser is header-driven, so column order is not load-bearing; **Q1, Q3, Q4 and Q5 remain UNKNOWN**. This section remains the canonical CSV contract; where §3 conflicts with it, §10 wins (§3 banner).
+>
+> **Path note (2026-11-28):** the artifact moved from `emergency-sources/servers.csv` to `Servers.csv` at the repository root, and its raw URL is now `https://raw.githubusercontent.com/morteza-taheri/VpnM/main/Servers.csv`. It is refreshed by `vpngate_collector.py` (via `1.bat`), which delegates the schema to `emergency_csv_publisher.py`.
 
 > Evidence class: column names and the base-15 are **USER-DIRECTED REQUIREMENT** (supplied and cross-checked against the VPN Gate iPhone API); extended-column semantics are **USER-DIRECTED REQUIREMENT** with validation/encoding choices as **INFERENCE**; the RUDP constraint is **SOURCE CODE EVIDENCE** (`RUDP_IMPLEMENTATION_PLAN.md` lines 7, 26, 51). No CSV file or generator is produced by this phase.
 

@@ -29,7 +29,12 @@ servers_softether_ranked.json
 servers_openvpn_ranked.json
 servers_sstp_ranked.json
 servers_l2tp_ranked.json
+# Lower-case `servers.csv` was the old scratch name for the collector output.
+# The app's emergency list is `Servers.csv` at the repository root and MUST be
+# committed — on Windows git matches ignore patterns case-insensitively, so the
+# negation below is required or the published file silently disappears.
 servers.csv
+!/Servers.csv
 collection_report.json
 diagnostics_report.json
 __pycache__/
@@ -69,3 +74,7 @@ build_test_baseline.log
 # Staging directory for release assets (five APKs, ~230 MB) and the release
 # notes that are uploaded to GitHub. Build output, never source.
 .release/
+
+# Renamed release APKs produced by scripts/prepare_release_assets.py
+# (VpnM-<version>-<abi>.apk). Build output, never source.
+/dist/

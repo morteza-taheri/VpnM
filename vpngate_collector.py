@@ -17,6 +17,8 @@ Protocols:
   - MS-SSTP
 
 Outputs:
+  Servers.csv                  (REPOSITORY ROOT - the app's emergency list;
+                                29-column schema, refreshed by 1.bat)
   servers_all.json
   servers_softether.json
   servers_openvpn.json
@@ -35,6 +37,7 @@ Dependencies:
   pip install requests beautifulsoup4
 """
 
+import argparse
 import base64
 import csv
 import io
@@ -46,7 +49,8 @@ import sys
 import time
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -76,11 +80,30 @@ OUT_SOFTETHER_RANKED = "servers_softether_ranked.json"
 OUT_OPENVPN_RANKED = "servers_openvpn_ranked.json"
 OUT_SSTP_RANKED = "servers_sstp_ranked.json"
 OUT_L2TP_RANKED = "servers_l2tp_ranked.json"
-# NOTE: not the app emergency file. The app-compatible servers.csv is written
-# only by emergency_csv_publisher.py (different schema, UTF-8 without BOM).
+# NOTE: not the app emergency file. The app-compatible list is Servers.csv at
+# the repository root (see EMERGENCY_CSV_PATH below); it uses the 29-column
+# schema of SERVER_SOURCE_ARCHITECTURE.md section 10 and is written through
+# emergency_csv_publisher.py so there is only ONE implementation of that schema.
 OUT_CSV = "collector_servers_full.csv"
 OUT_REPORT = "collection_report.json"
 OUT_DIAGNOSTICS = "diagnostics_report.json"
+
+# ── Emergency list (the file the app falls back to) ──────────────────────────
+#
+# The app seeds this URL into `emergency_source_config` on first run
+# (`app/src/main/res/values/emergency_defaults.xml`), so the file name and the
+# repository location are a CONTRACT, not a preference: renaming or moving it
+# breaks the seeded default for every install.
+REPO_ROOT = Path(__file__).resolve().parent
+EMERGENCY_CSV_NAME = "Servers.csv"
+EMERGENCY_CSV_PATH = REPO_ROOT / EMERGENCY_CSV_NAME
+EMERGENCY_DEFAULTS_XML = (
+    REPO_ROOT / "app" / "src" / "main" / "res" / "values" / "emergency_defaults.xml"
+)
+EMERGENCY_RAW_URL = (
+    "https://raw.githubusercontent.com/morteza-taheri/VpnM/main/Servers.csv"
+)
+EMERGENCY_MAX_SERVERS = 500
 
 HEADERS = {
     "User-Agent": (
@@ -3477,7 +3500,150 @@ def print_top(
 # MAIN
 # ============================================================
 
-def main():
+def parse_args(
+    argv: Optional[Sequence[str]] = None,
+) -> argparse.Namespace:
+    """CLI for the operator wrapper (``1.bat``) and for direct runs.
+
+    Unknown flags are reported and ignored instead of aborting: the historical
+    entry points (``--debug-ip``, ``--diagnose``) are handled in ``__main__``
+    before this parser runs, and an old shortcut in a batch file must not turn
+    into a hard failure.
+    """
+
+    parser = argparse.ArgumentParser(
+        prog="vpngate_collector.py",
+        description=(
+            "Collect VPN Gate servers and refresh Servers.csv (the app's "
+            "emergency server list at the repository root)."
+        ),
+    )
+    parser.add_argument(
+        "--emergency-only",
+        action="store_true",
+        help="refresh Servers.csv only; skip the analysis JSON/CSV outputs",
+    )
+    parser.add_argument(
+        "--no-emergency",
+        action="store_true",
+        help="run the analysis only; do not touch Servers.csv",
+    )
+    parser.add_argument(
+        "--max-servers",
+        type=int,
+        default=EMERGENCY_MAX_SERVERS,
+        help=(
+            "cap on the number of rows written to Servers.csv "
+            f"(default {EMERGENCY_MAX_SERVERS})"
+        ),
+    )
+    parser.add_argument(
+        "--skip-health-check",
+        action="store_true",
+        help="do not TCP-probe endpoints before writing Servers.csv",
+    )
+    parser.add_argument(
+        "--api-only",
+        action="store_true",
+        help="build Servers.csv from the API feed only (protocol columns stay 0)",
+    )
+
+    args, unknown = parser.parse_known_args(argv)
+    if unknown:
+        print(
+            "Ignoring unknown arguments: "
+            + " ".join(unknown)
+        )
+    return args
+
+
+def publish_emergency_csv(
+    *,
+    max_servers: int = EMERGENCY_MAX_SERVERS,
+    skip_health_check: bool = False,
+    api_only: bool = False,
+) -> int:
+    """Replace (or create) ``Servers.csv`` at the repository root.
+
+    The 29-column schema, the previous-row merge, the size budget and the
+    fail-closed self-check all live in ``emergency_csv_publisher.py``. This
+    function only supplies the paths and the "write, never commit" policy, so
+    the file the app consumes has exactly one producer.
+
+    Returns a process exit code: 0 when the file was written and re-read
+    successfully, non-zero otherwise.
+    """
+
+    print()
+    print("=" * 72)
+    print(
+        "📦 EMERGENCY LIST  ->  "
+        + str(EMERGENCY_CSV_PATH)
+    )
+    print("=" * 72)
+
+    try:
+        import emergency_csv_publisher as ecp  # type: ignore
+    except Exception as exc:  # missing requests/bs4 surfaces here, not later
+        print(f"❌ emergency publisher unavailable: {exc}")
+        return 2
+
+    argv = [
+        "--output", str(EMERGENCY_CSV_PATH),
+        "--published-raw-url", EMERGENCY_RAW_URL,
+        # Merge with what is already published so a transient upstream hiccup
+        # cannot shrink the app's fallback list. A missing file is fine.
+        "--previous-local", str(EMERGENCY_CSV_PATH),
+        "--max-servers", str(max(1, int(max_servers))),
+        # Write Servers.csv + emergency_defaults.xml, never run git: the
+        # operator reviews the diff and commits.
+        "--dry-run",
+    ]
+    if skip_health_check:
+        argv.append("--skip-health-check")
+    if api_only:
+        argv.append("--api-only")
+
+    try:
+        rc = ecp.main(argv)
+    except SystemExit as exc:  # argparse/publisher called sys.exit
+        rc = int(exc.code or 0)
+    except Exception as exc:
+        print(f"❌ emergency list failed: {exc}")
+        return 2
+
+    if rc != 0:
+        print(f"❌ Servers.csv NOT written (publisher exit {rc})")
+        return rc
+
+    if not EMERGENCY_CSV_PATH.is_file():
+        print("❌ Servers.csv missing after publish")
+        return 2
+
+    text = EMERGENCY_CSV_PATH.read_text(
+        encoding="utf-8",
+        errors="replace",
+    )
+    size = EMERGENCY_CSV_PATH.stat().st_size
+    rows = max(0, len(text.splitlines()) - 1)
+
+    print()
+    print(f"✅ {EMERGENCY_CSV_NAME}: {rows} servers, {size:,} bytes")
+    print(f"   raw URL: {EMERGENCY_RAW_URL}")
+    print(f"   xml    : {EMERGENCY_DEFAULTS_XML}")
+    return 0
+
+
+def main(argv: Optional[Sequence[str]] = None):
+
+    args = parse_args(argv)
+
+    if args.emergency_only:
+        return publish_emergency_csv(
+            max_servers=args.max_servers,
+            skip_health_check=args.skip_health_check,
+            api_only=args.api_only,
+        )
 
     print()
     print("=" * 72)
@@ -3828,6 +3994,17 @@ def main():
         "🏆 TOP L2TP/IPsec SERVERS"
     )
 
+    # --------------------------------------------------------
+    # EMERGENCY LIST (repository root Servers.csv)
+    # --------------------------------------------------------
+
+    if not args.no_emergency:
+        publish_emergency_csv(
+            max_servers=args.max_servers,
+            skip_health_check=args.skip_health_check,
+            api_only=args.api_only,
+        )
+
     print()
     print("=" * 72)
     print("✅ COLLECTION COMPLETED")
@@ -4054,4 +4231,4 @@ if __name__ == "__main__":
         )
         sys.exit(run_diagnose(_target))
 
-    main()
+    main(sys.argv[1:])
