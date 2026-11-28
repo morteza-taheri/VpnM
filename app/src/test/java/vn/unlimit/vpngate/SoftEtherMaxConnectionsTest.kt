@@ -133,7 +133,7 @@ class SoftEtherMaxConnectionsTest {
         val call = "client.nativeSetMaxConnection(nativeHandle, config.maxConnections)"
         assertEquals(
             "both the first connect AND the reconnect must push the value (the reconnect " +
-                "builds a fresh native handle, which resets max_connection to 4)",
+                "builds a fresh native handle, which resets max_connection to 8)",
             2,
             Regex(Regex.escape(call)).findAll(controller).count(),
         )
