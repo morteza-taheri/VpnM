@@ -439,4 +439,7 @@
     <string name="server_export_copied">CSV سرور در کلیپبرد کپی شد</string>
     <string name="server_export_saved">فایل CSV سرور ذخیره شد</string>
     <string name="server_export_failed">امکان اکسپورت CSV سرور نبود</string>
+    <string name="setting_auto_protocol_priority_wifi">اولویت پروتکل‌ها در وای‌فای</string>
+    <string name="setting_auto_protocol_priority_mobile_data">اولویت پروتکل‌ها در دیتای سیم‌کارت</string>
+    <string name="setting_auto_protocol_priority_none">هیچ پروتکلی فعال نیست</string>
 </resources>
