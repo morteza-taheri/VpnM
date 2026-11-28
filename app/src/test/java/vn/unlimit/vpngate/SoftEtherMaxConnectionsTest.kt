@@ -13,10 +13,9 @@ import java.io.File
  * `nativeSetMaxConnection`, and the login PACK sent a literal `4`, so the server
  * was asked for 4 connections whatever the user picked. Both are fixed here.
  *
- * The ceiling stays at 8: the protocol allows 32 and the server accepts them, but
- * this client's ramp-up starves the data plane above ~8 (device measurement in
- * `MAX_SOFTETHER_CONNECTIONS`). The last three tests keep the three pieces —
- * Kotlin clamp, native array size, and the connect path — from drifting apart.
+ * The fresh-install default stays at 8; the selectable/native ceiling is 32.
+ * Data-plane quality above 8 remains an operator measurement, because ramp-up
+ * can starve the data plane on some devices. Tests pin the full setting-to-socket path.
  */
 class SoftEtherMaxConnectionsTest {
 
@@ -138,6 +137,38 @@ class SoftEtherMaxConnectionsTest {
             2,
             Regex(Regex.escape(call)).findAll(controller).count(),
         )
+    }
+
+    @Test
+    fun nativeSetterClampsAndStoresTheConfiguredValue() {
+        val jni = sourceOf("SoftEtherClient/src/main/cpp/jni/softether_jni.c")
+        assertTrue(jni.contains("if (maxConnections < 1) maxConnections = 1;"))
+        assertTrue(jni.contains("if (maxConnections > MAX_SE_CONNECTIONS) maxConnections = MAX_SE_CONNECTIONS;"))
+        assertTrue(jni.contains("conn->max_connection = maxConnections;"))
+    }
+
+    @Test
+    fun serverNegotiationClampsTheTargetAndSchedulesOnlyTheAcceptedCount() {
+        val protocol = sourceOf(
+            "SoftEtherClient/src/main/cpp/softether-core/src/proto/softether_protocol.c",
+        )
+        assertTrue(protocol.contains("conn->max_connection = (int)conn->server_max_connection;"))
+        assertTrue(protocol.contains("conn->num_additional < conn->max_connection - 1"))
+    }
+
+    @Test
+    fun nativeActiveConnectionCounterIncludesPrimaryAndAdditionalSockets() {
+        val protocol = sourceOf(
+            "SoftEtherClient/src/main/cpp/softether-core/src/proto/softether_protocol.c",
+        )
+        assertTrue(protocol.contains("int count = (conn->socket_fd >= 0) ? 1 : 0;"))
+        assertTrue(protocol.contains("count += conn->num_additional;"))
+
+        val controller = sourceOf(
+            "SoftEtherClient/src/main/java/vn/unlimit/softether/controller/ConnectionController.kt",
+        )
+        assertTrue(controller.contains("client.nativeGetNumConnections(nativeHandle)"))
+        assertTrue(controller.contains("[SOFTETHER_CONNECTIONS] active="))
     }
 
     /** Reads a source file, trying the module-relative and repo-relative paths. */
